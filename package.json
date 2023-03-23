@@ -13,10 +13,6 @@
         "types": "./dist/index.edge.d.ts",
         "default": "./dist/index.edge.js"
       },
-      "browser": {
-        "types": "./dist/index.browser.d.ts",
-        "default": "./dist/index.browser.js"
-      },
       "worker": {
         "types": "./dist/index.edge.d.ts",
         "default": "./dist/index.edge.js"
@@ -42,10 +38,9 @@
     "directory": "packages/otel"
   },
   "scripts": {
-    "build": "pnpm build:node && pnpm build:edge && pnpm build:browser",
+    "build": "pnpm build:node && pnpm build:edge",
     "build:node": "tsc --project tsconfig.node.json",
-    "build:edge": "tsc --project tsconfig.edge.json",
-    "build:browser": "tsc --project tsconfig.browser.json"
+    "build:edge": "tsc --project tsconfig.edge.json"
   },
   "license": "MIT",
   "devDependencies": {
