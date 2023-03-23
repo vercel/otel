@@ -41,7 +41,7 @@
     "directory": "packages/otel"
   },
   "scripts": {
-    "build": "pnpm build:node",
+    "build": "pnpm build:node && pnpm build:edge && pnpm build:browser",
     "build:node": "tsc --project tsconfig.node.json",
     "build:edge": "tsc --project tsconfig.edge.json",
     "build:browser": "tsc --project tsconfig.browser.json"
