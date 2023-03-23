@@ -1,16 +1,16 @@
-export * from '@opentelemetry/api';
-export * from '@opentelemetry/semantic-conventions';
+export * from "@opentelemetry/api";
+export * from "@opentelemetry/semantic-conventions";
 
-import { Resource } from '@opentelemetry/resources';
-import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import { Resource } from "@opentelemetry/resources";
+import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import {
   NodeTracerProvider,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-node';
+} from "@opentelemetry/sdk-trace-node";
 
-import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 
-export const register = (serviceName: string) => {
+export const registerOTel = (serviceName: string) => {
   const provider = new NodeTracerProvider({
     resource: new Resource({
       [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
