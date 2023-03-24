@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "Vercel wrapper around OpenTelemetry APIs",
   "types": "./dist/index.node.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "edge": {
