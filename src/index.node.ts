@@ -1,5 +1,4 @@
 export * from "@opentelemetry/api";
-export * from "@opentelemetry/semantic-conventions";
 
 import { Resource } from "@opentelemetry/resources";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";

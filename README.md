@@ -36,26 +36,6 @@ register("your-service-name");
 const span = trace.getTracer("your-component").startSpan("your-operation");
 ```
 
-### 🎨 Customizing your setup
-
-The `register` function takes a single string argument for your service name. This will be used as the app name in many OpenTelemetry backends.
-
-The package also re-exports `@opentelemetry/api` and `@opentelemetry/semantics` for your convenience.
-
-```javascript
-const { context, trace, SemanticAttributes } = require("vercel/otel");
-
-// Use the OpenTelemetry APIs and semantic attributes as needed
-const span = trace.getTracer("your-component").startSpan("your-operation", {
-  attributes: {
-    [SemanticAttributes.HTTP_METHOD]: "GET",
-  },
-});
-
-// Modify the context as needed
-const ctx = trace.setSpan(context.active(), span);
-```
-
 ## 📖 API Reference
 
 ### `register(serviceName: string)`
@@ -67,13 +47,7 @@ This is all that is needed to trace your app on Vercel.
 
 ### Re-exported APIs
 
-This package re-exports the following APIs from `@opentelemetry/api` and `@opentelemetry/semantics`:
-
-- `context`
-- `trace`
-- `SemanticAttributes`
-
-Refer to the official [OpenTelemetry API documentation](https://opentelemetry.io/docs/instrumentation/js/) for details on how to use these APIs.
+This package re-exports everything from `@opentelemetry/api`. Refer to the official [OpenTelemetry API documentation](https://opentelemetry.io/docs/instrumentation/js/) for details on how to use these APIs.
 
 ## 📄 License
 
