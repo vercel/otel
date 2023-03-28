@@ -3,6 +3,7 @@ export * from "@opentelemetry/api";
 import { Resource } from "@opentelemetry/resources";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import {
+  ConsoleSpanExporter,
   NodeTracerProvider,
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-node";
@@ -19,6 +20,7 @@ export const registerOTel = (serviceName: string) => {
   provider.register();
 
   provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter({})));
+  provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 
   return provider;
 };
