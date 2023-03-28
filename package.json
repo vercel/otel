@@ -2,22 +2,14 @@
   "name": "@vercel/otel",
   "version": "0.0.3",
   "description": "Vercel wrapper around OpenTelemetry APIs",
-  "files": [
-    "dist"
-  ],
   "type": "module",
   "main": "dist/index.node.js",
   "types": "./dist/index.node.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.node.d.ts",
-        "default": "./dist/index.node.js"
-      },
-      "node": {
-        "types": "./dist/index.node.d.ts",
-        "default": "./dist/index.node.js"
-      },
       "default": "./dist/index.node.js"
     },
     "./package.json": "./package.json"
@@ -43,5 +35,9 @@
     "@opentelemetry/resources": "1.9.1",
     "@opentelemetry/sdk-trace-node": "1.9.1",
     "@opentelemetry/semantic-conventions": "1.9.1"
+  },
+  "packageManager": "pnpm@7.24.0",
+  "engines": {
+    "node": ">=16"
   }
 }
