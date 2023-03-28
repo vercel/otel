@@ -31,7 +31,8 @@
       "node": {
         "types": "./dist/index.node.d.ts",
         "default": "./dist/index.node.js"
-      }
+      },
+      "default": "./dist/index.node.js"
     },
     "./package.json": "./package.json"
   },
