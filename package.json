@@ -6,6 +6,8 @@
   "files": [
     "dist"
   ],
+  "type": "module",
+  "main": "dist/index.node.js",
   "exports": {
     ".": {
       "edge": {
