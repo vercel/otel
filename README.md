@@ -12,7 +12,9 @@ Use that hip style for Readme that many JS devs use. Keep it concise.
 
 # 🚀 Vercel Otel
 
-[![npm](https://img.shields.io/npm/v/vercel/otel.svg)](https://www.npmjs.com/package/vercel/otel)
+[![npm](https://img.shields.io/npm/v/@vercel/otel.svg)](https://www.npmjs.com/package/@vercel/otel)
+
+> **Note:** This package is experimental. It doesn't follow Semver yet.
 
 `vercel/otel` is a simple and easy-to-use package that sets up your trace provider and exporter, and bundles all OpenTelemetry APIs in a single package. It's not as powerful as using raw APIs, but it should be enough for most cases.
 
