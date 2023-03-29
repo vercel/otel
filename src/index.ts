@@ -1,5 +1,5 @@
 import type { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-export * as api from "@opentelemetry/api";
+export * from "@opentelemetry/api";
 
 export let registerOTel: (
   serviceName: string
