@@ -22,6 +22,7 @@
     "target": "es2020",
     "types": ["node"]
   },
+  "files": ["./src/index.ts"],
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }

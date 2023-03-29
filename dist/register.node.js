@@ -14,4 +14,4 @@ export const registerOTel = (serviceName) => {
     provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
     return provider;
 };
-//# sourceMappingURL=index.node.js.map
+//# sourceMappingURL=register.node.js.map
