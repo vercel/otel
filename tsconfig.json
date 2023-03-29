@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "lib": ["esnext", "dom"],
-    "module": "esnext",
+    "module": "CommonJS",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
