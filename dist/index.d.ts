@@ -1,2 +1,4 @@
-export declare const registerOTel: (serviceName: string) => import("@opentelemetry/sdk-trace-node").NodeTracerProvider | undefined;
+import type { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+export * as api from "@opentelemetry/api";
+export declare let registerOTel: (serviceName: string) => NodeTracerProvider | undefined;
 //# sourceMappingURL=index.d.ts.map
