@@ -7,12 +7,7 @@
     "dist/**/*"
   ],
   "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
+  "exports": "./dist/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/vercel/otel.git"
