@@ -3,8 +3,6 @@
   "version": "0.0.3",
   "description": "Vercel wrapper around OpenTelemetry APIs",
   "type": "module",
-  "main": "dist/index.node.js",
-  "types": "./dist/index.node.d.ts",
   "files": [
     "dist/**/*"
   ],
@@ -22,17 +20,13 @@
         "types": "./dist/index.edge.d.ts",
         "default": "./dist/index.edge.js"
       },
-      "import": {
-        "types": "./dist/index.node.d.ts",
-        "default": "./dist/index.node.js"
-      },
       "node": {
         "types": "./dist/index.node.d.ts",
         "default": "./dist/index.node.js"
       },
+      "types": "./dist/index.node.d.ts",
       "default": "./dist/index.node.js"
-    },
-    "./package.json": "./package.json"
+    }
   },
   "repository": {
     "type": "git",
