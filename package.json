@@ -6,6 +6,7 @@
   "files": [
     "dist/**/*"
   ],
+  "types": "./dist/index.node.d.ts",
   "exports": {
     ".": {
       "edge": {
