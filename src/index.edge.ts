@@ -1,4 +1,4 @@
 export const registerOTel = (serviceName: string) => {
+  // We don't support OTel on edge yet
   void serviceName;
-  // We don't support OpenTelemetry on edge.
 };
