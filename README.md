@@ -57,4 +57,4 @@ This package re-exports everything from `@opentelemetry/api`. Refer to the offic
 
 ---
 
-Made with 💖 by the Vercel. Happy tracing! 📈
+Made with 💖 by Vercel. Happy tracing! 📈
