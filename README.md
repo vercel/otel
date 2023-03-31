@@ -29,10 +29,10 @@ npm install vercel/otel
 ## 📚 Usage
 
 ```javascript
-const { register, trace } = require("vercel/otel");
+const { registerOTel, trace } = require("vercel/otel");
 
 // Register the OpenTelemetry provider with an HTTP exporter
-register("your-service-name");
+registerOTel("your-service-name");
 
 // Now you can use the OpenTelemetry APIs
 const span = trace.getTracer("your-component").startSpan("your-operation");
@@ -40,7 +40,7 @@ const span = trace.getTracer("your-component").startSpan("your-operation");
 
 ## 📖 API Reference
 
-### `register(serviceName: string)`
+### `registerOTel(serviceName: string)`
 
 Registers the OpenTelemetry provider with an HTTP exporter using the given service name.
 This is all that is needed to trace your app on Vercel.
