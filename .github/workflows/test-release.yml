@@ -18,6 +18,9 @@ jobs:
       - name: Install
         uses: ./.github/workflows/install
 
+      - name: Print ref
+        run: echo "$GITHUB_REF"
+
       - name: Build
         run: pnpm build
   release:
