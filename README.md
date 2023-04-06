@@ -17,7 +17,7 @@ npm install vercel/otel
 ## 📚 Usage
 
 ```javascript
-import { registerOTel } from "vercel/otel";
+import { registerOTel } from "@vercel/otel";
 import { trace } from "@opentelemetry/api";
 
 // Register the OpenTelemetry provider with an HTTP exporter
