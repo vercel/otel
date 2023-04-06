@@ -1,6 +1,6 @@
 {
   "name": "@vercel/otel",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Vercel wrapper around OpenTelemetry APIs",
   "type": "module",
   "files": [
