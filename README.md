@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@vercel/otel.svg)](https://www.npmjs.com/package/@vercel/otel)
 
-> **Note:** This package is experimental. Updates can contain breaking changes.
+> **Note:** This package is experimental. It doesn't follow semver yet. Minors can contain breaking changes.
 
 `@vercel/otel` is a simple and easy-to-use package that sets up your trace provider and exporter.
 
