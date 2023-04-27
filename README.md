@@ -4,14 +4,14 @@
 
 > **Note:** This package is experimental. It doesn't follow semver yet. Minors can contain breaking changes.
 
-`@vercel/otel` is a simple and easy-to-use package that sets up your trace provider and exporter.
+`vercel/otel` is a simple and easy-to-use package that sets up your trace provider and exporter.
 
 💡 Use this package to quickly instrument your applications and get started with OpenTelemetry!
 
 ## 📦 Installation
 
 ```sh
-npm install @vercel/otel
+npm install vercel/otel
 ```
 
 ## 📚 Usage
@@ -20,7 +20,7 @@ npm install @vercel/otel
 import { registerOTel } from "@vercel/otel";
 import { trace } from "@opentelemetry/api";
 
-// Register the OpenTelemetry provider with an GRPC exporter
+// Register the OpenTelemetry provider with an HTTP exporter
 registerOTel("your-service-name");
 
 // Now you can use the OpenTelemetry APIs
@@ -31,8 +31,8 @@ const span = trace.getTracer("your-component").startSpan("your-operation");
 
 ### `registerOTel(serviceName: string)`
 
-Registers the OpenTelemetry provider with an OTLP exporter using the given service name.
-This is all that is needed to trace your app on Vercel or any other platform exposing its own OpenTelemetry Collector.
+Registers the OpenTelemetry provider with an HTTP exporter using the given service name.
+This is all that is needed to trace your app on Vercel.
 
 - `serviceName`: The name of your service, used as the app name in many OpenTelemetry backends.
 
