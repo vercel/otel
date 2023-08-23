@@ -4,6 +4,7 @@ specifiers:
   '@opentelemetry/api': 1.4.1
   '@opentelemetry/context-async-hooks': 1.15.2
   '@opentelemetry/core': 1.15.2
+  '@opentelemetry/exporter-trace-otlp-grpc': ^0.41.2
   '@opentelemetry/exporter-trace-otlp-http': 0.41.2
   '@opentelemetry/otlp-exporter-base': 0.41.2
   '@opentelemetry/otlp-transformer': 0.41.2
@@ -20,6 +21,7 @@ dependencies:
   '@opentelemetry/api': 1.4.1
   '@opentelemetry/context-async-hooks': 1.15.2_@opentelemetry+api@1.4.1
   '@opentelemetry/core': 1.15.2_@opentelemetry+api@1.4.1
+  '@opentelemetry/exporter-trace-otlp-grpc': 0.41.2_@opentelemetry+api@1.4.1
   '@opentelemetry/exporter-trace-otlp-http': 0.41.2_@opentelemetry+api@1.4.1
   '@opentelemetry/otlp-exporter-base': 0.41.2_@opentelemetry+api@1.4.1
   '@opentelemetry/otlp-transformer': 0.41.2_@opentelemetry+api@1.4.1
