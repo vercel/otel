@@ -50,13 +50,13 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "18.16.1",
-    "typescript": "^5.0.4"
+    "typescript": "5.0.4"
   },
   "dependencies": {
     "@opentelemetry/api": "1.4.1",
     "@opentelemetry/context-async-hooks": "1.15.2",
     "@opentelemetry/core": "1.15.2",
-    "@opentelemetry/exporter-trace-otlp-grpc": "^0.41.2",
+    "@opentelemetry/exporter-trace-otlp-grpc": "0.41.2",
     "@opentelemetry/exporter-trace-otlp-http": "0.41.2",
     "@opentelemetry/otlp-exporter-base": "0.41.2",
     "@opentelemetry/otlp-transformer": "0.41.2",
@@ -65,7 +65,7 @@
     "@opentelemetry/sdk-trace-base": "1.15.2",
     "@opentelemetry/sdk-trace-node": "1.15.2",
     "@opentelemetry/semantic-conventions": "1.15.2",
-    "performance-polyfill": "^0.0.3"
+    "performance-polyfill": "0.0.3"
   },
   "packageManager": "pnpm@7.24.0",
   "engines": {

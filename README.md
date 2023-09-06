@@ -38,9 +38,12 @@ This is all that is needed to trace your app on Vercel or any other platform exp
 
 ## 🧪 What exactly is this package doing
 
-This package utilizes the [`exports`](https://nodejs.org/api/packages.html#exports) API, enabling us to import the OpenTelemetry SDK in Node only. When you import `registerOTel` in a file intended for the edge, it returns an empty function because OpenTelemetry doesn't support the edge. However, if you import the same function in a file designed for Node, you'll receive a standard function that sets up the OpenTelemetry SDK correctly.
+This package utilizes the [`exports`](https://nodejs.org/api/packages.html#exports) API, enabling us to import the OpenTelemetry SDK in Node and Edge runtimes. When you import `registerOTel`, you'll receive a standard function that sets up the OpenTelemetry SDK correctly.
 
-The OpenTelemetry SDK initialization itself is straightforward. For more details, please see [the code](https://github.com/vercel/otel/blob/main/src/index.node.ts).
+The OpenTelemetry SDK initialization itself is straightforward. For more details, please see the code,
+
+- [node](https://github.com/vercel/otel/blob/main/src/index.node.ts)
+- [edge](https://github.com/vercel/otel/blob/main/src/index.edge.ts)
 
 ## 📄 License
 

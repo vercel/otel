@@ -1,9 +1,9 @@
 import "performance-polyfill";
 import {
   BasicTracerProvider,
-  BatchSpanProcessor,
   ReadableSpan,
   SDKRegistrationConfig,
+  SimpleSpanProcessor,
   TracerConfig,
 } from "@opentelemetry/sdk-trace-base";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
@@ -48,7 +48,6 @@ abstract class OTLPExporterEdgeBase<
     onSuccess: () => void,
     onError: (error: OTLPExporterError) => void
   ): void {
-    console.log("send");
     if (this._shutdownOnce.isCalled) {
       diag.debug("Shutdown already started. Cannot send objects");
       return;
@@ -72,7 +71,7 @@ abstract class OTLPExporterEdgeBase<
       const index = this._sendingPromises.indexOf(promise);
       this._sendingPromises.splice(index, 1);
     };
-    promise.then(popPromise, popPromise);
+    promise.finally(popPromise);
   }
 }
 
@@ -98,6 +97,10 @@ export const registerOTel = (serviceName: string) => {
       [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
     }),
   });
-  provider.addSpanProcessor(new BatchSpanProcessor(new OTLPTraceExporter()));
+  // For now, we'll support the simple span processor.
+  // In the future, we want to change this to a batch span processor that
+  // takes advantage of the `waitUntil` API to ensure that the batch is sent
+  // and does not interfere with the page lifecycle.
+  provider.addSpanProcessor(new SimpleSpanProcessor(new OTLPTraceExporter()));
   provider.register();
 };
