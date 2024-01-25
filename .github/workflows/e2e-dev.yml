@@ -1,7 +1,8 @@
 name: e2e Tests (dev)
 
 on:
-  # push:
+  workflow_dispatch:
+    # push:
   #   branches: [main]
   # pull_request:
   #   branches: [main]
