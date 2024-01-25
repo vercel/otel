@@ -1,0 +1,12 @@
+{
+  "extends": "typescript-config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["esnext", "dom"],
+    "paths": {
+      "#/*": ["./*"]
+    },
+    "incremental": true,
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
+  },
+  "exclude": ["node_modules", "dist", "vitest.config.ts"]
+}

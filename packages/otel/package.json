@@ -1,0 +1,92 @@
+{
+  "name": "@vercel/otel",
+  "version": "0.9.0",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Vercel wrapper around OpenTelemetry APIs",
+  "author": "Vercel Inc",
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "edge": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "edge-light": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "worker": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "workerd": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/node/index.js"
+      },
+      "node": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/node/index.js"
+      },
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/edge/index.js"
+    }
+  },
+  "types": "./dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types",
+    "build-types": "tsc --noEmit false --declaration --emitDeclarationOnly --stripInternal --declarationDir dist/types src/index.ts",
+    "clean": "rimraf dist",
+    "eslint": "eslint-runner",
+    "eslint-fix": "eslint-runner --fix",
+    "prepublishOnly": "pnpm build",
+    "type-check": "tsc --noEmit",
+    "unit-test": "vitest --run",
+    "unit-test-watch": "vitest"
+  },
+  "dependencies": {
+    "@opentelemetry/context-async-hooks": "^1.19.0",
+    "@opentelemetry/core": "^1.19.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.46.0",
+    "@opentelemetry/instrumentation": "^0.46.0",
+    "@opentelemetry/otlp-exporter-base": "^0.46.0",
+    "@opentelemetry/otlp-proto-exporter-base": "^0.46.0",
+    "@opentelemetry/otlp-transformer": "^0.46.0",
+    "@opentelemetry/resources": "^1.19.0",
+    "@opentelemetry/sdk-logs": "^0.46.0",
+    "@opentelemetry/sdk-metrics": "^1.19.0",
+    "@opentelemetry/sdk-node": "^0.46.0",
+    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "@opentelemetry/semantic-conventions": "^1.19.0"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/api-logs": "^0.46.0",
+    "@types/node": "18.15.11",
+    "esbuild": "^0.19.4",
+    "eslint-config": "workspace:*",
+    "rimraf": "3.0.2",
+    "tsx": "^4.6.2",
+    "typescript": "^5",
+    "typescript-config": "workspace:*",
+    "vitest": "0.33.0"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/api-logs": "^0.46.0"
+  }
+}
