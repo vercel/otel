@@ -6,9 +6,10 @@ env:
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  # TODO: enable auto-release
+  # push:
+  #   branches:
+  #     - main
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
