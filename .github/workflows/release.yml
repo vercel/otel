@@ -1,24 +1,44 @@
 name: Release
 
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
 on:
-  push:
-    tags:
-      - v**
+  workflow_dispatch:
+  # TODO: enable after the first release
+  # push:
+  #   branches:
+  #     - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
+    name: Release
     runs-on: ubuntu-latest
     steps:
-      - name: Check out
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install
-        uses: ./.github/workflows/install
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
 
-      - name: Build
-        run: pnpm build
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
 
-      - name: Release
-        run: pnpm publish --access public --no-git-checks
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # This expects you to have a script called release which does a build for your packages and calls changeset publish
+          publish: pnpm release
+          version: pnpm version-packages
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}

@@ -1,0 +1,44 @@
+{
+  "name": "bridge-emulator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "exports": {
+    "./server": {
+      "default": "./src/server/index.ts"
+    },
+    "./client": "./src/client/index.ts"
+  },
+  "typesVersions": {
+    "*": {
+      "server": [
+        "src/server/index.ts"
+      ],
+      "client": [
+        "src/client/index.ts"
+      ]
+    }
+  },
+  "scripts": {
+    "eslint": "eslint-runner",
+    "eslint-fix": "eslint-runner --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "next": "14.0.5-canary.67"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@vercel/otel": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@vercel/otel": "workspace:^",
+    "eslint-config": "workspace:*",
+    "typescript-config": "workspace:*",
+    "typescript": "^5"
+  }
+}

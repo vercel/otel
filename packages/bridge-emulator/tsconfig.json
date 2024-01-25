@@ -1,0 +1,11 @@
+{
+  "extends": "typescript-config/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["esnext", "dom", "DOM.Iterable"],
+    "paths": {
+      "#/*": ["./src/*"]
+    },
+    "incremental": true,
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json"
+  }
+}

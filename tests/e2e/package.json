@@ -1,0 +1,29 @@
+{
+  "name": "e2e",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "eslint": "eslint-runner",
+    "eslint-fix": "eslint-runner --fix",
+    "type-check": "tsc --noEmit",
+    "e2e-test": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "eslint-config": "workspace:*",
+    "typescript": "^5",
+    "typescript-config": "workspace:*",
+    "vite-tsconfig-paths": "^4.2.3",
+    "vitest": "^1.1.2"
+  },
+  "dependencies": {
+    "bridge-emulator": "workspace:^",
+    "collector": "workspace:^"
+  }
+}
