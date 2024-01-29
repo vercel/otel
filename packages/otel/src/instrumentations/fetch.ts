@@ -147,7 +147,10 @@ export class FetchInstrumentation implements Instrumentation {
           }
 
           try {
-            const res = await originalFetch(input, init);
+            const res = await originalFetch(input, {
+              ...init,
+              headers: req.headers,
+            });
             span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
             if (res.status >= 500) {
               span.setStatus({
