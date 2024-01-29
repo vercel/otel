@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.0.1
+
+### Patch Changes
+
+- a9d3a36: Remove "experimental" warning
+
 ## 1.0.0
 
 ### Major Changes
