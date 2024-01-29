@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.1.0
+
+### Minor Changes
+
+- 83ad945: Ensure that fetch receives the original input
+
 ## 1.0.1
 
 ### Patch Changes
