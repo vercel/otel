@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.2.0
+
+### Minor Changes
+
+- 7a04c92: Avoid OTLP longbits to avoid compatibility problems with some OTLP collectors
+
 ## 1.1.0
 
 ### Minor Changes
