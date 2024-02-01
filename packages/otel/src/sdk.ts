@@ -68,6 +68,7 @@ export class Sdk {
     const env = getEnv();
     const envWithoutDefaults = getEnvWithoutDefaults();
     const configuration = this.configuration;
+    const runtime = process.env.NEXT_RUNTIME || "nodejs";
 
     const disabled = Boolean(env.OTEL_SDK_DISABLED);
 
@@ -105,7 +106,7 @@ export class Sdk {
         "vercel.env":
           process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
         "vercel.region": process.env.VERCEL_REGION,
-        "vercel.runtime": process.env.NEXT_RUNTIME,
+        "vercel.runtime": runtime,
         "vercel.sha":
           process.env.VERCEL_GIT_COMMIT_SHA ||
           process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
@@ -181,7 +182,7 @@ export class Sdk {
       instrumentations,
     });
 
-    diag.info("@vercel/otel: started", serviceName, process.env.NEXT_RUNTIME);
+    diag.info("@vercel/otel: started", serviceName, runtime);
   }
 
   public async shutdown(): Promise<void> {
@@ -318,7 +319,7 @@ function parseSampler(arg: SampleOrName | undefined, env: Env): Sampler {
       });
     default:
       diag.error(
-        `OTEL_TRACES_SAMPLER value "${String(
+        `@vercel/otel: OTEL_TRACES_SAMPLER value "${String(
           env.OTEL_TRACES_SAMPLER
         )} invalid, defaulting to ${FALLBACK_OTEL_TRACES_SAMPLER}".`
       );
@@ -332,7 +333,7 @@ function getSamplerProbabilityFromEnv(env: Env): number {
     env.OTEL_TRACES_SAMPLER_ARG === ""
   ) {
     diag.error(
-      `OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`
+      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`
     );
     return DEFAULT_RATIO;
   }
@@ -345,14 +346,14 @@ function getSamplerProbabilityFromEnv(env: Env): number {
 
   if (isNaN(probability)) {
     diag.error(
-      `OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is invalid, defaulting to ${DEFAULT_RATIO}.`
+      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is invalid, defaulting to ${DEFAULT_RATIO}.`
     );
     return DEFAULT_RATIO;
   }
 
   if (probability < 0 || probability > 1) {
     diag.error(
-      `OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`
+      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`
     );
     return DEFAULT_RATIO;
   }
@@ -422,8 +423,8 @@ function parseTraceExporter(
   }
 
   const protocol =
-    env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL ??
-    env.OTEL_EXPORTER_OTLP_PROTOCOL ??
+    process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL ??
+    process.env.OTEL_EXPORTER_OTLP_PROTOCOL ??
     "http/protobuf";
   const url = buildExporterUrlFromEnv(env);
   const headers = {
@@ -446,7 +447,7 @@ function parseTraceExporter(
     default:
       // "grpc" protocol is not supported in Edge.
       diag.warn(
-        `Unsupported OTLP traces protocol: ${protocol}. Using http/protobuf.`
+        `@vercel/otel: Unsupported OTLP traces protocol: ${protocol}. Using http/protobuf.`
       );
       return new OTLPHttpProtoTraceExporter();
   }

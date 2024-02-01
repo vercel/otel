@@ -20,11 +20,11 @@ export abstract class OTLPExporterEdgeBase<
   }
 
   onShutdown(): void {
-    diag.debug("[OTLPExporterEdgeBase] onShutdown");
+    diag.debug("@vercel/otel/otlp: onShutdown");
   }
 
   onInit(): void {
-    diag.debug("[OTLPExporterEdgeBase] onInit");
+    diag.debug("@vercel/otel/otlp: onInit");
   }
 
   send(
@@ -34,7 +34,7 @@ export abstract class OTLPExporterEdgeBase<
   ): void {
     if (this._shutdownOnce.isCalled) {
       diag.debug(
-        "[OTLPExporterEdgeBase] Shutdown already started. Cannot send objects"
+        "@vercel/otel/otlp: Shutdown already started. Cannot send objects"
       );
       return;
     }
@@ -48,7 +48,7 @@ export abstract class OTLPExporterEdgeBase<
       const message = this.toMessage(serviceRequest);
       ({ body, contentType, headers } = message);
     } catch (e) {
-      diag.warn("[OTLPExporterProtoEdgeBase] no proto", e);
+      diag.warn("@vercel/otel/otlp: no proto", e);
       return;
     }
 
@@ -59,20 +59,17 @@ export abstract class OTLPExporterEdgeBase<
         ...this._headers,
         ...headers,
         "Content-Type": contentType,
+        "User-Agent": "OTel-OTLP-Exporter-JavaScript/0.46.0",
       },
       // @ts-expect-error - this handles a Next.js specific issue
       next: { internal: true },
     })
       .then((res) => {
-        diag.debug(
-          "[OTLPExporterEdgeBase] onSuccess",
-          res.status,
-          res.statusText
-        );
+        diag.debug("@vercel/otel/otlp: onSuccess", res.status, res.statusText);
         onSuccess();
       })
       .catch((err) => {
-        diag.error("[OTLPExporterEdgeBase] onError", err);
+        diag.error("@vercel/otel/otlp: onError", err);
         onError(err as OTLPExporterError);
       })
       .finally(() => {
