@@ -12,7 +12,7 @@ export class OTLPHttpProtoTraceExporter extends OTLPExporterEdgeBase<
   IExportTraceServiceRequest
 > {
   convert(spans: ReadableSpan[]): IExportTraceServiceRequest {
-    return createExportTraceServiceRequest(spans, { useHex: true });
+    return createExportTraceServiceRequest(spans, undefined);
   }
 
   override toMessage(serviceRequest: IExportTraceServiceRequest): {
