@@ -61,8 +61,11 @@ export class CompositeSpanProcessor implements SpanProcessor {
             await Promise.race([
               promise,
               new Promise((resolve) => {
-                console.log("QQQQ: waitUntil: timeout", traceId);
-                setTimeout(resolve, 50);
+                setTimeout(() => {
+                  console.log("QQQQ: waitUntil: timeout", traceId);
+                  this.waitSpanEnd.delete(traceId);
+                  resolve(undefined);
+                }, 50);
               }),
             ]);
           }
