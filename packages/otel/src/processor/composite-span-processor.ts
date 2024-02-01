@@ -11,6 +11,7 @@ import { getVercelRequestContextAttributes } from "../vercel-request-context/att
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
   private readonly rootSpanIds = new Map<string, string>();
+  private readonly waitSpanEnd = new Map<string, () => void>();
 
   constructor(private processors: SpanProcessor[]) {}
 
@@ -45,7 +46,29 @@ export class CompositeSpanProcessor implements SpanProcessor {
       // Flush the streams to avoid data loss.
       const vrc = getVercelRequestContext();
       if (vrc) {
-        vrc.waitUntil(() => this.forceFlush());
+        vrc.waitUntil(async () => {
+          console.log(
+            "QQQQ: waitUntil: pending? ",
+            traceId,
+            this.rootSpanIds.has(traceId)
+          );
+          if (this.rootSpanIds.has(traceId)) {
+            // Not root has not completed yet, so no point in flushing.
+            // Need to wait for onEnd.
+            const promise = new Promise<void>((resolve) => {
+              this.waitSpanEnd.set(traceId, resolve);
+            });
+            await Promise.race([
+              promise,
+              new Promise((resolve) => {
+                console.log("QQQQ: waitUntil: timeout", traceId);
+                setTimeout(resolve, 50);
+              }),
+            ]);
+          }
+          console.log("QQQQ: waitUntil: execute", traceId);
+          return this.forceFlush();
+        });
       }
     }
 
@@ -57,12 +80,19 @@ export class CompositeSpanProcessor implements SpanProcessor {
   onEnd(span: ReadableSpan): void {
     const { traceId, spanId } = span.spanContext();
     const isRoot = this.rootSpanIds.get(traceId) === spanId;
-    if (isRoot) {
-      this.rootSpanIds.delete(traceId);
-    }
 
     for (const spanProcessor of this.processors) {
       spanProcessor.onEnd(span);
+    }
+
+    if (isRoot) {
+      this.rootSpanIds.delete(traceId);
+      const pending = this.waitSpanEnd.get(traceId);
+      if (pending) {
+        console.log("QQQQ: onEnd: resolve pending", traceId);
+        this.waitSpanEnd.delete(traceId);
+        pending();
+      }
     }
   }
 }
