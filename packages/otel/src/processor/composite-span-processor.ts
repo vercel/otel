@@ -47,29 +47,26 @@ export class CompositeSpanProcessor implements SpanProcessor {
       const vrc = getVercelRequestContext();
       if (vrc) {
         vrc.waitUntil(async () => {
-          console.log(
-            "QQQQ: waitUntil: pending? ",
-            traceId,
-            this.rootSpanIds.has(traceId)
-          );
           if (this.rootSpanIds.has(traceId)) {
             // Not root has not completed yet, so no point in flushing.
             // Need to wait for onEnd.
             const promise = new Promise<void>((resolve) => {
               this.waitSpanEnd.set(traceId, resolve);
             });
+            let timer: NodeJS.Timeout | undefined;
             await Promise.race([
               promise,
               new Promise((resolve) => {
-                setTimeout(() => {
-                  console.log("QQQQ: waitUntil: timeout", traceId);
+                timer = setTimeout(() => {
                   this.waitSpanEnd.delete(traceId);
                   resolve(undefined);
                 }, 50);
               }),
             ]);
+            if (timer) {
+              clearTimeout(timer);
+            }
           }
-          console.log("QQQQ: waitUntil: execute", traceId);
           return this.forceFlush();
         });
       }
@@ -92,7 +89,6 @@ export class CompositeSpanProcessor implements SpanProcessor {
       this.rootSpanIds.delete(traceId);
       const pending = this.waitSpanEnd.get(traceId);
       if (pending) {
-        console.log("QQQQ: onEnd: resolve pending", traceId);
         this.waitSpanEnd.delete(traceId);
         pending();
       }

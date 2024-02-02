@@ -45,7 +45,7 @@ on:
 
 jobs:
   release-snapshot:
-    name: Release
+    name: Release Snapshot
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -68,7 +68,7 @@ jobs:
         run: pnpm install
 
       - name: Build
-        run: pnpm build
+        run: pnpm --filter @vercel/otel build
 
       - name: Add SHORT_SHA env property with commit short sha
         run: echo "SHORT_SHA=`echo ${{ github.sha }} | cut -c1-8`" >> $GITHUB_ENV
