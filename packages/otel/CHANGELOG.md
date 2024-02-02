@@ -1,5 +1,12 @@
 # @vercel/otel
 
+## 1.2.1
+
+### Patch Changes
+
+- 79fbec0: Eliminate race condition between response end and trace end
+- 31ce66b: More docs on fetch instrumentation
+
 ## 1.2.0
 
 ### Minor Changes
