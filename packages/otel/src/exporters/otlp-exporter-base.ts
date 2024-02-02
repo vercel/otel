@@ -67,6 +67,8 @@ export abstract class OTLPExporterEdgeBase<
       .then((res) => {
         diag.debug("@vercel/otel/otlp: onSuccess", res.status, res.statusText);
         onSuccess();
+        // Drain the response body.
+        void res.arrayBuffer().catch(() => undefined);
       })
       .catch((err) => {
         diag.error("@vercel/otel/otlp: onError", err);
