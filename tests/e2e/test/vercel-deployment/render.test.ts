@@ -74,7 +74,11 @@ describe("vercel deployment: render", {}, (props) => {
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
-              attributes: { scope: "sample", foo: "bar" },
+              attributes: {
+                scope: "sample",
+                foo: "bar",
+                "operation.name": "sample",
+              },
               spans: [],
             },
           ],
