@@ -157,7 +157,7 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   return {
     "operation.name": toOperationName(
       libraryName,
-      SPAN_KIND_NAME[kind] || "internal"
+      kind === SpanKind.INTERNAL ? "" : SPAN_KIND_NAME[kind]
     ),
   };
 }
@@ -170,5 +170,5 @@ function toOperationName(libraryName: string, name: string): string {
   if (cleanLibraryName.startsWith("_")) {
     cleanLibraryName = cleanLibraryName.slice(1);
   }
-  return `${cleanLibraryName}.${name}`;
+  return name ? `${cleanLibraryName}.${name}` : cleanLibraryName;
 }
