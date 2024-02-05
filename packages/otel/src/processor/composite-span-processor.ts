@@ -1,5 +1,5 @@
-import type { Context } from "@opentelemetry/api";
-import { TraceFlags, diag } from "@opentelemetry/api";
+import type { Attributes, Context } from "@opentelemetry/api";
+import { TraceFlags, diag, SpanKind } from "@opentelemetry/api";
 import type {
   Span,
   ReadableSpan,
@@ -81,6 +81,11 @@ export class CompositeSpanProcessor implements SpanProcessor {
     const { traceId, spanId } = span.spanContext();
     const isRoot = this.rootSpanIds.get(traceId) === spanId;
 
+    const resourceAttributes = getResourceAttributes(span);
+    if (resourceAttributes) {
+      Object.assign(span.attributes, resourceAttributes);
+    }
+
     for (const spanProcessor of this.processors) {
       spanProcessor.onEnd(span);
     }
@@ -99,4 +104,71 @@ export class CompositeSpanProcessor implements SpanProcessor {
 function isSampled(traceFlags: number): boolean {
   // eslint-disable-next-line no-bitwise
   return (traceFlags & TraceFlags.SAMPLED) !== 0;
+}
+
+const SPAN_KIND_NAME: { [key in SpanKind]: string } = {
+  [SpanKind.INTERNAL]: "internal",
+  [SpanKind.SERVER]: "server",
+  [SpanKind.CLIENT]: "client",
+  [SpanKind.PRODUCER]: "producer",
+  [SpanKind.CONSUMER]: "consumer",
+};
+
+function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
+  const { kind, attributes } = span;
+  const {
+    "operation.name": operationName,
+    "resouce.name": resourceName,
+    "span.type": spanTypeAttr,
+    "next.span_type": nextSpanType,
+    "http.method": httpMethod,
+    "http.route": httpRoute,
+  } = attributes;
+  if (operationName) {
+    return undefined;
+  }
+
+  // Per https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml,
+  // the default operation.name is "library name + span kind".
+  const libraryName = span.instrumentationLibrary.name;
+
+  const spanType = nextSpanType ?? spanTypeAttr;
+  if (spanType && typeof spanType === "string") {
+    return {
+      "operation.name": toOperationName(libraryName, spanType),
+    };
+  }
+
+  if (
+    httpMethod &&
+    httpRoute &&
+    typeof httpMethod === "string" &&
+    typeof httpRoute === "string"
+  ) {
+    return {
+      "operation.name": toOperationName(
+        libraryName,
+        `http.${SPAN_KIND_NAME[kind] || "internal"}.request`
+      ),
+      "resource.name": resourceName ?? `${httpMethod} ${httpRoute}`,
+    };
+  }
+
+  return {
+    "operation.name": toOperationName(
+      libraryName,
+      SPAN_KIND_NAME[kind] || "internal"
+    ),
+  };
+}
+
+function toOperationName(libraryName: string, name: string): string {
+  if (!libraryName) {
+    return name;
+  }
+  let cleanLibraryName = libraryName.replace(/[ @./]/g, "_");
+  if (cleanLibraryName.startsWith("_")) {
+    cleanLibraryName = cleanLibraryName.slice(1);
+  }
+  return `${cleanLibraryName}.${name}`;
 }

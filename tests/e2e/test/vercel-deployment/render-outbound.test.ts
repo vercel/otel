@@ -42,6 +42,8 @@ describe("vercel deployment: outbound", {}, (props) => {
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
                     "http.status_code": 200,
+                    "operation.name": "fetch",
+                    "resource.name": `POST http://localhost:${bridge.port}/`,
                   },
                 },
               ],
