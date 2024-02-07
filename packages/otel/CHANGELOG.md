@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.3.0
+
+### Minor Changes
+
+- 965fce6: DataDog resource/operation mapping
+
 ## 1.2.1
 
 ### Patch Changes
