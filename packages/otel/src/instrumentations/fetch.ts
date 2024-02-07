@@ -139,6 +139,8 @@ export class FetchInstrumentation implements Instrumentation {
             [SemanticAttributes.HTTP_SCHEME]: url.protocol.replace(":", ""),
             [SemanticAttributes.NET_PEER_NAME]: url.hostname,
             [SemanticAttributes.NET_PEER_PORT]: url.port,
+            "operation.name": "fetch",
+            "resource.name": `${req.method} ${req.url}`,
           },
         },
         async (span) => {

@@ -30,6 +30,7 @@ describe("vercel deployment: render", {}, (props) => {
         "http.status_code": 200,
         "next.route": "/slugs/[slug]",
         "http.route": "/slugs/[slug]",
+        "operation.name": "next_js.BaseServer.handleRequest",
       },
       spans: [
         {
@@ -49,6 +50,7 @@ describe("vercel deployment: render", {}, (props) => {
             "next.span_name": "render route (app) /slugs/[slug]",
             "next.span_type": "AppRender.getBodyResult",
             "next.route": "/slugs/[slug]",
+            "operation.name": "next_js.AppRender.getBodyResult",
           },
           spans: [
             {
@@ -72,7 +74,11 @@ describe("vercel deployment: render", {}, (props) => {
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
-              attributes: { scope: "sample", foo: "bar" },
+              attributes: {
+                scope: "sample",
+                foo: "bar",
+                "operation.name": "sample",
+              },
               spans: [],
             },
           ],
