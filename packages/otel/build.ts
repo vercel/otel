@@ -36,8 +36,7 @@ const __dirname = _nPath.dirname(__filename);`,
 
 const edgeSupportBanner = {
   js: `if (globalThis.performance === undefined) {
-    const timeOrigin = Date.now() - 1;
-    globalThis.performance = { timeOrigin: timeOrigin, now: () => Date.now() - timeOrigin };
+    globalThis.performance = { timeOrigin: 0, now: () => Date.now() };
   }`,
 };
 
