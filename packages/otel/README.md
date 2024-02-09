@@ -51,6 +51,13 @@ Registers the OpenTelemetry SDK with the specified configuration. Configuration 
 
 See API for more details.
 
+## 🔗 References
+
+- [OpenTelemetry Primer](https://opentelemetry.io/docs/concepts/observability-primer/)
+- [OpenTelemetry Environment Variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/)
+- [Next.js OpenTelemetry docs](https://nextjs.org/docs/app/building-your-application/optimizing/open-telemetry)
+- [Vercel OpenTelemetry Collector](https://vercel.com/docs/observability/otel-overview/quickstart)
+
 ## 📄 License
 
 [MIT](LICENSE)
