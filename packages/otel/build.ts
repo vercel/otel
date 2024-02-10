@@ -2,6 +2,7 @@ import type { Plugin } from "esbuild";
 import { build } from "esbuild";
 
 const MINIFY = true;
+const SOURCEMAP = false;
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
 const externalCjsToEsmPlugin: ExternalPluginFactory = (external) => ({
@@ -52,7 +53,7 @@ async function buildAll(): Promise<void> {
       outdir: "dist/node",
       bundle: true,
       minify: MINIFY,
-      sourcemap: true,
+      sourcemap: SOURCEMAP,
       banner: esmNodeSupportBanner,
       external: ["@opentelemetry/api"],
       plugins: [externalCjsToEsmPlugin(peerDependencies)],
@@ -65,7 +66,7 @@ async function buildAll(): Promise<void> {
       outdir: "dist/edge",
       bundle: true,
       minify: MINIFY,
-      sourcemap: true,
+      sourcemap: SOURCEMAP,
       banner: edgeSupportBanner,
       external: ["@opentelemetry/api"],
       plugins: [
