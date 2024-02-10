@@ -31,6 +31,7 @@ describe("vercel deployment: render", {}, (props) => {
         "next.route": "/slugs/[slug]",
         "http.route": "/slugs/[slug]",
         "operation.name": "next_js.BaseServer.handleRequest",
+        "resource.name": "/slugs/[slug]",
       },
       spans: [
         {
@@ -112,6 +113,8 @@ describe("vercel deployment: render", {}, (props) => {
         "http.status_code": 200,
         "next.route": "/slugs/[slug]/edge",
         "http.route": "/slugs/[slug]/edge",
+        "operation.name": "next_js.BaseServer.handleRequest",
+        "resource.name": "/slugs/[slug]/edge",
       },
       spans: [
         {

@@ -10,11 +10,13 @@ import type {
   InstrumentationConfig,
 } from "@opentelemetry/instrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import { resolveTemplate } from "../util/template";
 
 export interface FetchInstrumentationConfig extends InstrumentationConfig {
   ignoreUrls?: (string | RegExp)[];
   propagateContextUrls?: (string | RegExp)[];
   dontPropagateContextUrls?: (string | RegExp)[];
+  resourceNameTemplate?: string;
 }
 
 type NextRequestInit = RequestInit & {
@@ -85,6 +87,7 @@ export class FetchInstrumentation implements Instrumentation {
       process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL || null;
     const propagateContextUrls = this.config.propagateContextUrls ?? [];
     const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
+    const resourceNameTemplate = this.config.resourceNameTemplate;
 
     const shouldPropagate = (url: URL): boolean => {
       const urlString = url.toString();
@@ -128,19 +131,26 @@ export class FetchInstrumentation implements Instrumentation {
         return originalFetch(input, init);
       }
 
+      const attrs = {
+        [SemanticAttributes.HTTP_METHOD]: req.method,
+        [SemanticAttributes.HTTP_URL]: req.url,
+        [SemanticAttributes.HTTP_HOST]: url.host,
+        [SemanticAttributes.HTTP_SCHEME]: url.protocol.replace(":", ""),
+        [SemanticAttributes.NET_PEER_NAME]: url.hostname,
+        [SemanticAttributes.NET_PEER_PORT]: url.port,
+      };
+      const resourceName = resourceNameTemplate
+        ? resolveTemplate(resourceNameTemplate, attrs)
+        : req.url;
+
       return tracer.startActiveSpan(
         `fetch ${req.method} ${req.url}`,
         {
           kind: SpanKind.CLIENT,
           attributes: {
-            [SemanticAttributes.HTTP_METHOD]: req.method,
-            [SemanticAttributes.HTTP_URL]: req.url,
-            [SemanticAttributes.HTTP_HOST]: url.host,
-            [SemanticAttributes.HTTP_SCHEME]: url.protocol.replace(":", ""),
-            [SemanticAttributes.NET_PEER_NAME]: url.hostname,
-            [SemanticAttributes.NET_PEER_PORT]: url.port,
-            "operation.name": "fetch",
-            "resource.name": `${req.method} ${req.url}`,
+            ...attrs,
+            "operation.name": `fetch.${req.method}`,
+            "resource.name": resourceName,
           },
         },
         async (span) => {

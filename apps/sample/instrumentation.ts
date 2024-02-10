@@ -19,6 +19,22 @@ export function register() {
   if (!process.env.VERCEL_ENV || process.env.VERCEL_ENV === "test") {
     config = startBridgeEmulator(config);
   }
+  if (process.env.TEST_FETCH_RESOURCE_NAME_TEMPLATE) {
+    console.log(
+      "Custom fetch resourceNameTemplate:",
+      process.env.TEST_FETCH_RESOURCE_NAME_TEMPLATE
+    );
+    config = {
+      ...config,
+      instrumentationConfig: {
+        ...config.instrumentationConfig,
+        fetch: {
+          ...config.instrumentationConfig?.fetch,
+          resourceNameTemplate: process.env.TEST_FETCH_RESOURCE_NAME_TEMPLATE,
+        },
+      },
+    };
+  }
   if (process.env.TEST_SPAN_PROCESSOR == "console") {
     console.log("Custom span processor: console");
     config = {

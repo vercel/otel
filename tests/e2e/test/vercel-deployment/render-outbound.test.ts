@@ -42,8 +42,8 @@ describe("vercel deployment: outbound", {}, (props) => {
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
                     "http.status_code": 200,
-                    "operation.name": "fetch",
-                    "resource.name": `POST http://localhost:${bridge.port}/`,
+                    "operation.name": "fetch.POST",
+                    "resource.name": `http://localhost:${bridge.port}/`,
                   },
                 },
               ],
@@ -224,3 +224,72 @@ describe("vercel deployment: outbound", {}, (props) => {
     });
   });
 });
+
+describe(
+  "vercel deployment: outbound with resourceNameTemplate",
+  {
+    env: {
+      TEST_FETCH_RESOURCE_NAME_TEMPLATE: "custom {http.scheme} {http.host}",
+    },
+  },
+  (props) => {
+    it("should create a span for fetch", async () => {
+      const { collector, bridge } = props();
+
+      await bridge.fetch(
+        `/slugs/baz?dataUrl=${encodeURIComponent(
+          `http://localhost:${bridge.port}`
+        )}`
+      );
+
+      await expectTrace(collector, {
+        name: "GET /slugs/[slug]",
+        status: { code: SpanStatusCode.UNSET },
+        kind: SpanKind.SERVER,
+        resource: { "vercel.runtime": "nodejs" },
+        spans: [
+          { name: "resolve page components" },
+          {
+            name: "render route (app) /slugs/[slug]",
+            attributes: {},
+            spans: [
+              { name: "resolve segment modules" },
+              { name: "resolve segment modules" },
+              {
+                name: "sample-span",
+                attributes: { scope: "sample", foo: "bar" },
+                spans: [
+                  {
+                    name: `fetch POST http://localhost:${bridge.port}/`,
+                    kind: SpanKind.CLIENT,
+                    attributes: {
+                      scope: "@vercel/otel/fetch",
+                      "http.method": "POST",
+                      "http.url": `http://localhost:${bridge.port}/`,
+                      "http.host": `localhost:${bridge.port}`,
+                      "http.scheme": "http",
+                      "net.peer.name": "localhost",
+                      "net.peer.port": `${bridge.port}`,
+                      "http.status_code": 200,
+                      "operation.name": "fetch.POST",
+                      "resource.name": `custom http localhost:${bridge.port}`,
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      const fetches = bridge.fetches;
+      expect(fetches).toHaveLength(1);
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const fetch = fetches[0]!;
+      expect(fetch.headers.get("traceparent")).toMatch(
+        /00-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-01/
+      );
+    });
+  }
+);

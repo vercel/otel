@@ -121,6 +121,7 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
     "resouce.name": resourceName,
     "span.type": spanTypeAttr,
     "next.span_type": nextSpanType,
+    "next.route": nextRoute,
     "http.method": httpMethod,
     "http.route": httpRoute,
   } = attributes;
@@ -134,9 +135,14 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
 
   const spanType = nextSpanType ?? spanTypeAttr;
   if (spanType && typeof spanType === "string") {
-    return {
-      "operation.name": toOperationName(libraryName, spanType),
-    };
+    const nextOperationName = toOperationName(libraryName, spanType);
+    if (nextRoute) {
+      return {
+        "operation.name": nextOperationName,
+        "resource.name": resourceName ?? nextRoute,
+      };
+    }
+    return { "operation.name": nextOperationName };
   }
 
   if (
@@ -148,9 +154,9 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
     return {
       "operation.name": toOperationName(
         libraryName,
-        `http.${SPAN_KIND_NAME[kind] || "internal"}.request`
+        `http.${SPAN_KIND_NAME[kind] || "internal"}.${httpMethod}`
       ),
-      "resource.name": resourceName ?? `${httpMethod} ${httpRoute}`,
+      "resource.name": resourceName ?? httpRoute,
     };
   }
 
