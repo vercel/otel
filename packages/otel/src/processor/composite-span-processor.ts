@@ -139,7 +139,7 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
     if (nextRoute) {
       return {
         "operation.name": nextOperationName,
-        "resource.name": nextRoute,
+        "resource.name": resourceName ?? nextRoute,
       };
     }
     return { "operation.name": nextOperationName };
