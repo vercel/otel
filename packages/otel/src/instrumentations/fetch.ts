@@ -4,7 +4,11 @@ import {
   propagation,
   context,
 } from "@opentelemetry/api";
-import type { TextMapSetter, TracerProvider } from "@opentelemetry/api";
+import type {
+  Attributes,
+  TextMapSetter,
+  TracerProvider,
+} from "@opentelemetry/api";
 import type {
   Instrumentation,
   InstrumentationConfig,
@@ -48,7 +52,16 @@ export interface FetchInstrumentationConfig extends InstrumentationConfig {
   resourceNameTemplate?: string;
 }
 
-type NextRequestInit = RequestInit & {
+export type RequestInitWithOpenTelemetry = RequestInit & {
+  opentelemetry?: {
+    ignore?: boolean;
+    propagateContext?: boolean;
+    spanName?: string;
+    attributes?: Attributes;
+  };
+};
+
+type InternalRequestInit = RequestInitWithOpenTelemetry & {
   next?: {
     internal: boolean;
   };
@@ -99,7 +112,13 @@ export class FetchInstrumentation implements Instrumentation {
 
     const ignoreUrls = this.config.ignoreUrls ?? [];
 
-    const shouldIgnore = (url: URL): boolean => {
+    const shouldIgnore = (
+      url: URL,
+      init: InternalRequestInit | undefined
+    ): boolean => {
+      if (init?.opentelemetry?.ignore !== undefined) {
+        return init.opentelemetry.ignore;
+      }
       if (ignoreUrls.length === 0) {
         return false;
       }
@@ -125,7 +144,13 @@ export class FetchInstrumentation implements Instrumentation {
     const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
     const resourceNameTemplate = this.config.resourceNameTemplate;
 
-    const shouldPropagate = (url: URL): boolean => {
+    const shouldPropagate = (
+      url: URL,
+      init: InternalRequestInit | undefined
+    ): boolean => {
+      if (init?.opentelemetry?.propagateContext) {
+        return init.opentelemetry.propagateContext;
+      }
       const urlString = url.toString();
       if (
         dontPropagateContextUrls.length > 0 &&
@@ -172,15 +197,18 @@ export class FetchInstrumentation implements Instrumentation {
     const originalFetch = globalThis.fetch;
     this.originalFetch = originalFetch;
 
-    const doFetch: typeof fetch = (input, init) => {
+    const doFetch: typeof fetch = (input, initArg) => {
+      const init = initArg as InternalRequestInit | undefined;
+      console.log("QQQQ: Fetch instr: fetch with:", init);
+
       // Passthrough internal requests.
-      if ((init as NextRequestInit | undefined)?.next?.internal) {
+      if (init?.next?.internal) {
         return originalFetch(input, init);
       }
 
       const req = new Request(input, init);
       const url = new URL(req.url);
-      if (shouldIgnore(url)) {
+      if (shouldIgnore(url, init)) {
         return originalFetch(input, init);
       }
 
@@ -197,20 +225,21 @@ export class FetchInstrumentation implements Instrumentation {
         : removeSearch(req.url);
 
       return tracer.startActiveSpan(
-        `fetch ${req.method} ${req.url}`,
+        init?.opentelemetry?.spanName ?? `fetch ${req.method} ${req.url}`,
         {
           kind: SpanKind.CLIENT,
           attributes: {
             ...attrs,
             "operation.name": `fetch.${req.method}`,
             "resource.name": resourceName,
+            ...init?.opentelemetry?.attributes,
           },
         },
         async (span) => {
           if (
             span.isRecording() &&
             isSampled(span.spanContext().traceFlags) &&
-            shouldPropagate(url)
+            shouldPropagate(url, init)
           ) {
             propagation.inject(context.active(), req.headers, HEADERS_SETTER);
           }

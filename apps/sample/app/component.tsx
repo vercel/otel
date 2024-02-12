@@ -1,4 +1,5 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
+import type { RequestInitWithOpenTelemetry } from "@vercel/otel";
 
 export interface Props {
   searchParams?: {
@@ -33,6 +34,18 @@ export async function Component({ searchParams }: Props): Promise<JSX.Element> {
         return null;
       }
       try {
+        console.log("QQQQ: Component.tsx: fetch with:", {
+          method: "POST",
+          body: JSON.stringify({
+            cmd: searchParams.status ? "status" : "echo",
+            data: { status: searchParams.status, foo: "bar" },
+          }),
+          opentelemetry: {
+            attributes: {
+              custom1: "value1",
+            },
+          },
+        });
         const response = await fetch(dataUrl, {
           method: "POST",
           body: JSON.stringify({
@@ -40,7 +53,12 @@ export async function Component({ searchParams }: Props): Promise<JSX.Element> {
             data: { status: searchParams.status, foo: "bar" },
           }),
           cache: "no-store",
-        });
+          opentelemetry: {
+            attributes: {
+              custom1: "value1",
+            },
+          },
+        } as RequestInitWithOpenTelemetry);
         const json = await response.json();
         span.end();
         return json;

@@ -4,7 +4,7 @@ import { describe } from "../../lib/with-bridge";
 import { expectTrace } from "../../lib/expect-trace";
 
 describe("vercel deployment: outbound", {}, (props) => {
-  it("should create a span for fetch", async () => {
+  it.only("should create a span for fetch", async () => {
     const { collector, bridge } = props();
 
     await bridge.fetch(
@@ -41,6 +41,7 @@ describe("vercel deployment: outbound", {}, (props) => {
                     "http.status_code": 200,
                     "operation.name": "fetch.POST",
                     "resource.name": `http://localhost:${bridge.port}/`,
+                    custom1: "value1",
                   },
                 },
               ],

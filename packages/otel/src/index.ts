@@ -6,6 +6,7 @@ export { OTLPHttpJsonTraceExporter } from "./exporters/exporter-trace-otlp-http-
 export { OTLPHttpProtoTraceExporter } from "./exporters/exporter-trace-otlp-proto-fetch";
 export {
   type FetchInstrumentationConfig,
+  type RequestInitWithOpenTelemetry,
   FetchInstrumentation,
 } from "./instrumentations/fetch";
 
