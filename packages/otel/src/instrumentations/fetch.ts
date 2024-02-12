@@ -141,7 +141,7 @@ export class FetchInstrumentation implements Instrumentation {
       };
       const resourceName = resourceNameTemplate
         ? resolveTemplate(resourceNameTemplate, attrs)
-        : req.url;
+        : removeSearch(req.url);
 
       return tracer.startActiveSpan(
         `fetch ${req.method} ${req.url}`,
@@ -206,3 +206,8 @@ const HEADERS_SETTER: TextMapSetter<Headers> = {
     carrier.set(key, value);
   },
 };
+
+function removeSearch(url: string): string {
+  const index = url.indexOf("?");
+  return index === -1 ? url : url.substring(0, index);
+}
