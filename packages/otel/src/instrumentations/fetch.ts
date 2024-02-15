@@ -77,6 +77,9 @@ export class FetchInstrumentation implements Instrumentation {
       const urlString = url.toString();
       return ignoreUrls.some((match) => {
         if (typeof match === "string") {
+          if (match === "*") {
+            return true;
+          }
           return urlString.startsWith(match);
         }
         return match.test(urlString);
@@ -85,6 +88,10 @@ export class FetchInstrumentation implements Instrumentation {
 
     const host =
       process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL || null;
+    const branchHost =
+      process.env.VERCEL_BRANCH_URL ||
+      process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
+      null;
     const propagateContextUrls = this.config.propagateContextUrls ?? [];
     const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
     const resourceNameTemplate = this.config.resourceNameTemplate;
@@ -95,6 +102,9 @@ export class FetchInstrumentation implements Instrumentation {
         dontPropagateContextUrls.length > 0 &&
         dontPropagateContextUrls.some((match) => {
           if (typeof match === "string") {
+            if (match === "*") {
+              return true;
+            }
             return urlString.startsWith(match);
           }
           return match.test(urlString);
@@ -102,11 +112,23 @@ export class FetchInstrumentation implements Instrumentation {
       ) {
         return false;
       }
-      if (host && url.protocol === "https:" && url.host === host) {
+      // Allow same origin.
+      if (
+        host &&
+        url.protocol === "https:" &&
+        (url.host === host || url.host === branchHost)
+      ) {
+        return true;
+      }
+      // Allow localhost for testing in a dev mode.
+      if (!host && url.protocol === "http:" && url.hostname === "localhost") {
         return true;
       }
       return propagateContextUrls.some((match) => {
         if (typeof match === "string") {
+          if (match === "*") {
+            return true;
+          }
           return urlString.startsWith(match);
         }
         return match.test(urlString);
