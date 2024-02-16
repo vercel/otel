@@ -11,6 +11,7 @@ import type {
 } from "@opentelemetry/instrumentation";
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import { resolveTemplate } from "../util/template";
+import { getVercelRequestContext } from "../vercel-request-context/api";
 
 export interface FetchInstrumentationConfig extends InstrumentationConfig {
   ignoreUrls?: (string | RegExp)[];
@@ -116,7 +117,9 @@ export class FetchInstrumentation implements Instrumentation {
       if (
         host &&
         url.protocol === "https:" &&
-        (url.host === host || url.host === branchHost)
+        (url.host === host ||
+          url.host === branchHost ||
+          url.host === getVercelRequestContext()?.headers.host)
       ) {
         return true;
       }
