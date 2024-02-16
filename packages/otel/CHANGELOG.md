@@ -1,5 +1,18 @@
 # @vercel/otel
 
+## 1.3.0
+
+### Minor Changes
+
+- 79110fc: resource.name and resourceNameTemplate for fetch instrumentation
+- 965fce6: DataDog resource/operation mapping
+
+### Patch Changes
+
+- 67b5337: Edge performance.timeOrigin is set as 0
+- bc65efe: Automatically propagate context to localhost on dev, and same branch_host on preview/prod
+- bc65efe: Added vercel.branch_host resource attribute
+
 ## 1.2.1
 
 ### Patch Changes
