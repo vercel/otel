@@ -52,16 +52,18 @@ export interface FetchInstrumentationConfig extends InstrumentationConfig {
   resourceNameTemplate?: string;
 }
 
-export type RequestInitWithOpenTelemetry = RequestInit & {
-  opentelemetry?: {
-    ignore?: boolean;
-    propagateContext?: boolean;
-    spanName?: string;
-    attributes?: Attributes;
-  };
-};
+declare global {
+  interface RequestInit {
+    opentelemetry?: {
+      ignore?: boolean;
+      propagateContext?: boolean;
+      spanName?: string;
+      attributes?: Attributes;
+    };
+  }
+}
 
-type InternalRequestInit = RequestInitWithOpenTelemetry & {
+type InternalRequestInit = RequestInit & {
   next?: {
     internal: boolean;
   };

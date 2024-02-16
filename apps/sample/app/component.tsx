@@ -1,5 +1,4 @@
 import { SpanStatusCode, trace } from "@opentelemetry/api";
-import type { RequestInitWithOpenTelemetry } from "@vercel/otel";
 
 export interface Props {
   searchParams?: {
@@ -58,7 +57,7 @@ export async function Component({ searchParams }: Props): Promise<JSX.Element> {
               custom1: "value1",
             },
           },
-        } as RequestInitWithOpenTelemetry);
+        });
         const json = await response.json();
         span.end();
         return json;
