@@ -12,6 +12,7 @@ import type {
 import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
 import { resolveTemplate } from "../util/template";
 import { getVercelRequestContext } from "../vercel-request-context/api";
+import { isSampled } from "../util/sampled";
 
 export interface FetchInstrumentationConfig extends InstrumentationConfig {
   ignoreUrls?: (string | RegExp)[];
@@ -179,7 +180,11 @@ export class FetchInstrumentation implements Instrumentation {
           },
         },
         async (span) => {
-          if (shouldPropagate(url)) {
+          if (
+            span.isRecording() &&
+            isSampled(span.spanContext().traceFlags) &&
+            shouldPropagate(url)
+          ) {
             propagation.inject(context.active(), req.headers, HEADERS_SETTER);
           }
 

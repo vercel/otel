@@ -1,5 +1,5 @@
 import type { Attributes, Context } from "@opentelemetry/api";
-import { TraceFlags, diag, SpanKind } from "@opentelemetry/api";
+import { diag, SpanKind } from "@opentelemetry/api";
 import type {
   Span,
   ReadableSpan,
@@ -7,6 +7,7 @@ import type {
 } from "@opentelemetry/sdk-trace-base";
 import { getVercelRequestContext } from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
+import { isSampled } from "../util/sampled";
 
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
@@ -78,12 +79,15 @@ export class CompositeSpanProcessor implements SpanProcessor {
   }
 
   onEnd(span: ReadableSpan): void {
-    const { traceId, spanId } = span.spanContext();
+    const { traceId, spanId, traceFlags } = span.spanContext();
+    const sampled = isSampled(traceFlags);
     const isRoot = this.rootSpanIds.get(traceId) === spanId;
 
-    const resourceAttributes = getResourceAttributes(span);
-    if (resourceAttributes) {
-      Object.assign(span.attributes, resourceAttributes);
+    if (sampled) {
+      const resourceAttributes = getResourceAttributes(span);
+      if (resourceAttributes) {
+        Object.assign(span.attributes, resourceAttributes);
+      }
     }
 
     for (const spanProcessor of this.processors) {
@@ -99,11 +103,6 @@ export class CompositeSpanProcessor implements SpanProcessor {
       }
     }
   }
-}
-
-function isSampled(traceFlags: number): boolean {
-  // eslint-disable-next-line no-bitwise
-  return (traceFlags & TraceFlags.SAMPLED) !== 0;
 }
 
 const SPAN_KIND_NAME: { [key in SpanKind]: string } = {
