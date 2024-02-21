@@ -59,11 +59,11 @@ Registers the OpenTelemetry SDK with the specified configuration. Configuration 
 - `traceSampler`: The sampler to be used to decide which requests should be traced. By default, all requests are traced. This option can be changed to, for instance, only trace 1% of all requests.
 - `spanProcessors` and `traceExporter`: The export mechanism for traces. By default, `@vercel/otel` configures the best export mechanism for the environment. For instance, if a [tracing integrations](https://vercel.com/docs/observability/otel-overview/quickstart) is configured on Vercel, this integration will be automatically used for export; otherwise an [OTLP exporter](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#otlp-exporter) can be used if configured in environment variables.
 
-See [API](https://otel-site-git-dimavoytenko-tsdoc.vercel.sh/api/) for more details.
+See [API](https://otel.vercel.sh/api/) for more details.
 
 ## 📝 Changelog
 
-See [CHANGELOG.md](https://otel-site-git-dimavoytenko-tsdoc.vercel.sh/CHANGELOG.md).
+See [CHANGELOG.md](https://otel.vercel.sh/CHANGELOG.md).
 
 ## 🔗 References
 
@@ -74,7 +74,7 @@ See [CHANGELOG.md](https://otel-site-git-dimavoytenko-tsdoc.vercel.sh/CHANGELOG.
 
 ## 📄 License
 
-[MIT](https://otel-site-git-dimavoytenko-tsdoc.vercel.sh/LICENSE)
+[MIT](https://otel.vercel.sh/LICENSE)
 
 ---
 
