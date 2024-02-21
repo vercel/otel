@@ -66,8 +66,6 @@ describe("vercel deployment: render", {}, (props) => {
 
     const execResp = await bridge.fetch("/slugs/baz/edge");
     expect(execResp.status).toBe(200);
-    // await execResp.arrayBuffer();
-    console.log("QQQQ: ", await execResp.text());
 
     await expectTrace(collector, {
       name: "GET /slugs/[slug]/edge",
