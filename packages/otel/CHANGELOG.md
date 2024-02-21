@@ -1,5 +1,15 @@
 # @vercel/otel
 
+## 1.4.0
+
+### Minor Changes
+
+- 913fcb7: RequestInit.opentelemetry property to override fetch instrumentation
+
+### Patch Changes
+
+- c311f29: Include API docs
+
 ## 1.3.0
 
 ### Minor Changes
