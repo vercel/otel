@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.3.1
+
+### Patch Changes
+
+- c311f29: Include API docs
+
 ## 1.3.0
 
 ### Minor Changes
