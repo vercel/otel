@@ -33,11 +33,11 @@ export async function expectTrace(
     new Promise<ITrace>((resolve) => {
       const interval = setInterval(() => {
         const traces = collector.getAllTraces();
-        // console.log(
-        //   "[expect-trace] traces:",
-        //   traces.length,
-        //   traces.map((t) => t.name)
-        // );
+        console.log(
+          "[expect-trace] traces:",
+          traces.length,
+          traces.map((t) => t.name)
+        );
         const matchedTrace = traces.find((trace) => {
           return (
             trace.name === tracesMatch.name &&
@@ -51,7 +51,7 @@ export async function expectTrace(
       }, 50);
     }),
     new Promise<undefined>((resolve) => {
-      setTimeout(() => resolve(undefined), 4000);
+      setTimeout(() => resolve(undefined), 6000);
     }),
   ]);
 

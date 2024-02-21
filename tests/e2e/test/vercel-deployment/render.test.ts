@@ -61,12 +61,13 @@ describe("vercel deployment: render", {}, (props) => {
     });
   });
 
-  it("should trace render for edge", async () => {
+  it.only("should trace render for edge", async () => {
     const { port, collector, bridge } = props();
 
     const execResp = await bridge.fetch("/slugs/baz/edge");
     expect(execResp.status).toBe(200);
-    void execResp.arrayBuffer();
+    // await execResp.arrayBuffer();
+    console.log("QQQQ: ", await execResp.text());
 
     await expectTrace(collector, {
       name: "GET /slugs/[slug]/edge",

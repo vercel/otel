@@ -34,6 +34,12 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
   onStart(span: Span, parentContext: Context): void {
     const { traceId, spanId, traceFlags } = span.spanContext();
+    console.log(
+      "QQQQ: CompositeSpanProcessor.onStart:",
+      span.name,
+      traceId,
+      traceFlags
+    );
     const isRoot = !span.parentSpanId || !this.rootSpanIds.has(traceId);
     if (isRoot) {
       this.rootSpanIds.set(traceId, spanId);
@@ -80,6 +86,12 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
   onEnd(span: ReadableSpan): void {
     const { traceId, spanId, traceFlags } = span.spanContext();
+    console.log(
+      "QQQQ: CompositeSpanProcessor.onEnd3:",
+      span.name,
+      traceId,
+      traceFlags
+    );
     const sampled = isSampled(traceFlags);
     const isRoot = this.rootSpanIds.get(traceId) === spanId;
 

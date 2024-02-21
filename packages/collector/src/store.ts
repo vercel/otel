@@ -52,6 +52,10 @@ export function resetStore(): void {
 }
 
 export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
+  console.log(
+    "QQQQ: collector: processResourceSpans:",
+    JSON.stringify(resourceSpans, null, 2)
+  );
   for (const resourceSpan of resourceSpans) {
     const { resource } = resourceSpan;
     if (!resource) {

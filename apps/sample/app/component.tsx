@@ -33,18 +33,6 @@ export async function Component({ searchParams }: Props): Promise<JSX.Element> {
         return null;
       }
       try {
-        console.log("QQQQ: Component.tsx: fetch with:", {
-          method: "POST",
-          body: JSON.stringify({
-            cmd: searchParams.status ? "status" : "echo",
-            data: { status: searchParams.status, foo: "bar" },
-          }),
-          opentelemetry: {
-            attributes: {
-              custom1: "value1",
-            },
-          },
-        });
         const response = await fetch(dataUrl, {
           method: "POST",
           body: JSON.stringify({

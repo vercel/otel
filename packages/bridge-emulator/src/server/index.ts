@@ -72,10 +72,19 @@ export class BridgeEmulatorContextReader implements TextMapPropagator {
         headers,
         url: url ?? "",
         waitUntil: (pf): void => {
+          console.log(
+            "QQQQ: BRIDGE: waitUntil2",
+            process.env.NEXT_RUNTIME,
+            !!responseAck
+          );
           if (!responseAck) {
             responseAck = fetch(`http://127.0.0.1:${bridgePort}`, {
               method: "POST",
-              body: JSON.stringify({ cmd: "ack", testId }),
+              body: JSON.stringify({
+                cmd: "ack",
+                testId,
+                runtime: process.env.NEXT_RUNTIME,
+              }),
               headers: { "content-type": "application/json" },
               // @ts-expect-error - internal Next request.
               next: { internal: true },
@@ -87,14 +96,27 @@ export class BridgeEmulatorContextReader implements TextMapPropagator {
                 setTimeout(() => resolve(), 200);
               });
             })
-            .then(async () => {
-              try {
-                await (typeof pf === "function" ? pf() : pf);
-              } catch (e) {
-                // eslint-disable-next-line no-console
-                console.error("[BridgeEmulatorServer] waitUntil error:", e);
+            .then(
+              async () => {
+                console.log(
+                  "QQQQ: BRIDGE: waitUntil2: resolved",
+                  process.env.NEXT_RUNTIME
+                );
+                try {
+                  await (typeof pf === "function" ? pf() : pf);
+                } catch (e) {
+                  // eslint-disable-next-line no-console
+                  console.error("[BridgeEmulatorServer] waitUntil error:", e);
+                }
+              },
+              (err) => {
+                console.log(
+                  "QQQQ: BRIDGE: waitUntil2: resolved: error",
+                  process.env.NEXT_RUNTIME,
+                  err
+                );
               }
-            });
+            );
         },
       };
     }

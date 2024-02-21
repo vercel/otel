@@ -76,8 +76,10 @@ class BridgeEmulatorServer implements Bridge {
 
       if (json.cmd === "ack") {
         const waiting = this.waitingAck.get(json.testId);
+        console.log("QQQQ: BRIDGE CLIENT3: ack:", json, !!waiting);
         if (waiting) {
           waiting.finally(() => {
+            console.log("QQQQ: BRIDGE CLIENT3: ack finally:", json);
             this.waitingAck.delete(json.testId);
             res.writeHead(200);
             res.write("{}");
@@ -178,7 +180,9 @@ class BridgeEmulatorServer implements Bridge {
           "x-otel-test-bridge-port": String(this.port),
         },
       });
-      return res;
+      const resClone = res.clone();
+      await res.arrayBuffer();
+      return resClone;
     } finally {
       waitingResolve(undefined);
     }

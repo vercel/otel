@@ -4,6 +4,7 @@ import { describe } from "../../lib/with-bridge";
 import { expectTrace } from "../../lib/expect-trace";
 
 describe("vercel deployment: outbound", {}, (props) => {
+  // QQQQQ: edge
   it("should create a span for fetch", async () => {
     const { collector, bridge } = props();
 
