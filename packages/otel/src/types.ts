@@ -94,6 +94,7 @@ export interface Configuration {
    * Use the "auto" value to include all default propagators.
    * By default, `@vercel/otel` configures [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagator.
    * This option can be also configured via the [`OTEL_PROPAGATORS`](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) environment variable.
+   *
    * Example: `{ propagators: ["auto", new MyPropagator()] }`
    */
   propagators?: PropagatorOrName[];
