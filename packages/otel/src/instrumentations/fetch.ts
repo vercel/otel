@@ -14,10 +14,37 @@ import { resolveTemplate } from "../util/template";
 import { getVercelRequestContext } from "../vercel-request-context/api";
 import { isSampled } from "../util/sampled";
 
+/**
+ * Configuration for the "fetch" instrumentation.
+ */
 export interface FetchInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * A set of URL matchers (string prefix or regex) that should be ignored from tracing.
+   * By default all URLs are traced. Example: `fetch: { ignoreUrls: [/example.com/] }`.
+   */
   ignoreUrls?: (string | RegExp)[];
+
+  /**
+   * A set of URL matchers (string prefix or regex) for which the tracing context
+   * should be propagated (see [`propagators`](Configuration#propagators)).
+   * By default the context is propagated _only_ for the
+   * [deployment URLs](https://vercel.com/docs/deployments/generated-urls), all
+   * other URLs should be enabled explicitly.
+   * Example: `fetch: { propagateContextUrls: [ /my.api/ ] }`.
+   */
   propagateContextUrls?: (string | RegExp)[];
+
+  /**
+   * A set of URL matchers (string prefix or regex) for which the tracing context
+   * should not be propagated (see [`propagators`](Configuration#propagators)). This allows you to exclude a
+   * subset of URLs allowed by the [`propagateContextUrls`](FetchInstrumentationConfig#propagateContextUrls).
+   */
   dontPropagateContextUrls?: (string | RegExp)[];
+
+  /**
+   * A string for the "resource.name" attribute that can include attribute expressions in `{}`.
+   * Example: `fetch: { resourceNameTemplate: "{http.host}" }`.
+   */
   resourceNameTemplate?: string;
 }
 

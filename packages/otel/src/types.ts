@@ -45,22 +45,88 @@ export interface InstrumentationConfiguration {
   fetch?: FetchInstrumentationConfig;
 }
 
+/**
+ * OpenTelemetry SDK configuration.
+ */
 export interface Configuration {
+  /**
+   * The name of your service, used as the app name in many OpenTelemetry backends.
+   * Can be overriden by the `OTEL_SERVICE_NAME` environment variable.
+   */
   serviceName?: string;
+
+  /**
+   * The resource attributes.
+   * By default, `@vercel/otel` configures relevant Vercel attributes based on the
+   * [environment](https://vercel.com/docs/projects/environment-variables/system-environment-variables),
+   * including:
+   * - `service.name` - the service name.
+   * - `node.env` - the value of `NODE_ENV` environment variable.
+   * - `vercel.env` - the Vercel deployment environment such as "production" or "preview" (`VERCEL_ENV` environment variable).
+   * - `vercel.region` - the Vercel deployment region (`VERCEL_REGION` environment variable).
+   * - `vercel.runtime` - "nodejs" or "edge" (`NEXT_RUNTIME` environment variable).
+   * - `vercel.sha` - the Vercel deployment Git SHA (`VERCEL_GIT_COMMIT_SHA` environment variable).
+   * - `vercel.host` - the Vercel deployment host for the Git SHA (`VERCEL_URL` environment variable).
+   * - `vercel.branch_host` - the Vercel deployment host for the branch (`VERCEL_BRANCH_URL` environment variable).
+   */
   attributes?: ResourceAttributes;
+
   resourceDetectors?: DetectorSync[];
   autoDetectResources?: boolean;
 
+  /**
+   * A set of instrumentations.
+   * By default, `@vercel/otel` configures ["fetch"](FetchInstrumentationConfig) instrumentation.
+   */
   instrumentations?: InstrumentationOptionOrName[];
+
+  /**
+   * Customize configuration for predefined instrumentations:
+   * - [fetch](FetchInstrumentationConfig)
+   */
   instrumentationConfig?: InstrumentationConfiguration;
 
   contextManager?: ContextManager;
   idGenerator?: IdGenerator;
+
+  /**
+   * A set of propagators that may extend inbound and outbound contexts.
+   * Use the "auto" value to include all default propagators.
+   * By default, `@vercel/otel` configures [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagator.
+   * This option can be also configured via the [`OTEL_PROPAGATORS`](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) environment variable.
+   * Example: `{ propagators: ["auto", new MyPropagator()] }`
+   */
   propagators?: PropagatorOrName[];
 
+  /**
+   * The sampler to be used to decide which requests should be traced.
+   * Use the "auto" value to use the default sampler.
+   * By default, all requests are traced. This option can be changed to,
+   * for instance, only trace 1% of all requests.
+   * This option can also be configured via the [`OTEL_TRACES_SAMPLER` and `OTEL_TRACES_SAMPLER_ARG`](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) environment variable.
+   */
   traceSampler?: SampleOrName;
+
+  /**
+   * A set of span processors to be used to process captured spans.
+   * Use the "auto" value to include all default span processors.
+   * By default, `@vercel/otel` auto-configures an export processor based on the environment.
+   * See [traceExporter](Configuration#traceExporter) for more details.
+   */
   spanProcessors?: SpanProcessorOrName[];
+
+  /**
+   * A custom exporter for traces.
+   * Use the "auto" value to include the best export mechanism for the environment.
+   * By default, `@vercel/otel` configures the best export mechanism for the
+   * environment. For instance, if a [tracing integrations](https://vercel.com/docs/observability/otel-overview/quickstart) is
+   * configured on Vercel, this integration will be automatically used for export; otherwise an
+   * [OTLP exporter](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#otlp-exporter)
+   * can be used if configured via environment variables, such as `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`
+   * and `OTEL_EXPORTER_OTLP_HEADERS`.
+   */
   traceExporter?: SpanExporterOrName;
+
   spanLimits?: SpanLimits;
 
   logRecordProcessor?: LogRecordProcessor;

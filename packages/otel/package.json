@@ -42,7 +42,9 @@
   },
   "types": "./dist/types/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=18"
@@ -81,6 +83,7 @@
     "eslint-config": "workspace:*",
     "rimraf": "3.0.2",
     "tsx": "^4.6.2",
+    "typedoc": "^0.25.8",
     "typescript": "^5",
     "typescript-config": "workspace:*",
     "vitest": "0.33.0"

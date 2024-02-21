@@ -1,0 +1,9 @@
+{
+  "out": "dist/docs",
+  "cacheBust": true,
+  "name": "@vercel/otel",
+  "disableGit": true,
+  "disableSources": true,
+  "hideGenerator": true,
+  "readme": "none"
+}

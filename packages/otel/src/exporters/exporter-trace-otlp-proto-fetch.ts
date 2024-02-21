@@ -7,6 +7,9 @@ import { getExportRequestProto } from "@opentelemetry/otlp-proto-exporter-base/b
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
 
+/**
+ * OTLP exporter for the `http/protobuf` protocol. Compatible with the "edge" runtime.
+ */
 export class OTLPHttpProtoTraceExporter extends OTLPExporterEdgeBase<
   ReadableSpan,
   IExportTraceServiceRequest
