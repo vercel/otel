@@ -4,7 +4,6 @@ import { describe } from "../../lib/with-bridge";
 import { expectTrace } from "../../lib/expect-trace";
 
 describe("vercel deployment: outbound", {}, (props) => {
-  // QQQQQ: edge
   it("should create a span for fetch", async () => {
     const { collector, bridge } = props();
 
@@ -22,6 +21,62 @@ describe("vercel deployment: outbound", {}, (props) => {
       spans: [
         {
           name: "render route (app) /slugs/[slug]",
+          spans: [
+            {
+              name: "sample-span",
+              attributes: { scope: "sample", foo: "bar" },
+              spans: [
+                {
+                  name: `fetch POST http://localhost:${bridge.port}/`,
+                  kind: SpanKind.CLIENT,
+                  attributes: {
+                    scope: "@vercel/otel/fetch",
+                    "http.method": "POST",
+                    "http.url": `http://localhost:${bridge.port}/`,
+                    "http.host": `localhost:${bridge.port}`,
+                    "http.scheme": "http",
+                    "net.peer.name": "localhost",
+                    "net.peer.port": `${bridge.port}`,
+                    "http.status_code": 200,
+                    "operation.name": "fetch.POST",
+                    "resource.name": `http://localhost:${bridge.port}/`,
+                    custom1: "value1",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const fetches = bridge.fetches;
+    expect(fetches).toHaveLength(1);
+
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const fetch = fetches[0]!;
+    expect(fetch.headers.get("traceparent")).toMatch(
+      /00-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-01/
+    );
+  });
+
+  it("should create a span for fetch in edge", async () => {
+    const { collector, bridge } = props();
+
+    await bridge.fetch(
+      `/slugs/baz/edge?dataUrl=${encodeURIComponent(
+        `http://localhost:${bridge.port}`
+      )}`
+    );
+
+    await expectTrace(collector, {
+      name: "GET /slugs/[slug]/edge",
+      status: { code: SpanStatusCode.UNSET },
+      kind: SpanKind.SERVER,
+      resource: { "vercel.runtime": "edge" },
+      spans: [
+        {
+          name: "render route (app) /slugs/[slug]/edge",
           spans: [
             {
               name: "sample-span",
