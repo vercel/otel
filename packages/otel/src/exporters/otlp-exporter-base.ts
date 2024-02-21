@@ -40,11 +40,11 @@ export abstract class OTLPExporterEdgeBase<
     }
 
     const serviceRequest = this.convert(items);
-    console.log(
-      "QQQQ: OTLP: export:",
-      JSON.stringify(items, null, 2),
-      JSON.stringify(serviceRequest, null, 2)
-    );
+    // console.log(
+    //   "QQQQ: OTLP: export:",
+    //   JSON.stringify(items, null, 2),
+    //   JSON.stringify(serviceRequest, null, 2)
+    // );
 
     let body: string | Uint8Array | Blob;
     let contentType: string;

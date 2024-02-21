@@ -55,7 +55,7 @@ Registers the OpenTelemetry SDK with the specified configuration. Configuration 
     - `propagateContextUrls`: A set of URL matchers (string prefix or regex) for which the tracing context should be propagated (see `propagators`). By default the context is propagated _only_ for the [deployment URLs](https://vercel.com/docs/deployments/generated-urls), all other URLs should be enabled explicitly. Example: `fetch: { propagateContextUrls: [ /my.api/ ] }`.
     - `dontPropagateContextUrls`: A set of URL matchers (string prefix or regex) for which the tracing context should not be propagated (see `propagators`). This allows you to exclude a subset of URLs allowed by the `propagateContextUrls`.
     - `resourceNameTemplate`: A string for the "resource.name" attribute that can include attribute expressions in `{}`. Example: `fetch: { resourceNameTemplate: "{http.host}" }`.
-    - The `fetch` instrumentation also allows the caller to pass relevant telemetry parameters via `fetch(..., { opentelemetry: {} })` argument, which may include the following fields:
+    - The `fetch` instrumentation also allows the caller to pass relevant telemetry parameters via `fetch(..., { opentelemetry: {} })` argument (requires Next 14.1.1), which may include the following fields:
       - `ignore: boolean`: overrides `ignoreUrls` for this call.
       - `propagateContext: boolean`: overrides `propagateContextUrls` for this call.
       - `spanName: string`: overrides the computed span name for this call.

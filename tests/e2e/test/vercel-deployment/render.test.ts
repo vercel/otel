@@ -61,7 +61,7 @@ describe("vercel deployment: render", {}, (props) => {
     });
   });
 
-  it.only("should trace render for edge", async () => {
+  it("should trace render for edge", async () => {
     const { port, collector, bridge } = props();
 
     const execResp = await bridge.fetch("/slugs/baz/edge");

@@ -41,7 +41,7 @@ export function register() {
       ...config,
       spanProcessors: [
         new SimpleSpanProcessor(new ConsoleSpanExporter()),
-        ...(config.spanProcessors ?? ["auto"]),
+        ...(config.spanProcessors ?? []),
       ],
     };
   }

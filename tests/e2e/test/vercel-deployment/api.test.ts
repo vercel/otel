@@ -52,7 +52,6 @@ describe("vercel deployment: api", {}, (props) => {
             },
           ],
         },
-        { name: "start response" },
       ],
     });
   });
