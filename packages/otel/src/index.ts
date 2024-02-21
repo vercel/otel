@@ -12,6 +12,7 @@ export {
 /**
  * Registers the OpenTelemetry SDK with the specified service name and the default configuration.
  * Should be included in the `instrumentation.ts`. For example:
+ *
  * ```ts
  * import { registerOTel } from "@vercel/otel";
  *
