@@ -1,5 +1,5 @@
 {
-  "out": "dist/docs",
+  "out": "dist-site/api",
   "cacheBust": true,
   "name": "@vercel/otel",
   "disableGit": true,
