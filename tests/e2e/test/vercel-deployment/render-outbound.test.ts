@@ -4,7 +4,7 @@ import { describe } from "../../lib/with-bridge";
 import { expectTrace } from "../../lib/expect-trace";
 
 describe("vercel deployment: outbound", {}, (props) => {
-  it.only("should create a span for fetch", async () => {
+  it("should create a span for fetch", async () => {
     const { collector, bridge } = props();
 
     await bridge.fetch(
@@ -21,7 +21,6 @@ describe("vercel deployment: outbound", {}, (props) => {
       spans: [
         {
           name: "render route (app) /slugs/[slug]",
-          attributes: {},
           spans: [
             {
               name: "sample-span",

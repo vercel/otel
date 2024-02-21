@@ -201,7 +201,6 @@ export class FetchInstrumentation implements Instrumentation {
 
     const doFetch: typeof fetch = (input, initArg) => {
       const init = initArg as InternalRequestInit | undefined;
-      console.log("QQQQ: Fetch instr: fetch with:", init);
 
       // Passthrough internal requests.
       if (init?.next?.internal) {
