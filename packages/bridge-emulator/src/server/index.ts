@@ -75,7 +75,11 @@ export class BridgeEmulatorContextReader implements TextMapPropagator {
           if (!responseAck) {
             responseAck = fetch(`http://127.0.0.1:${bridgePort}`, {
               method: "POST",
-              body: JSON.stringify({ cmd: "ack", testId }),
+              body: JSON.stringify({
+                cmd: "ack",
+                testId,
+                runtime: process.env.NEXT_RUNTIME,
+              }),
               headers: { "content-type": "application/json" },
               // @ts-expect-error - internal Next request.
               next: { internal: true },

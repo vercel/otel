@@ -15,7 +15,6 @@ describe(
 
       const execResp = await bridge.fetch("/slugs/baz");
       expect(execResp.status).toBe(200);
-      void execResp.arrayBuffer();
 
       await expectStdio(stdio.out, "name: 'GET /slugs/[slug]'");
       expect(collector.getAllTraces().length).toBe(0);
@@ -26,7 +25,6 @@ describe(
 
       const execResp = await bridge.fetch("/slugs/baz/edge");
       expect(execResp.status).toBe(200);
-      void execResp.arrayBuffer();
 
       await expectStdio(stdio.out, "name: 'GET /slugs/[slug]/edge'");
       expect(collector.getAllTraces().length).toBe(0);

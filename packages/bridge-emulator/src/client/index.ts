@@ -178,7 +178,9 @@ class BridgeEmulatorServer implements Bridge {
           "x-otel-test-bridge-port": String(this.port),
         },
       });
-      return res;
+      const resClone = res.clone();
+      await res.arrayBuffer();
+      return resClone;
     } finally {
       waitingResolve(undefined);
     }

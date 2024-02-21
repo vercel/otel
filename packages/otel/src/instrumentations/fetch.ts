@@ -4,7 +4,11 @@ import {
   propagation,
   context,
 } from "@opentelemetry/api";
-import type { TextMapSetter, TracerProvider } from "@opentelemetry/api";
+import type {
+  Attributes,
+  TextMapSetter,
+  TracerProvider,
+} from "@opentelemetry/api";
 import type {
   Instrumentation,
   InstrumentationConfig,
@@ -16,11 +20,23 @@ import { isSampled } from "../util/sampled";
 
 /**
  * Configuration for the "fetch" instrumentation.
+ *
+ * Some of this configuration can be overriden on a per-fetch call basis by
+ * using the `opentelemetry` property in the `RequestInit` object (requires Next 14.1.1 or above).
+ * This property can include:
+ * - `ignore`: boolean - whether to ignore the fetch call from tracing. Overrides
+ *   `ignoreUrls`.
+ * - `propagateContext: boolean`: overrides `propagateContextUrls` for this call.
+ * - `spanName: string`: overrides the computed span name for this call.
+ * - `attributes: Attributes`: overrides the computed attributes for this call.
  */
 export interface FetchInstrumentationConfig extends InstrumentationConfig {
   /**
    * A set of URL matchers (string prefix or regex) that should be ignored from tracing.
-   * By default all URLs are traced. Example: `fetch: { ignoreUrls: [/example.com/] }`.
+   * By default all URLs are traced.
+   * Can be overriden by the `opentelemetry.ignore` property in the `RequestInit` object.
+   *
+   * Example: `fetch: { ignoreUrls: [/example.com/] }`.
    */
   ignoreUrls?: (string | RegExp)[];
 
@@ -30,6 +46,8 @@ export interface FetchInstrumentationConfig extends InstrumentationConfig {
    * By default the context is propagated _only_ for the
    * [deployment URLs](https://vercel.com/docs/deployments/generated-urls), all
    * other URLs should be enabled explicitly.
+   * Can be overriden by the `opentelemetry.propagateContext` property in the `RequestInit` object.
+   *
    * Example: `fetch: { propagateContextUrls: [ /my.api/ ] }`.
    */
   propagateContextUrls?: (string | RegExp)[];
@@ -38,17 +56,31 @@ export interface FetchInstrumentationConfig extends InstrumentationConfig {
    * A set of URL matchers (string prefix or regex) for which the tracing context
    * should not be propagated (see [`propagators`](Configuration#propagators)). This allows you to exclude a
    * subset of URLs allowed by the [`propagateContextUrls`](FetchInstrumentationConfig#propagateContextUrls).
+   * Can be overriden by the `opentelemetry.propagateContext` property in the `RequestInit` object.
    */
   dontPropagateContextUrls?: (string | RegExp)[];
 
   /**
    * A string for the "resource.name" attribute that can include attribute expressions in `{}`.
+   * Can be overriden by the `opentelemetry.attributes` property in the `RequestInit` object.
+   *
    * Example: `fetch: { resourceNameTemplate: "{http.host}" }`.
    */
   resourceNameTemplate?: string;
 }
 
-type NextRequestInit = RequestInit & {
+declare global {
+  interface RequestInit {
+    opentelemetry?: {
+      ignore?: boolean;
+      propagateContext?: boolean;
+      spanName?: string;
+      attributes?: Attributes;
+    };
+  }
+}
+
+type InternalRequestInit = RequestInit & {
   next?: {
     internal: boolean;
   };
@@ -99,7 +131,13 @@ export class FetchInstrumentation implements Instrumentation {
 
     const ignoreUrls = this.config.ignoreUrls ?? [];
 
-    const shouldIgnore = (url: URL): boolean => {
+    const shouldIgnore = (
+      url: URL,
+      init: InternalRequestInit | undefined
+    ): boolean => {
+      if (init?.opentelemetry?.ignore !== undefined) {
+        return init.opentelemetry.ignore;
+      }
       if (ignoreUrls.length === 0) {
         return false;
       }
@@ -125,7 +163,13 @@ export class FetchInstrumentation implements Instrumentation {
     const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
     const resourceNameTemplate = this.config.resourceNameTemplate;
 
-    const shouldPropagate = (url: URL): boolean => {
+    const shouldPropagate = (
+      url: URL,
+      init: InternalRequestInit | undefined
+    ): boolean => {
+      if (init?.opentelemetry?.propagateContext) {
+        return init.opentelemetry.propagateContext;
+      }
       const urlString = url.toString();
       if (
         dontPropagateContextUrls.length > 0 &&
@@ -172,15 +216,17 @@ export class FetchInstrumentation implements Instrumentation {
     const originalFetch = globalThis.fetch;
     this.originalFetch = originalFetch;
 
-    const doFetch: typeof fetch = (input, init) => {
+    const doFetch: typeof fetch = (input, initArg) => {
+      const init = initArg as InternalRequestInit | undefined;
+
       // Passthrough internal requests.
-      if ((init as NextRequestInit | undefined)?.next?.internal) {
+      if (init?.next?.internal) {
         return originalFetch(input, init);
       }
 
       const req = new Request(input, init);
       const url = new URL(req.url);
-      if (shouldIgnore(url)) {
+      if (shouldIgnore(url, init)) {
         return originalFetch(input, init);
       }
 
@@ -197,20 +243,21 @@ export class FetchInstrumentation implements Instrumentation {
         : removeSearch(req.url);
 
       return tracer.startActiveSpan(
-        `fetch ${req.method} ${req.url}`,
+        init?.opentelemetry?.spanName ?? `fetch ${req.method} ${req.url}`,
         {
           kind: SpanKind.CLIENT,
           attributes: {
             ...attrs,
             "operation.name": `fetch.${req.method}`,
             "resource.name": resourceName,
+            ...init?.opentelemetry?.attributes,
           },
         },
         async (span) => {
           if (
             span.isRecording() &&
             isSampled(span.spanContext().traceFlags) &&
-            shouldPropagate(url)
+            shouldPropagate(url, init)
           ) {
             propagation.inject(context.active(), req.headers, HEADERS_SETTER);
           }

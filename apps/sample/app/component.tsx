@@ -40,6 +40,11 @@ export async function Component({ searchParams }: Props): Promise<JSX.Element> {
             data: { status: searchParams.status, foo: "bar" },
           }),
           cache: "no-store",
+          opentelemetry: {
+            attributes: {
+              custom1: "value1",
+            },
+          },
         });
         const json = await response.json();
         span.end();

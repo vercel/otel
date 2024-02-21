@@ -9,7 +9,6 @@ describe("vercel deployment: middleware", {}, (props) => {
 
     const execResp = await bridge.fetch("/behind-middleware/baz");
     expect(execResp.status).toBe(200);
-    void execResp.arrayBuffer();
 
     await expectTrace(collector, {
       name: "middleware GET /behind-middleware/baz",
@@ -69,7 +68,6 @@ describe("vercel deployment: middleware", {}, (props) => {
 
     const execResp = await bridge.fetch("/behind-middleware/baz/edge");
     expect(execResp.status).toBe(200);
-    void execResp.arrayBuffer();
 
     await expectTrace(collector, {
       name: "middleware GET /behind-middleware/baz/edge",
