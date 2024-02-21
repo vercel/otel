@@ -43,8 +43,7 @@
   "types": "./dist/types/index.d.ts",
   "files": [
     "dist",
-    "LICENSE",
-    "CHANGELOG.md"
+    "LICENSE"
   ],
   "engines": {
     "node": ">=18"
