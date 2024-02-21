@@ -43,7 +43,6 @@ describe("vercel deployment: middleware", {}, (props) => {
         "http.route": "/behind-middleware/[slug]",
       },
       spans: [
-        { name: "resolve page components" },
         {
           name: "render route (app) /behind-middleware/[slug]",
           kind: SpanKind.INTERNAL,
@@ -54,8 +53,6 @@ describe("vercel deployment: middleware", {}, (props) => {
             "next.route": "/behind-middleware/[slug]",
           },
           spans: [
-            { name: "resolve segment modules" },
-            { name: "resolve segment modules" },
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
@@ -117,8 +114,6 @@ describe("vercel deployment: middleware", {}, (props) => {
             "next.route": "/behind-middleware/[slug]/edge",
           },
           spans: [
-            { name: "resolve segment modules" },
-            { name: "resolve segment modules" },
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,

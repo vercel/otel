@@ -39,6 +39,7 @@ export async function Component({ searchParams }: Props): Promise<JSX.Element> {
             cmd: searchParams.status ? "status" : "echo",
             data: { status: searchParams.status, foo: "bar" },
           }),
+          cache: "no-store",
         });
         const json = await response.json();
         span.end();

@@ -35,15 +35,6 @@ describe("vercel deployment: render", {}, (props) => {
       },
       spans: [
         {
-          name: "resolve page components",
-          attributes: {
-            scope: "next.js",
-            "next.span_name": "resolve page components",
-            "next.span_type": "NextNodeServer.findPageComponents",
-          },
-          spans: [],
-        },
-        {
           name: "render route (app) /slugs/[slug]",
           kind: SpanKind.INTERNAL,
           attributes: {
@@ -54,24 +45,6 @@ describe("vercel deployment: render", {}, (props) => {
             "operation.name": "next_js.AppRender.getBodyResult",
           },
           spans: [
-            {
-              name: "resolve segment modules",
-              attributes: {
-                scope: "next.js",
-                "next.segment": "",
-                "next.span_name": "resolve segment modules",
-                "next.span_type": "NextNodeServer.getLayoutOrPageModule",
-              },
-            },
-            {
-              name: "resolve segment modules",
-              attributes: {
-                scope: "next.js",
-                "next.segment": "__PAGE__",
-                "next.span_name": "resolve segment modules",
-                "next.span_type": "NextNodeServer.getLayoutOrPageModule",
-              },
-            },
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
@@ -127,24 +100,6 @@ describe("vercel deployment: render", {}, (props) => {
             "next.route": "/slugs/[slug]/edge",
           },
           spans: [
-            {
-              name: "resolve segment modules",
-              attributes: {
-                scope: "next.js",
-                "next.segment": "",
-                "next.span_name": "resolve segment modules",
-                "next.span_type": "NextNodeServer.getLayoutOrPageModule",
-              },
-            },
-            {
-              name: "resolve segment modules",
-              attributes: {
-                scope: "next.js",
-                "next.segment": "__PAGE__",
-                "next.span_name": "resolve segment modules",
-                "next.span_type": "NextNodeServer.getLayoutOrPageModule",
-              },
-            },
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,

@@ -34,15 +34,6 @@ describe("vercel deployment: api", {}, (props) => {
       },
       spans: [
         {
-          name: "resolve page components",
-          attributes: {
-            scope: "next.js",
-            "next.span_name": "resolve page components",
-            "next.span_type": "NextNodeServer.findPageComponents",
-          },
-          spans: [],
-        },
-        {
           name: "executing api route (app) /api/service/[slug]/route",
           kind: SpanKind.INTERNAL,
           attributes: {
