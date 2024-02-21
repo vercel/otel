@@ -29,6 +29,14 @@ interface Store {
   traces: ITrace[];
 }
 
+const skipSet = new Set([
+  "build component tree",
+  "resolve page components",
+  "resolve segment modules",
+  "start response",
+  "NextNodeServer.clientComponentLoading",
+]);
+
 const store: Store = {
   services: {},
   traces: [],
@@ -279,7 +287,13 @@ function isValidSpan(span: ISpan): boolean {
   const hasBubble = attributes.some(
     ({ key, value }) => key === "next.bubble" && value.boolValue === true
   );
-  return !hasBubble;
+  if (hasBubble) {
+    return false;
+  }
+  if (skipSet.has(span.name)) {
+    return false;
+  }
+  return true;
 }
 
 /**

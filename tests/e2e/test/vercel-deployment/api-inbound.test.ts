@@ -36,7 +36,6 @@ describe("vercel deployment: api inbound", {}, (props) => {
         "http.route": "/api/service/[slug]/route",
       },
       spans: [
-        { name: "resolve page components" },
         {
           name: "executing api route (app) /api/service/[slug]/route",
           kind: SpanKind.INTERNAL,

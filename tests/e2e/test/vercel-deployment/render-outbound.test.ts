@@ -19,13 +19,10 @@ describe("vercel deployment: outbound", {}, (props) => {
       kind: SpanKind.SERVER,
       resource: { "vercel.runtime": "nodejs" },
       spans: [
-        { name: "resolve page components" },
         {
           name: "render route (app) /slugs/[slug]",
           attributes: {},
           spans: [
-            { name: "resolve segment modules" },
-            { name: "resolve segment modules" },
             {
               name: "sample-span",
               attributes: { scope: "sample", foo: "bar" },
@@ -78,13 +75,10 @@ describe("vercel deployment: outbound", {}, (props) => {
       kind: SpanKind.SERVER,
       resource: { "vercel.runtime": "nodejs" },
       spans: [
-        { name: "resolve page components" },
         {
           name: "render route (app) /slugs/[slug]",
           attributes: {},
           spans: [
-            { name: "resolve segment modules" },
-            { name: "resolve segment modules" },
             {
               name: "sample-span",
               attributes: { scope: "sample", foo: "bar" },
@@ -133,13 +127,10 @@ describe("vercel deployment: outbound", {}, (props) => {
       kind: SpanKind.SERVER,
       resource: { "vercel.runtime": "nodejs" },
       spans: [
-        { name: "resolve page components" },
         {
           name: "render route (app) /slugs/[slug]",
           attributes: {},
           spans: [
-            { name: "resolve segment modules" },
-            { name: "resolve segment modules" },
             {
               name: "sample-span",
               status: { code: SpanStatusCode.ERROR },
@@ -190,13 +181,10 @@ describe("vercel deployment: outbound", {}, (props) => {
       kind: SpanKind.SERVER,
       resource: { "vercel.runtime": "nodejs" },
       spans: [
-        { name: "resolve page components" },
         {
           name: "render route (app) /slugs/[slug]",
           attributes: {},
           spans: [
-            { name: "resolve segment modules" },
-            { name: "resolve segment modules" },
             {
               name: "sample-span",
               attributes: { scope: "sample", foo: "bar" },
@@ -248,13 +236,10 @@ describe(
         kind: SpanKind.SERVER,
         resource: { "vercel.runtime": "nodejs" },
         spans: [
-          { name: "resolve page components" },
           {
             name: "render route (app) /slugs/[slug]",
             attributes: {},
             spans: [
-              { name: "resolve segment modules" },
-              { name: "resolve segment modules" },
               {
                 name: "sample-span",
                 attributes: { scope: "sample", foo: "bar" },

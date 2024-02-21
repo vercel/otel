@@ -45,7 +45,6 @@ describe(
           "http.route": "/slugs/[slug]",
         },
         spans: [
-          { name: "resolve page components" },
           {
             name: "render route (app) /slugs/[slug]",
             kind: SpanKind.INTERNAL,
@@ -56,8 +55,6 @@ describe(
               "next.route": "/slugs/[slug]",
             },
             spans: [
-              { name: "resolve segment modules" },
-              { name: "resolve segment modules" },
               {
                 name: "sample-span",
                 kind: SpanKind.INTERNAL,
@@ -106,8 +103,6 @@ describe(
               "next.route": "/slugs/[slug]/edge",
             },
             spans: [
-              { name: "resolve segment modules" },
-              { name: "resolve segment modules" },
               {
                 name: "sample-span",
                 kind: SpanKind.INTERNAL,

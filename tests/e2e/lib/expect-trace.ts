@@ -56,6 +56,7 @@ export async function expectTrace(
   ]);
 
   if (!foundTrace) {
+    printTraces(collector);
     const traces = collector.getAllTraces();
     throw new Error(
       `trace not found: "${
