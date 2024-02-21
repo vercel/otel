@@ -5,6 +5,9 @@ import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
 
+/**
+ * OTLP exporter for the `http/json` protocol. Compatible with the "edge" runtime.
+ */
 export class OTLPHttpJsonTraceExporter extends OTLPExporterEdgeBase<
   ReadableSpan,
   IExportTraceServiceRequest

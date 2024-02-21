@@ -14,12 +14,21 @@ npm install @vercel/otel
 
 ## 📚 Usage
 
+To configure OpenTelemetry SDK, call the `registerOTel` in the `instumentation.ts`:
+
 ```javascript
 import { registerOTel } from "@vercel/otel";
-import { trace } from "@opentelemetry/api";
 
-// Register the OpenTelemetry.
-registerOTel("your-service-name");
+export function register() {
+  // Register the OpenTelemetry.
+  registerOTel("your-service-name");
+}
+```
+
+To create custom spans in your code, use the OpenTelemetry API:
+
+```javascript
+import { trace } from "@opentelemetry/api";
 
 // Now you can use the OpenTelemetry APIs
 const span = trace.getTracer("your-component").startSpan("your-operation");
@@ -50,7 +59,11 @@ Registers the OpenTelemetry SDK with the specified configuration. Configuration 
 - `traceSampler`: The sampler to be used to decide which requests should be traced. By default, all requests are traced. This option can be changed to, for instance, only trace 1% of all requests.
 - `spanProcessors` and `traceExporter`: The export mechanism for traces. By default, `@vercel/otel` configures the best export mechanism for the environment. For instance, if a [tracing integrations](https://vercel.com/docs/observability/otel-overview/quickstart) is configured on Vercel, this integration will be automatically used for export; otherwise an [OTLP exporter](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#otlp-exporter) can be used if configured in environment variables.
 
-See API for more details.
+See [API](https://otel.vercel.sh/api/) for more details.
+
+## 📝 Changelog
+
+See [CHANGELOG.md](https://otel.vercel.sh/CHANGELOG.md).
 
 ## 🔗 References
 
@@ -61,7 +74,7 @@ See API for more details.
 
 ## 📄 License
 
-[MIT](LICENSE)
+[MIT](https://otel.vercel.sh/LICENSE)
 
 ---
 

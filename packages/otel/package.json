@@ -42,15 +42,18 @@
   },
   "types": "./dist/types/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types",
+    "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types && pnpm build-site",
     "build-types": "tsc --noEmit false --declaration --emitDeclarationOnly --stripInternal --declarationDir dist/types src/index.ts",
-    "clean": "rimraf dist",
+    "build-site": "pnpm build-typedoc && cp index.html LICENSE CHANGELOG.md dist-site",
+    "build-typedoc": "pnpm typedoc src/index.ts",
+    "clean": "rimraf dist && rimraf dist-site",
     "eslint": "eslint-runner",
     "eslint-fix": "eslint-runner --fix",
     "prepublishOnly": "pnpm build",
@@ -81,6 +84,7 @@
     "eslint-config": "workspace:*",
     "rimraf": "3.0.2",
     "tsx": "^4.6.2",
+    "typedoc": "^0.25.8",
     "typescript": "^5",
     "typescript-config": "workspace:*",
     "vitest": "0.33.0"
