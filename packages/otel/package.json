@@ -52,7 +52,7 @@
   "scripts": {
     "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types && pnpm build-site",
     "build-types": "tsc --noEmit false --declaration --emitDeclarationOnly --stripInternal --declarationDir dist/types src/index.ts",
-    "build-site": "pnpm build-typedoc && cp LICENSE CHANGELOG.md dist-site",
+    "build-site": "pnpm build-typedoc && cp index.html LICENSE CHANGELOG.md dist-site",
     "build-typedoc": "pnpm typedoc src/index.ts",
     "clean": "rimraf dist && rimraf dist-site",
     "eslint": "eslint-runner",
