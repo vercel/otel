@@ -23,7 +23,6 @@ describe(
 
       const execResp = await bridge.fetch("/slugs/baz");
       expect(execResp.status).toBe(200);
-      void execResp.arrayBuffer();
 
       await expectTrace(collector, {
         name: "GET /slugs/[slug]",
@@ -72,7 +71,6 @@ describe(
 
       const execResp = await bridge.fetch("/slugs/baz/edge");
       expect(execResp.status).toBe(200);
-      void execResp.arrayBuffer();
 
       await expectTrace(collector, {
         name: "GET /slugs/[slug]/edge",

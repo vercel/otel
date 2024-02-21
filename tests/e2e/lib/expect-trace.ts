@@ -51,7 +51,7 @@ export async function expectTrace(
       }, 50);
     }),
     new Promise<undefined>((resolve) => {
-      setTimeout(() => resolve(undefined), 6000);
+      setTimeout(() => resolve(undefined), 4000);
     }),
   ]);
 
