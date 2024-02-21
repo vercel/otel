@@ -50,8 +50,9 @@
     "node": ">=18"
   },
   "scripts": {
-    "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types",
+    "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types && pnpm build-typedoc",
     "build-types": "tsc --noEmit false --declaration --emitDeclarationOnly --stripInternal --declarationDir dist/types src/index.ts",
+    "build-typedoc": "pnpm typedoc src/index.ts",
     "clean": "rimraf dist",
     "eslint": "eslint-runner",
     "eslint-fix": "eslint-runner --fix",
