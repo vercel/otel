@@ -294,8 +294,10 @@ export class FetchInstrumentation implements Instrumentation {
               }
             },
             (err) => {
-              onError(span, err);
-              span.end();
+              if (span.isRecording()) {
+                onError(span, err);
+                span.end();
+              }
             }
           );
         } else {
