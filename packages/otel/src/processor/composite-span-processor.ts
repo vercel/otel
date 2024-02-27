@@ -11,7 +11,10 @@ import { isSampled } from "../util/sampled";
 
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
-  private readonly rootSpanIds = new Map<string, string>();
+  private readonly rootSpanIds = new Map<
+    string,
+    { rootSpanId: string; open: Span[] }
+  >();
   private readonly waitSpanEnd = new Map<string, () => void>();
 
   constructor(private processors: SpanProcessor[]) {}
@@ -36,7 +39,9 @@ export class CompositeSpanProcessor implements SpanProcessor {
     const { traceId, spanId, traceFlags } = span.spanContext();
     const isRoot = !span.parentSpanId || !this.rootSpanIds.has(traceId);
     if (isRoot) {
-      this.rootSpanIds.set(traceId, spanId);
+      this.rootSpanIds.set(traceId, { rootSpanId: spanId, open: [] });
+    } else {
+      this.rootSpanIds.get(traceId)?.open.push(span);
     }
     if (isRoot && isSampled(traceFlags)) {
       const vercelRequestContextAttrs = getVercelRequestContextAttributes();
@@ -81,7 +86,8 @@ export class CompositeSpanProcessor implements SpanProcessor {
   onEnd(span: ReadableSpan): void {
     const { traceId, spanId, traceFlags } = span.spanContext();
     const sampled = isSampled(traceFlags);
-    const isRoot = this.rootSpanIds.get(traceId) === spanId;
+    const rootObj = this.rootSpanIds.get(traceId);
+    const isRoot = rootObj?.rootSpanId === spanId;
 
     if (sampled) {
       const resourceAttributes = getResourceAttributes(span);
@@ -96,10 +102,27 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
     if (isRoot) {
       this.rootSpanIds.delete(traceId);
+      if (rootObj.open.length > 0) {
+        for (const openSpan of rootObj.open) {
+          if (!openSpan.ended && openSpan.spanContext().spanId !== spanId) {
+            try {
+              openSpan.end();
+            } catch (e) {
+              diag.error("@vercel/otel: onEnd failed:", e);
+            }
+          }
+        }
+      }
       const pending = this.waitSpanEnd.get(traceId);
       if (pending) {
         this.waitSpanEnd.delete(traceId);
         pending();
+      }
+    } else if (rootObj) {
+      for (let i = 0; i < rootObj.open.length; i++) {
+        if (rootObj.open[i]?.spanContext().spanId === spanId) {
+          rootObj.open.splice(i, 1);
+        }
       }
     }
   }

@@ -285,11 +285,13 @@ export class FetchInstrumentation implements Instrumentation {
         if (res.body) {
           void pipeResponse(res).then(
             (byteLength) => {
-              span.setAttribute(
-                SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
-                byteLength
-              );
-              span.end();
+              if (span.isRecording()) {
+                span.setAttribute(
+                  SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
+                  byteLength
+                );
+                span.end();
+              }
             },
             (err) => {
               onError(span, err);
