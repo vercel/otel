@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.5.0
+
+### Minor Changes
+
+- 1a25890: Fetch span covers the complete response, including streaming
+
 ## 1.4.0
 
 ### Minor Changes
