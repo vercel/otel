@@ -6,6 +6,7 @@ import {
 } from "@opentelemetry/api";
 import type {
   Attributes,
+  Span,
   TextMapSetter,
   TracerProvider,
 } from "@opentelemetry/api";
@@ -216,7 +217,7 @@ export class FetchInstrumentation implements Instrumentation {
     const originalFetch = globalThis.fetch;
     this.originalFetch = originalFetch;
 
-    const doFetch: typeof fetch = (input, initArg) => {
+    const doFetch: typeof fetch = async (input, initArg) => {
       const init = initArg as InternalRequestInit | undefined;
 
       // Passthrough internal requests.
@@ -242,8 +243,11 @@ export class FetchInstrumentation implements Instrumentation {
         ? resolveTemplate(resourceNameTemplate, attrs)
         : removeSearch(req.url);
 
-      return tracer.startActiveSpan(
-        init?.opentelemetry?.spanName ?? `fetch ${req.method} ${req.url}`,
+      const spanName =
+        init?.opentelemetry?.spanName ?? `fetch ${req.method} ${req.url}`;
+
+      const span = tracer.startSpan(
+        spanName,
         {
           kind: SpanKind.CLIENT,
           attributes: {
@@ -253,47 +257,59 @@ export class FetchInstrumentation implements Instrumentation {
             ...init?.opentelemetry?.attributes,
           },
         },
-        async (span) => {
-          if (
-            span.isRecording() &&
-            isSampled(span.spanContext().traceFlags) &&
-            shouldPropagate(url, init)
-          ) {
-            propagation.inject(context.active(), req.headers, HEADERS_SETTER);
-          }
-
-          try {
-            const res = await originalFetch(input, {
-              ...init,
-              headers: req.headers,
-            });
-            span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
-            if (res.status >= 500) {
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: `Status: ${res.status} (${res.statusText})`,
-              });
-            }
-            span.end();
-            return res;
-          } catch (e) {
-            if (e instanceof Error) {
-              span.recordException(e);
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: e.message,
-              });
-            } else {
-              span.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: String(e),
-              });
-            }
-            span.end();
-            throw e;
-          }
-        }
+        context.active()
       );
+      if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
+        span.end();
+        return originalFetch(input, init);
+      }
+
+      if (shouldPropagate(url, init)) {
+        propagation.inject(context.active(), req.headers, HEADERS_SETTER);
+      }
+
+      try {
+        const startTime = Date.now();
+        const res = await originalFetch(input, {
+          ...init,
+          headers: req.headers,
+        });
+        const duration = Date.now() - startTime;
+        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
+        span.setAttribute("http.response_time", duration);
+        if (res.status >= 500) {
+          onError(span, `Status: ${res.status} (${res.statusText})`);
+        }
+
+        // Flush body, but non-blocking.
+        if (res.body) {
+          void pipeResponse(res).then(
+            (byteLength) => {
+              if (span.isRecording()) {
+                span.setAttribute(
+                  SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
+                  byteLength
+                );
+                span.end();
+              }
+            },
+            (err) => {
+              if (span.isRecording()) {
+                onError(span, err);
+                span.end();
+              }
+            }
+          );
+        } else {
+          span.end();
+        }
+
+        return res;
+      } catch (e) {
+        onError(span, e);
+        span.end();
+        throw e;
+      }
     };
     globalThis.fetch = doFetch;
   }
@@ -314,4 +330,39 @@ const HEADERS_SETTER: TextMapSetter<Headers> = {
 function removeSearch(url: string): string {
   const index = url.indexOf("?");
   return index === -1 ? url : url.substring(0, index);
+}
+
+function pipeResponse(res: Response): Promise<number> {
+  let length = 0;
+  const clone = res.clone();
+  const reader = clone.body?.getReader();
+  if (!reader) {
+    return Promise.resolve(0);
+  }
+  const read = (): Promise<void> => {
+    return reader.read().then(({ done, value }) => {
+      if (done) {
+        return;
+      }
+      length += value.byteLength;
+      return read();
+    });
+  };
+  return read().then(() => length);
+}
+
+function onError(span: Span, err: unknown): void {
+  if (err instanceof Error) {
+    span.recordException(err);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: err.message,
+    });
+  } else {
+    const message = String(err);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message,
+    });
+  }
 }

@@ -38,11 +38,18 @@ describe("vercel deployment: outbound", {}, (props) => {
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
                     "http.status_code": 200,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_content_length_uncompressed":
+                      expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                     "operation.name": "fetch.POST",
                     "resource.name": `http://localhost:${bridge.port}/`,
                     custom1: "value1",
                   },
+                  spans: [],
                 },
+                { name: "process-response" },
               ],
             },
           ],
@@ -94,11 +101,18 @@ describe("vercel deployment: outbound", {}, (props) => {
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
                     "http.status_code": 200,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_content_length_uncompressed":
+                      expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                     "operation.name": "fetch.POST",
                     "resource.name": `http://localhost:${bridge.port}/`,
                     custom1: "value1",
                   },
+                  spans: [],
                 },
+                { name: "process-response" },
               ],
             },
           ],
@@ -151,8 +165,14 @@ describe("vercel deployment: outbound", {}, (props) => {
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
                     "http.status_code": 200,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_content_length_uncompressed":
+                      expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                   },
                 },
+                { name: "process-response" },
               ],
             },
           ],
@@ -257,9 +277,15 @@ describe("vercel deployment: outbound", {}, (props) => {
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
                     "http.status_code": 500,
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_content_length_uncompressed":
+                      expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                   },
                   events: [],
                 },
+                { name: "process-response" },
               ],
             },
           ],
@@ -312,10 +338,17 @@ describe(
                       "net.peer.name": "localhost",
                       "net.peer.port": `${bridge.port}`,
                       "http.status_code": 200,
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                      "http.response_content_length_uncompressed":
+                        expect.any(Number),
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                      "http.response_time": expect.any(Number),
                       "operation.name": "fetch.POST",
                       "resource.name": `custom http localhost:${bridge.port}`,
                     },
+                    spans: [],
                   },
+                  { name: "process-response" },
                 ],
               },
             ],
