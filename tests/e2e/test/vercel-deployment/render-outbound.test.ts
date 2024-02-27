@@ -41,6 +41,8 @@ describe("vercel deployment: outbound", {}, (props) => {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     "http.response_content_length_uncompressed":
                       expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                     "operation.name": "fetch.POST",
                     "resource.name": `http://localhost:${bridge.port}/`,
                     custom1: "value1",
@@ -102,6 +104,8 @@ describe("vercel deployment: outbound", {}, (props) => {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     "http.response_content_length_uncompressed":
                       expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                     "operation.name": "fetch.POST",
                     "resource.name": `http://localhost:${bridge.port}/`,
                     custom1: "value1",
@@ -164,6 +168,8 @@ describe("vercel deployment: outbound", {}, (props) => {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     "http.response_content_length_uncompressed":
                       expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                   },
                 },
                 { name: "process-response" },
@@ -274,6 +280,8 @@ describe("vercel deployment: outbound", {}, (props) => {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     "http.response_content_length_uncompressed":
                       expect.any(Number),
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    "http.response_time": expect.any(Number),
                   },
                   events: [],
                 },
@@ -333,6 +341,8 @@ describe(
                       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                       "http.response_content_length_uncompressed":
                         expect.any(Number),
+                      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                      "http.response_time": expect.any(Number),
                       "operation.name": "fetch.POST",
                       "resource.name": `custom http localhost:${bridge.port}`,
                     },

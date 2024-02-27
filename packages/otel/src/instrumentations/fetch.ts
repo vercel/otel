@@ -269,11 +269,14 @@ export class FetchInstrumentation implements Instrumentation {
       }
 
       try {
+        const startTime = Date.now();
         const res = await originalFetch(input, {
           ...init,
           headers: req.headers,
         });
+        const duration = Date.now() - startTime;
         span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
+        span.setAttribute("http.response_time", duration);
         if (res.status >= 500) {
           onError(span, `Status: ${res.status} (${res.statusText})`);
         }
