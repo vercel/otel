@@ -46,9 +46,25 @@ export async function Component({ searchParams }: Props): Promise<JSX.Element> {
             },
           },
         });
-        const json = await response.json();
+        const data = await trace
+          .getTracer("sample")
+          .startActiveSpan("process-response", async (span2) => {
+            try {
+              const json = await response.json();
+              await new Promise((resolve) => setTimeout(resolve, 50));
+              span2.end();
+              return json;
+            } catch (e) {
+              span2.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: e instanceof Error ? e.message : String(e),
+              });
+              span2.end();
+              throw e;
+            }
+          });
         span.end();
-        return json;
+        return data;
       } catch (e) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
