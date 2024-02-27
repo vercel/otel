@@ -6,6 +6,7 @@ import {
 } from "@opentelemetry/api";
 import type {
   Attributes,
+  Span,
   TextMapSetter,
   TracerProvider,
 } from "@opentelemetry/api";
@@ -274,34 +275,31 @@ export class FetchInstrumentation implements Instrumentation {
         });
         span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
         if (res.status >= 500) {
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: `Status: ${res.status} (${res.statusText})`,
-          });
+          onError(span, `Status: ${res.status} (${res.statusText})`);
         }
 
-        // Flush body.
-        const byteLength = await pipeResponse(res);
-        span.setAttribute(
-          SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
-          byteLength
-        );
+        // Flush body, but non-blocking.
+        if (res.body) {
+          void pipeResponse(res).then(
+            (byteLength) => {
+              span.setAttribute(
+                SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
+                byteLength
+              );
+              span.end();
+            },
+            (err) => {
+              onError(span, err);
+              span.end();
+            }
+          );
+        } else {
+          span.end();
+        }
 
-        span.end();
         return res;
       } catch (e) {
-        if (e instanceof Error) {
-          span.recordException(e);
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: e.message,
-          });
-        } else {
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: String(e),
-          });
-        }
+        onError(span, e);
         span.end();
         throw e;
       }
@@ -344,4 +342,20 @@ function pipeResponse(res: Response): Promise<number> {
     });
   };
   return read().then(() => length);
+}
+
+function onError(span: Span, err: unknown): void {
+  if (err instanceof Error) {
+    span.recordException(err);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: err.message,
+    });
+  } else {
+    const message = String(err);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message,
+    });
+  }
 }
