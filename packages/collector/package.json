@@ -17,7 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@opentelemetry/otlp-transformer": "^0.46.0",
-    "@opentelemetry/semantic-conventions": "^1.19.0"
+    "@opentelemetry/semantic-conventions": "^1.22.0"
   },
   "devDependencies": {
     "eslint-config": "workspace:*",

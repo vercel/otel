@@ -10,8 +10,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.7.0",
-    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "@opentelemetry/api": "^1.8.0",
+    "@opentelemetry/sdk-trace-base": "^1.22.0",
     "@vercel/otel": "workspace:^",
     "bridge-emulator": "workspace:^",
     "next": "14.1.1-canary.65",
