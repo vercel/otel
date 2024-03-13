@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.6.0
+
+### Minor Changes
+
+- 0cc92da: Use @opentelemetry/sdk-trace-base as a peer dependency
+
 ## 1.5.0
 
 ### Minor Changes
