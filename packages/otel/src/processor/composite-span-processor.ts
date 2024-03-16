@@ -160,7 +160,7 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   const spanType = nextSpanType ?? spanTypeAttr;
   if (spanType && typeof spanType === "string") {
     const nextOperationName = toOperationName(libraryName, spanType);
-    if (resourceName || httpRoute) {
+    if (httpRoute) {
       return {
         "operation.name": nextOperationName,
         "resource.name": resourceName ?? httpRoute,

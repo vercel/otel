@@ -62,14 +62,7 @@ export function describe(
       stdio = { out: [], err: [] };
       childProcess = await execStart(
         "pnpm",
-        [
-          "--filter",
-          "sample",
-          prodTest ? "start" : "dev",
-          "--",
-          "--port",
-          `${port}`,
-        ],
+        ["--filter", "sample", prodTest ? "start" : "dev", "--port", `${port}`],
         stdio
       );
       await new Promise<void>((resolve) => {

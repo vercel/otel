@@ -18,8 +18,22 @@ describe("vercel deployment: middleware", {}, (props) => {
         "vercel.env": "test",
       },
       attributes: {
-        scope: "sample",
+        scope: "next.js",
+        "http.method": "GET",
+        "http.target": "/behind-middleware/baz",
+        "next.span_name": "middleware GET /behind-middleware/baz",
+        "next.span_type": "Middleware.execute",
+        "operation.name": "next_js.Middleware.execute",
       },
+      spans: [
+        {
+          name: "sample-span",
+          attributes: {
+            scope: "sample",
+            "operation.name": "sample",
+          },
+        },
+      ],
     });
 
     await expectTrace(collector, {
@@ -77,8 +91,22 @@ describe("vercel deployment: middleware", {}, (props) => {
         "vercel.env": "test",
       },
       attributes: {
-        scope: "sample",
+        scope: "next.js",
+        "http.method": "GET",
+        "http.target": "/behind-middleware/baz/edge",
+        "next.span_name": "middleware GET /behind-middleware/baz/edge",
+        "next.span_type": "Middleware.execute",
+        "operation.name": "next_js.Middleware.execute",
       },
+      spans: [
+        {
+          name: "sample-span",
+          attributes: {
+            scope: "sample",
+            "operation.name": "sample",
+          },
+        },
+      ],
     });
 
     await expectTrace(collector, {
