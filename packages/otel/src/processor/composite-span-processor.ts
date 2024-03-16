@@ -96,10 +96,6 @@ export class CompositeSpanProcessor implements SpanProcessor {
       }
     }
 
-    for (const spanProcessor of this.processors) {
-      spanProcessor.onEnd(span);
-    }
-
     if (isRoot) {
       this.rootSpanIds.delete(traceId);
       if (rootObj.open.length > 0) {
@@ -113,16 +109,23 @@ export class CompositeSpanProcessor implements SpanProcessor {
           }
         }
       }
-      const pending = this.waitSpanEnd.get(traceId);
-      if (pending) {
-        this.waitSpanEnd.delete(traceId);
-        pending();
-      }
     } else if (rootObj) {
       for (let i = 0; i < rootObj.open.length; i++) {
         if (rootObj.open[i]?.spanContext().spanId === spanId) {
           rootObj.open.splice(i, 1);
         }
+      }
+    }
+
+    for (const spanProcessor of this.processors) {
+      spanProcessor.onEnd(span);
+    }
+
+    if (isRoot) {
+      const pending = this.waitSpanEnd.get(traceId);
+      if (pending) {
+        this.waitSpanEnd.delete(traceId);
+        pending();
       }
     }
   }
@@ -143,7 +146,6 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
     "resouce.name": resourceName,
     "span.type": spanTypeAttr,
     "next.span_type": nextSpanType,
-    "next.route": nextRoute,
     "http.method": httpMethod,
     "http.route": httpRoute,
   } = attributes;
@@ -158,10 +160,10 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   const spanType = nextSpanType ?? spanTypeAttr;
   if (spanType && typeof spanType === "string") {
     const nextOperationName = toOperationName(libraryName, spanType);
-    if (nextRoute) {
+    if (resourceName || httpRoute) {
       return {
         "operation.name": nextOperationName,
-        "resource.name": resourceName ?? nextRoute,
+        "resource.name": resourceName ?? httpRoute,
       };
     }
     return { "operation.name": nextOperationName };
