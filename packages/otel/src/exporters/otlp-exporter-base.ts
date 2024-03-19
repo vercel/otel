@@ -1,18 +1,17 @@
-import type {
-  OTLPExporterConfigBase,
-  OTLPExporterError,
-} from "@opentelemetry/otlp-exporter-base";
+import type { OTLPExporterError } from "@opentelemetry/otlp-exporter-base";
 import { OTLPExporterBase } from "@opentelemetry/otlp-exporter-base/build/src/OTLPExporterBase";
 import { diag } from "@opentelemetry/api";
+import type { OTLPExporterConfig } from "./config";
 
+/** @internal */
 export abstract class OTLPExporterEdgeBase<
   ExportItem,
   ServiceRequest,
-> extends OTLPExporterBase<OTLPExporterConfigBase, ExportItem, ServiceRequest> {
+> extends OTLPExporterBase<OTLPExporterConfig, ExportItem, ServiceRequest> {
   /** @internal */
   private _headers: Record<string, unknown> | undefined;
 
-  constructor(config: OTLPExporterConfigBase = {}) {
+  constructor(config: OTLPExporterConfig = {}) {
     super(config);
     if (config.headers) {
       this._headers = config.headers;
@@ -82,7 +81,7 @@ export abstract class OTLPExporterEdgeBase<
     this._sendingPromises.push(promise);
   }
 
-  getDefaultUrl(_config: OTLPExporterConfigBase): string {
+  getDefaultUrl(_config: OTLPExporterConfig): string {
     throw new Error("Method not implemented.");
   }
 
