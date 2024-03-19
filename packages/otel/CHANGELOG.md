@@ -1,5 +1,13 @@
 # @vercel/otel
 
+## 1.6.1
+
+### Patch Changes
+
+- b9be833: Resource name adjustments
+- 5b8c36f: Fix types for OTLPHttpJsonTraceExporter and OTLPHttpProtoTraceExporter
+- b9be833: Reorder dangling spans to end before the parent span
+
 ## 1.6.0
 
 ### Minor Changes
