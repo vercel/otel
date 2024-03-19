@@ -2,6 +2,7 @@ import type { Configuration } from "./types";
 import { Sdk } from "./sdk";
 
 export type * from "./types";
+export type { OTLPExporterConfig } from "./exporters/config";
 export { OTLPHttpJsonTraceExporter } from "./exporters/exporter-trace-otlp-http-fetch";
 export { OTLPHttpProtoTraceExporter } from "./exporters/exporter-trace-otlp-proto-fetch";
 export {
