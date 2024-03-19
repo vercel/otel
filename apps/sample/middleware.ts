@@ -13,7 +13,7 @@ export async function middleware(
   event?: NextFetchEvent
 ): Promise<Response> {
   const pathname = request.nextUrl.pathname;
-  return trace(`middleware ${request.method} ${pathname}`, async () => {
+  return trace(`sample-span`, async () => {
     return NextResponse.next();
   });
 }
