@@ -225,7 +225,10 @@ export class FetchInstrumentation implements Instrumentation {
         return originalFetch(input, init);
       }
 
-      const req = new Request(input, init);
+      const req = new Request(
+        input instanceof Request ? input.clone() : input,
+        init
+      );
       const url = new URL(req.url);
       if (shouldIgnore(url, init)) {
         return originalFetch(input, init);
