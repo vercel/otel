@@ -225,7 +225,13 @@ export class FetchInstrumentation implements Instrumentation {
         return originalFetch(input, init);
       }
 
-      const req = new Request(input, init);
+      const req = new Request(
+        // The input Request must be cloned to avoid the bug
+        // on Edge runtime where the `new Request()` eagerly
+        // consumes the body of the original Request.
+        input instanceof Request ? input.clone() : input,
+        init
+      );
       const url = new URL(req.url);
       if (shouldIgnore(url, init)) {
         return originalFetch(input, init);
