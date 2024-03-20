@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.6.2
+
+### Patch Changes
+
+- 4c86b92: Fix request clonning bug in Edge runtime
+
 ## 1.6.1
 
 ### Patch Changes
