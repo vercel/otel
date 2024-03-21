@@ -103,8 +103,8 @@ export class Sdk {
 
         // Vercel.
         // https://vercel.com/docs/projects/environment-variables/system-environment-variables
-        "vercel.env":
-          process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
+        // Vercel Env set as top level attribute for simplicity. One of 'production', 'preview' or 'development'.
+        env: process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
         "vercel.region": process.env.VERCEL_REGION,
         "vercel.runtime": runtime,
         "vercel.sha":
