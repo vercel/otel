@@ -68,7 +68,7 @@ export interface Configuration {
    * - `vercel.sha` - the Vercel deployment Git SHA (`VERCEL_GIT_COMMIT_SHA` environment variable).
    * - `vercel.host` - the Vercel deployment host for the Git SHA (`VERCEL_URL` environment variable).
    * - `vercel.branch_host` - the Vercel deployment host for the branch (`VERCEL_BRANCH_URL` environment variable).
-   * 
+   *
    * Any additional attributes will be merged with the default attributes.
    */
   attributes?: ResourceAttributes;
@@ -122,7 +122,7 @@ export interface Configuration {
    * A custom exporter for traces.
    * Use the "auto" value to include the best export mechanism for the environment.
    * By default, `@vercel/otel` configures the best export mechanism for the
-   * environment. For instance, if a [tracing integrations](https://vercel.com/docs/observability/otel-overview/quickstart) is
+   * environment. For instance, if a [tracing integrations](https://vercel.com/docs/observability/otel-overview) is
    * configured on Vercel, this integration will be automatically used for export; otherwise an
    * [OTLP exporter](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#otlp-exporter)
    * can be used if configured via environment variables, such as `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`
