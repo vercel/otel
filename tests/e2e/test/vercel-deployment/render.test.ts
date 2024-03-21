@@ -17,7 +17,7 @@ describe("vercel deployment: render", {}, (props) => {
       resource: {
         "service.name": "sample-app",
         "vercel.runtime": "nodejs",
-        "vercel.env": "test",
+        env: "test",
       },
       attributes: {
         scope: "next.js",
@@ -73,7 +73,7 @@ describe("vercel deployment: render", {}, (props) => {
       resource: {
         "service.name": "sample-app",
         "vercel.runtime": "edge",
-        "vercel.env": "test",
+        env: "test",
       },
       attributes: {
         scope: "next.js",
