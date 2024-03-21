@@ -153,35 +153,41 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
     return undefined;
   }
 
-  // Per https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml,
-  // the default operation.name is "library name + span kind".
-  const libraryName = span.instrumentationLibrary.name;
-
-  const spanType = nextSpanType ?? spanTypeAttr;
-  if (spanType && typeof spanType === "string") {
-    const nextOperationName = toOperationName(libraryName, spanType);
-    if (httpRoute) {
-      return {
-        "operation.name": nextOperationName,
-        "resource.name": resourceName ?? httpRoute,
-      };
-    }
-    return { "operation.name": nextOperationName };
-  }
+  const resourceNameResolved =
+    resourceName ??
+    (httpMethod &&
+    typeof httpMethod === "string" &&
+    httpRoute &&
+    typeof httpRoute === "string"
+      ? `${httpMethod} ${httpRoute}`
+      : httpRoute);
 
   if (
+    span.kind === SpanKind.SERVER &&
     httpMethod &&
     httpRoute &&
     typeof httpMethod === "string" &&
     typeof httpRoute === "string"
   ) {
     return {
-      "operation.name": toOperationName(
-        libraryName,
-        `http.${SPAN_KIND_NAME[kind] || "internal"}.${httpMethod}`
-      ),
-      "resource.name": resourceName ?? httpRoute,
+      "operation.name": "web.request",
+      "resource.name": resourceNameResolved,
     };
+  }
+
+  // Per https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml,
+  // the default operation.name is "library name + span kind".
+  const libraryName = span.instrumentationLibrary.name;
+  const spanType = nextSpanType ?? spanTypeAttr;
+  if (spanType && typeof spanType === "string") {
+    const nextOperationName = toOperationName(libraryName, spanType);
+    if (httpRoute) {
+      return {
+        "operation.name": nextOperationName,
+        "resource.name": resourceNameResolved,
+      };
+    }
+    return { "operation.name": nextOperationName };
   }
 
   return {
