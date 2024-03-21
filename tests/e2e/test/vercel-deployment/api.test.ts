@@ -19,7 +19,7 @@ describe("vercel deployment: api", {}, (props) => {
       resource: {
         "service.name": "sample-app",
         "vercel.runtime": "nodejs",
-        env: "test",
+        "vercel.env": "test",
       },
       attributes: {
         scope: "next.js",
@@ -68,7 +68,7 @@ describe("vercel deployment: api", {}, (props) => {
       resource: {
         "service.name": "sample-app",
         "vercel.runtime": "edge",
-        env: "test",
+        "vercel.env": "test",
       },
       kind: SpanKind.INTERNAL,
       attributes: {

@@ -17,7 +17,7 @@ describe("vercel deployment: render", {}, (props) => {
       resource: {
         "service.name": "sample-app",
         "vercel.runtime": "nodejs",
-        env: "test",
+        "vercel.env": "test",
       },
       attributes: {
         scope: "next.js",
@@ -29,8 +29,8 @@ describe("vercel deployment: render", {}, (props) => {
         "http.status_code": 200,
         "next.route": "/slugs/[slug]",
         "http.route": "/slugs/[slug]",
-        "operation.name": "web.request",
-        "resource.name": "GET /slugs/[slug]",
+        "operation.name": "next_js.BaseServer.handleRequest",
+        "resource.name": "/slugs/[slug]",
       },
       spans: [
         {
@@ -73,7 +73,7 @@ describe("vercel deployment: render", {}, (props) => {
       resource: {
         "service.name": "sample-app",
         "vercel.runtime": "edge",
-        env: "test",
+        "vercel.env": "test",
       },
       attributes: {
         scope: "next.js",
@@ -84,8 +84,8 @@ describe("vercel deployment: render", {}, (props) => {
         "http.status_code": 200,
         "next.route": "/slugs/[slug]/edge",
         "http.route": "/slugs/[slug]/edge",
-        "operation.name": "web.request",
-        "resource.name": "GET /slugs/[slug]/edge",
+        "operation.name": "next_js.BaseServer.handleRequest",
+        "resource.name": "/slugs/[slug]/edge",
       },
       spans: [
         {
