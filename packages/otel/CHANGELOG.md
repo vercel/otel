@@ -81,7 +81,7 @@
 - 2daf631: - Support for Node and Edge environments
   - Telemetry context propagation, including [W3C Trace Context](https://www.w3.org/TR/trace-context/)
   - Fetch API instrumentation with context propagation.
-  - Support and auto-configuration for [Vercel OTEL collector](https://vercel.com/docs/observability/otel-overview/quickstart).
+  - Support and auto-configuration for [Vercel OTEL collector](https://vercel.com/docs/observability/otel-overview).
   - Enhanced metadata reporting.
   - Sampling support.
   - Custom tracing exporter support.
