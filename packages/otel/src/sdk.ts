@@ -118,6 +118,8 @@ export class Sdk {
           process.env.VERCEL_BRANCH_URL ||
           process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
           undefined,
+        // Vercel Env set as top level attribute for simplicity. One of 'production', 'preview' or 'development'.
+        env: process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
 
         ...configuration.attributes,
       })
