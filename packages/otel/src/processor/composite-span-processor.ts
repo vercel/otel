@@ -157,6 +157,18 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   // the default operation.name is "library name + span kind".
   const libraryName = span.instrumentationLibrary.name;
 
+  if (
+    httpMethod &&
+    httpRoute &&
+    typeof httpMethod === "string" &&
+    typeof httpRoute === "string"
+  ) {
+    return {
+      "operation.name": "http",
+      "resource.name": resourceName ?? httpRoute,
+    };
+  }
+
   const spanType = nextSpanType ?? spanTypeAttr;
   if (spanType && typeof spanType === "string") {
     const nextOperationName = toOperationName(libraryName, spanType);
@@ -167,21 +179,6 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
       };
     }
     return { "operation.name": nextOperationName };
-  }
-
-  if (
-    httpMethod &&
-    httpRoute &&
-    typeof httpMethod === "string" &&
-    typeof httpRoute === "string"
-  ) {
-    return {
-      "operation.name": toOperationName(
-        libraryName,
-        `http.${SPAN_KIND_NAME[kind] || "internal"}.${httpMethod}`
-      ),
-      "resource.name": resourceName ?? httpRoute,
-    };
   }
 
   return {
