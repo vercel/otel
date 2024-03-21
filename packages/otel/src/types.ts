@@ -62,7 +62,7 @@ export interface Configuration {
    * including:
    * - `service.name` - the service name.
    * - `node.env` - the value of `NODE_ENV` environment variable.
-   * - `vercel.env` - the Vercel deployment environment such as "production" or "preview" (`VERCEL_ENV` environment variable).
+   * - `env` - the Vercel deployment environment such as "production" or "preview" (`VERCEL_ENV` environment variable).
    * - `vercel.region` - the Vercel deployment region (`VERCEL_REGION` environment variable).
    * - `vercel.runtime` - "nodejs" or "edge" (`NEXT_RUNTIME` environment variable).
    * - `vercel.sha` - the Vercel deployment Git SHA (`VERCEL_GIT_COMMIT_SHA` environment variable).
