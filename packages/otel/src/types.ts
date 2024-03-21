@@ -56,7 +56,7 @@ export interface Configuration {
   serviceName?: string;
 
   /**
-   * The resource attributes.
+   * The additional resource attributes to apply to all spans.
    * By default, `@vercel/otel` configures relevant Vercel attributes based on the
    * [environment](https://vercel.com/docs/projects/environment-variables/system-environment-variables),
    * including:
@@ -68,6 +68,8 @@ export interface Configuration {
    * - `vercel.sha` - the Vercel deployment Git SHA (`VERCEL_GIT_COMMIT_SHA` environment variable).
    * - `vercel.host` - the Vercel deployment host for the Git SHA (`VERCEL_URL` environment variable).
    * - `vercel.branch_host` - the Vercel deployment host for the branch (`VERCEL_BRANCH_URL` environment variable).
+   * 
+   * Any additional attributes will be merged with the default attributes.
    */
   attributes?: ResourceAttributes;
 
