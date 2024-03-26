@@ -51,6 +51,7 @@ export abstract class OTLPExporterEdgeBase<
       return;
     }
 
+    const startTime = Date.now();
     const promise = fetch(this.url, {
       method: "POST",
       body,
@@ -64,7 +65,13 @@ export abstract class OTLPExporterEdgeBase<
       next: { internal: true },
     })
       .then((res) => {
-        diag.debug("@vercel/otel/otlp: onSuccess", res.status, res.statusText);
+        const duration = Date.now() - startTime;
+        diag.debug(
+          "@vercel/otel/otlp: onSuccess",
+          res.status,
+          res.statusText,
+          `${duration}ms`
+        );
         onSuccess();
         // Drain the response body.
         void res.arrayBuffer().catch(() => undefined);
