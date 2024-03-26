@@ -25,6 +25,24 @@ const externalCjsToEsmPlugin: ExternalPluginFactory = (external) => ({
   },
 });
 
+// On Edge `eval()` is not allowed. Strip it from the input sources.
+const stripEvalEdge: Plugin = {
+  name: "stripEvalEdge",
+  setup(builder): void {
+    builder.onLoad({ filter: /@protobufjs\/inquire\/index\.js/ }, () => {
+      return {
+        contents: `
+          "use strict";
+          module.exports = inquire;
+          function inquire(moduleName) {
+            return null;
+          }
+        `,
+      };
+    });
+  },
+};
+
 /** Adds support for require, __filename, and __dirname to ESM / Node. */
 const esmNodeSupportBanner = {
   js: `import { fileURLToPath } from 'url';
@@ -71,6 +89,7 @@ async function buildAll(): Promise<void> {
       external: ["@opentelemetry/api"],
       plugins: [
         externalCjsToEsmPlugin(["async_hooks", "events", ...peerDependencies]),
+        stripEvalEdge,
       ],
     }),
   ]);
