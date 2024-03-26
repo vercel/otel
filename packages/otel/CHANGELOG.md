@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.7.1
+
+### Patch Changes
+
+- 9354de3: Release 1.7x
+
 ## 1.7.0
 
 ### Minor Changes
