@@ -290,12 +290,12 @@ export class FetchInstrumentation implements Instrumentation {
         return originalFetch(input, init);
       }
 
-      if (attributesFromRequestHeaders) {
-        headersToAttributes(span, attributesFromRequestHeaders, req.headers);
-      }
-
       if (shouldPropagate(url, init)) {
         propagation.inject(context.active(), req.headers, HEADERS_SETTER);
+      }
+
+      if (attributesFromRequestHeaders) {
+        headersToAttributes(span, attributesFromRequestHeaders, req.headers);
       }
 
       try {
