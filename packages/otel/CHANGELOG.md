@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.7.2
+
+### Patch Changes
+
+- 9ba9131: Strip eval() calls on Edge
+
 ## 1.7.1
 
 ### Patch Changes
