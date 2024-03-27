@@ -8,6 +8,7 @@ import type {
 import { getVercelRequestContext } from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
 import { isSampled } from "../util/sampled";
+import type { AttributesFromHeaders } from "../types";
 
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
@@ -17,7 +18,10 @@ export class CompositeSpanProcessor implements SpanProcessor {
   >();
   private readonly waitSpanEnd = new Map<string, () => void>();
 
-  constructor(private processors: SpanProcessor[]) {}
+  constructor(
+    private processors: SpanProcessor[],
+    private attributesFromHeaders: AttributesFromHeaders | undefined
+  ) {}
 
   forceFlush(): Promise<void> {
     return Promise.all(
@@ -44,13 +48,16 @@ export class CompositeSpanProcessor implements SpanProcessor {
       this.rootSpanIds.get(traceId)?.open.push(span);
     }
     if (isRoot && isSampled(traceFlags)) {
-      const vercelRequestContextAttrs = getVercelRequestContextAttributes();
+      const vrc = getVercelRequestContext();
+      const vercelRequestContextAttrs = getVercelRequestContextAttributes(
+        vrc,
+        this.attributesFromHeaders
+      );
       if (vercelRequestContextAttrs) {
         span.setAttributes(vercelRequestContextAttrs);
       }
 
       // Flush the streams to avoid data loss.
-      const vrc = getVercelRequestContext();
       if (vrc) {
         vrc.waitUntil(async () => {
           if (this.rootSpanIds.has(traceId)) {
