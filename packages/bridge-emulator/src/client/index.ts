@@ -79,12 +79,12 @@ class BridgeEmulatorServer implements Bridge {
         if (waiting) {
           waiting.finally(() => {
             this.waitingAck.delete(json.testId);
-            res.writeHead(200);
+            res.writeHead(200, "OK", { "X-Server": "bridge" });
             res.write("{}");
             res.end();
           });
         } else {
-          res.writeHead(404);
+          res.writeHead(404, "Not Found", { "X-Server": "bridge" });
           res.end();
         }
         return;
@@ -107,19 +107,19 @@ class BridgeEmulatorServer implements Bridge {
           { headers: fetchHeaders }
         );
         this.fetches.push(fetchReq);
-        res.writeHead(200);
+        res.writeHead(200, "OK", { "X-Server": "bridge" });
         res.write(JSON.stringify(json.data));
         res.end();
         return;
       }
       if (json.cmd === "status") {
-        res.writeHead(parseInt(json.data.status));
+        res.writeHead(parseInt(json.data.status), "", { "X-Server": "bridge" });
         res.write(JSON.stringify(json.data));
         res.end();
         return;
       }
 
-      res.writeHead(400);
+      res.writeHead(400, "Bad request", { "X-Server": "bridge" });
       res.end();
     };
 

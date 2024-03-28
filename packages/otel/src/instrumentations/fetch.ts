@@ -68,6 +68,24 @@ export interface FetchInstrumentationConfig extends InstrumentationConfig {
    * Example: `fetch: { resourceNameTemplate: "{http.host}" }`.
    */
   resourceNameTemplate?: string;
+
+  /**
+   * A map of attributes that should be created from the request headers. The keys of the map are
+   * attribute names and the values are request header names. If a resonse header doesn't exist, no
+   * attribute will be created for it.
+   *
+   * Example: `fetch: { attributesFromRequestHeaders: { "attr1": "X-Attr" } }`
+   */
+  attributesFromRequestHeaders?: Record<string, string>;
+
+  /**
+   * A map of attributes that should be created from the response headers. The keys of the map are
+   * attribute names and the values are response header names. If a resonse header doesn't exist, no
+   * attribute will be created for it.
+   *
+   * Example: `fetch: { attributesFromResponseHeaders: { "attr1": "X-Attr" } }`
+   */
+  attributesFromResponseHeaders?: Record<string, string>;
 }
 
 declare global {
@@ -163,6 +181,8 @@ export class FetchInstrumentation implements Instrumentation {
     const propagateContextUrls = this.config.propagateContextUrls ?? [];
     const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
     const resourceNameTemplate = this.config.resourceNameTemplate;
+    const { attributesFromRequestHeaders, attributesFromResponseHeaders } =
+      this.config;
 
     const shouldPropagate = (
       url: URL,
@@ -274,6 +294,10 @@ export class FetchInstrumentation implements Instrumentation {
         propagation.inject(context.active(), req.headers, HEADERS_SETTER);
       }
 
+      if (attributesFromRequestHeaders) {
+        headersToAttributes(span, attributesFromRequestHeaders, req.headers);
+      }
+
       try {
         const startTime = Date.now();
         const res = await originalFetch(input, {
@@ -283,6 +307,9 @@ export class FetchInstrumentation implements Instrumentation {
         const duration = Date.now() - startTime;
         span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
         span.setAttribute("http.response_time", duration);
+        if (attributesFromResponseHeaders) {
+          headersToAttributes(span, attributesFromResponseHeaders, res.headers);
+        }
         if (res.status >= 500) {
           onError(span, `Status: ${res.status} (${res.statusText})`);
         }
@@ -370,5 +397,18 @@ function onError(span: Span, err: unknown): void {
       code: SpanStatusCode.ERROR,
       message,
     });
+  }
+}
+
+function headersToAttributes(
+  span: Span,
+  attrsToHeadersMap: Record<string, string>,
+  headers: Headers
+): void {
+  for (const [attrName, headerName] of Object.entries(attrsToHeadersMap)) {
+    const headerValue = headers.get(headerName);
+    if (headerValue !== null) {
+      span.setAttribute(attrName, headerValue);
+    }
   }
 }
