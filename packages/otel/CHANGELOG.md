@@ -1,5 +1,12 @@
 # @vercel/otel
 
+## 1.8.0
+
+### Minor Changes
+
+- 75d26f5: Fetch: map request/response headers to attributes
+- 056ea14: Configuration to customize root span attributes based on the request headers
+
 ## 1.7.2
 
 ### Patch Changes
