@@ -173,6 +173,8 @@ class BridgeEmulatorServer implements Bridge {
         ...init,
         headers: {
           ...init?.headers,
+          "x-client": "bridge",
+          "x-vercel-id": "request1",
           "x-otel-test-id": testId,
           "x-otel-test-url": input,
           "x-otel-test-bridge-port": String(this.port),

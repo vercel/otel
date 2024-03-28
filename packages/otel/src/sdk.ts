@@ -48,7 +48,6 @@ import type {
   InstrumentationOptionOrName,
   PropagatorOrName,
   SampleOrName,
-  SpanExporterOrName,
   SpanProcessorOrName,
 } from "./types";
 import { FetchInstrumentation } from "./instrumentations/fetch";
@@ -152,7 +151,12 @@ export class Sdk {
       sampler: traceSampler,
       spanLimits,
     });
-    tracerProvider.addSpanProcessor(new CompositeSpanProcessor(spanProcessors));
+    tracerProvider.addSpanProcessor(
+      new CompositeSpanProcessor(
+        spanProcessors,
+        configuration.attributesFromHeaders
+      )
+    );
     tracerProvider.register({
       contextManager,
       propagator: new CompositePropagator({ propagators }),
@@ -370,62 +374,59 @@ function parseSpanProcessor(
   configuration: Configuration,
   env: Env
 ): SpanProcessor[] {
-  return (arg ?? ["auto"])
-    .map((spanProcessorOrName) => {
-      if (spanProcessorOrName === "auto") {
-        if (process.env.VERCEL_OTEL_ENDPOINTS) {
-          // OTEL collector is configured on 4318 port.
-          const port = process.env.VERCEL_OTEL_ENDPOINTS_PORT || "4318";
-          // It's important to use x-protobuf here because the Vercel collector
-          // doesn't correctly process `TimeUnixNano{low, high}` encoding.
-          const protocol =
-            process.env.VERCEL_OTEL_ENDPOINTS_PROTOCOL || "http/protobuf";
-          diag.debug(
-            "@vercel/otel: Configure vercel otel collector on port: ",
-            port,
-            protocol
-          );
-          const config = {
-            url: `http://localhost:${port}/v1/traces`,
-            headers: {},
-          };
-          const exporter =
-            protocol === "http/protobuf"
-              ? new OTLPHttpProtoTraceExporter(config)
-              : new OTLPHttpJsonTraceExporter(config);
-          return new BatchSpanProcessor(exporter);
-        }
+  return [
+    ...(arg ?? ["auto"])
+      .map((spanProcessorOrName) => {
+        if (spanProcessorOrName === "auto") {
+          if (process.env.VERCEL_OTEL_ENDPOINTS) {
+            // OTEL collector is configured on 4318 port.
+            const port = process.env.VERCEL_OTEL_ENDPOINTS_PORT || "4318";
+            // It's important to use x-protobuf here because the Vercel collector
+            // doesn't correctly process `TimeUnixNano{low, high}` encoding.
+            const protocol =
+              process.env.VERCEL_OTEL_ENDPOINTS_PROTOCOL || "http/protobuf";
+            diag.debug(
+              "@vercel/otel: Configure vercel otel collector on port: ",
+              port,
+              protocol
+            );
+            const config = {
+              url: `http://localhost:${port}/v1/traces`,
+              headers: {},
+            };
+            const exporter =
+              protocol === "http/protobuf"
+                ? new OTLPHttpProtoTraceExporter(config)
+                : new OTLPHttpJsonTraceExporter(config);
+            return new BatchSpanProcessor(exporter);
+          }
 
-        if (
-          configuration.traceExporter ||
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
-          env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
-          env.OTEL_EXPORTER_OTLP_ENDPOINT
-        ) {
-          return new BatchSpanProcessor(
-            parseTraceExporter(configuration.traceExporter, env)
-          );
-        }
+          if (
+            !configuration.traceExporter ||
+            configuration.traceExporter === "auto" ||
+            env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
+            env.OTEL_EXPORTER_OTLP_ENDPOINT
+          ) {
+            return new BatchSpanProcessor(parseTraceExporter(env));
+          }
 
-        return undefined;
-      }
-      return spanProcessorOrName;
-    })
-    .filter(isNotNull);
+          return undefined;
+        }
+        return spanProcessorOrName;
+      })
+      .filter(isNotNull),
+    ...(configuration.traceExporter && configuration.traceExporter !== "auto"
+      ? [new BatchSpanProcessor(configuration.traceExporter)]
+      : []),
+  ];
 }
 
 /**
  * This code is moved from the https://github.com/open-telemetry/opentelemetry-js/blob/00e78efd840d3f49d9d4b025a9965e8d3f2913ad/experimental/packages/opentelemetry-sdk-node/src/TracerProviderWithEnvExporter.ts#L41
  * due to the https://github.com/open-telemetry/opentelemetry-js/issues/4212
  */
-function parseTraceExporter(
-  exporterOrName: SpanExporterOrName | undefined,
-  env: Env
-): SpanExporter {
-  if (exporterOrName && exporterOrName !== "auto") {
-    return exporterOrName;
-  }
-
+function parseTraceExporter(env: Env): SpanExporter {
   const protocol =
     process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL ??
     process.env.OTEL_EXPORTER_OTLP_PROTOCOL ??

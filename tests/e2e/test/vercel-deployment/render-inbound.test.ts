@@ -24,7 +24,13 @@ describe("vercel deployment: inbound propagation", {}, (props) => {
       kind: SpanKind.SERVER,
       traceId: EXTERNAL.traceId,
       parentSpanId: EXTERNAL.spanId,
-      resource: { "vercel.runtime": "nodejs" },
+      resource: {
+        "vercel.runtime": "nodejs",
+      },
+      attributes: {
+        client: "bridge",
+        "vercel.request_id": "request1",
+      },
     });
   });
 
@@ -84,6 +90,10 @@ describe("vercel deployment: inbound propagation", {}, (props) => {
           kind: SpanKind.SERVER,
           traceId: EXTERNAL.traceId,
           parentSpanId: EXTERNAL.spanId,
+          attributes: {
+            client: "bridge",
+            "vercel.request_id": "request1",
+          },
         },
       ],
     });

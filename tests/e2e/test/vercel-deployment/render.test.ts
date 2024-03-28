@@ -21,6 +21,8 @@ describe("vercel deployment: render", {}, (props) => {
       },
       attributes: {
         scope: "next.js",
+        client: "bridge",
+        "vercel.request_id": "request1",
         "next.span_name": "GET /slugs/[slug]",
         "next.span_type": "BaseServer.handleRequest",
         "http.method": "GET",
@@ -77,6 +79,8 @@ describe("vercel deployment: render", {}, (props) => {
       },
       attributes: {
         scope: "next.js",
+        client: "bridge",
+        "vercel.request_id": "request1",
         "next.span_name": "GET /slugs/[slug]/edge",
         "next.span_type": "BaseServer.handleRequest",
         "http.method": "GET",

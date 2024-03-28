@@ -23,6 +23,8 @@ describe("vercel deployment: api", {}, (props) => {
       },
       attributes: {
         scope: "next.js",
+        client: "bridge",
+        "vercel.request_id": "request1",
         "next.span_name": "GET /api/service/[slug]/route",
         "next.span_type": "BaseServer.handleRequest",
         "http.method": "GET",
@@ -73,6 +75,8 @@ describe("vercel deployment: api", {}, (props) => {
       kind: SpanKind.INTERNAL,
       attributes: {
         scope: "next.js",
+        client: "bridge",
+        "vercel.request_id": "request1",
         "next.span_name":
           "executing api route (app) /api/service/[slug]/edge/route",
         "next.span_type": "AppRouteRouteHandlers.runHandler",

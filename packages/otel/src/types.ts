@@ -1,4 +1,9 @@
-import type { TextMapPropagator, ContextManager } from "@opentelemetry/api";
+import type {
+  TextMapPropagator,
+  ContextManager,
+  TextMapGetter,
+  Attributes,
+} from "@opentelemetry/api";
 import type { InstrumentationOption } from "@opentelemetry/instrumentation";
 import type {
   DetectorSync,
@@ -73,6 +78,16 @@ export interface Configuration {
    */
   attributes?: ResourceAttributes;
 
+  /**
+   * This configuration is used to compute root span's attributes based on the request's headers.
+   * The value can be one of the following:
+   * - A map with keys as attribute names and values as header names. An attribute would only
+   *   be created if the specified header exists.
+   * - A function that can take an opaque headers object with the getter callback, and returns
+   *   a set of computed attributes.
+   */
+  attributesFromHeaders?: AttributesFromHeaders;
+
   resourceDetectors?: DetectorSync[];
   autoDetectResources?: boolean;
 
@@ -136,3 +151,12 @@ export interface Configuration {
   metricReader?: MetricReader;
   views?: View[];
 }
+
+export type AttributesFromHeaderFunc = <Carrier = unknown>(
+  headers: Carrier,
+  getter: TextMapGetter<Carrier>
+) => Attributes | undefined;
+
+export type AttributesFromHeaders =
+  | Record<string, string>
+  | AttributesFromHeaderFunc;

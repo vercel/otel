@@ -21,6 +21,9 @@ export function register() {
         },
       },
     },
+    attributesFromHeaders: {
+      client: "X-Client",
+    },
   };
   if (!process.env.VERCEL_ENV || process.env.VERCEL_ENV === "test") {
     config = startBridgeEmulator(config);
