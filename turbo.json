@@ -5,7 +5,7 @@
     },
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", "dist-site/**"]
     },
     "conformance": {
       "dependsOn": ["^build"]
