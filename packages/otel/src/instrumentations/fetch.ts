@@ -3,6 +3,7 @@ import {
   SpanStatusCode,
   propagation,
   context,
+  trace as traceApi,
 } from "@opentelemetry/api";
 import type {
   Attributes,
@@ -272,6 +273,8 @@ export class FetchInstrumentation implements Instrumentation {
       const spanName =
         init?.opentelemetry?.spanName ?? `fetch ${req.method} ${req.url}`;
 
+      const parentContext = context.active();
+
       const span = tracer.startSpan(
         spanName,
         {
@@ -283,7 +286,7 @@ export class FetchInstrumentation implements Instrumentation {
             ...init?.opentelemetry?.attributes,
           },
         },
-        context.active()
+        parentContext
       );
       if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
         span.end();
@@ -291,7 +294,8 @@ export class FetchInstrumentation implements Instrumentation {
       }
 
       if (shouldPropagate(url, init)) {
-        propagation.inject(context.active(), req.headers, HEADERS_SETTER);
+        const fetchContext = traceApi.setSpan(parentContext, span);
+        propagation.inject(fetchContext, req.headers, HEADERS_SETTER);
       }
 
       if (attributesFromRequestHeaders) {
