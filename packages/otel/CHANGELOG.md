@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.8.1
+
+### Patch Changes
+
+- 5019762: (fix) Use the fetch's span context for propagation, not parent's.
+
 ## 1.8.0
 
 ### Minor Changes
