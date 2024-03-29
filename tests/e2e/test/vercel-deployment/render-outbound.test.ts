@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import type { ITrace } from "collector";
 import { describe } from "../../lib/with-bridge";
 import { expectTrace } from "../../lib/expect-trace";
 
@@ -59,13 +60,26 @@ describe("vercel deployment: outbound", {}, (props) => {
       ],
     });
 
+    let fetchSpan: ITrace["spans"][0] | undefined;
+    collector.getAllTraces().forEach((trace) => {
+      trace.spans.forEach((span) => {
+        if (span.name === `fetch POST http://localhost:${bridge.port}/`) {
+          fetchSpan = span;
+        }
+      });
+    });
+    expect(fetchSpan).toBeDefined();
+    if (!fetchSpan) {
+      throw new Error("already asserted");
+    }
+
     const fetches = bridge.fetches;
     expect(fetches).toHaveLength(1);
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
-    expect(fetch.headers.get("traceparent")).toMatch(
-      /00-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-01/
+    expect(fetch.headers.get("traceparent")).toEqual(
+      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
     );
   });
 
@@ -124,13 +138,26 @@ describe("vercel deployment: outbound", {}, (props) => {
       ],
     });
 
+    let fetchSpan: ITrace["spans"][0] | undefined;
+    collector.getAllTraces().forEach((trace) => {
+      trace.spans.forEach((span) => {
+        if (span.name === `fetch POST http://localhost:${bridge.port}/`) {
+          fetchSpan = span;
+        }
+      });
+    });
+    expect(fetchSpan).toBeDefined();
+    if (!fetchSpan) {
+      throw new Error("already asserted");
+    }
+
     const fetches = bridge.fetches;
     expect(fetches).toHaveLength(1);
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
-    expect(fetch.headers.get("traceparent")).toMatch(
-      /00-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-01/
+    expect(fetch.headers.get("traceparent")).toEqual(
+      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
     );
   });
 
