@@ -28,7 +28,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "next": "14.2.1"
+    "next": "14.2.1-canary.7"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.7.0",
