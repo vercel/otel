@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.8.2
+
+### Patch Changes
+
+- 6cf1e79: Manual protobuf encoding for OTLP to save about 180K binary size
+
 ## 1.8.1
 
 ### Patch Changes
