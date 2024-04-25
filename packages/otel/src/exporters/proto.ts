@@ -6,7 +6,6 @@
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable import/no-extraneous-dependencies */
 
 /**
  * This file is constructed by:
