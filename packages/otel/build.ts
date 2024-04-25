@@ -1,8 +1,14 @@
+import { stat } from "node:fs/promises";
 import type { Plugin } from "esbuild";
 import { build } from "esbuild";
 
 const MINIFY = true;
 const SOURCEMAP = false;
+
+const MAX_SIZES = {
+  "dist/node/index.js": 210_000,
+  "dist/edge/index.js": 180_000,
+};
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
 const externalCjsToEsmPlugin: ExternalPluginFactory = (external) => ({
@@ -93,6 +99,25 @@ async function buildAll(): Promise<void> {
       ],
     }),
   ]);
+
+  // Check max size.
+  const errors: string[] = [];
+  for (const [file, maxSize] of Object.entries(MAX_SIZES)) {
+    // eslint-disable-next-line no-await-in-loop
+    const s = await stat(file);
+    if (s.size > maxSize) {
+      errors.push(
+        `${file}: the size of ${s.size} is over the maximum allowed size of ${maxSize}`
+      );
+    }
+  }
+  if (errors.length > 0) {
+    for (const error of errors) {
+      // eslint-disable-next-line no-console
+      console.error(error);
+    }
+    process.exit(1);
+  }
 }
 
 void buildAll();

@@ -11,6 +11,7 @@
     "eslint-fix": "turbo eslint -- --fix",
     "release": "pnpm build && changeset publish",
     "type-check": "turbo --continue type-check",
+    "unit-test": "turbo unit-test",
     "version-packages": "changeset version && pnpm i --no-frozen-lockfile && git add ."
   },
   "keywords": [],
