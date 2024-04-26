@@ -25,9 +25,32 @@ const externalCjsToEsmPlugin: ExternalPluginFactory = (external) => ({
       path: args.path,
       namespace: "external",
     }));
-    builder.onLoad({ filter: /.*/, namespace: "external" }, (args) => ({
-      contents: `export * from ${JSON.stringify(args.path)}`,
-    }));
+    builder.onLoad({ filter: /.*/, namespace: "external" }, (args) => {
+      if (args.path === "os") {
+        return {
+          contents: `
+            export function arch() {
+              return (typeof process === 'object' ? process.arch : "") ?? "";
+            }
+            export function platform() {
+              return (typeof process === 'object' ? process.platform : "") ?? "";
+            }
+            export function release() {
+              return "";
+            }
+            export function hostname() {
+              return "";
+            }
+            export function userInfo() {
+              return { username: "" };
+            }
+          `,
+        };
+      }
+      return {
+        contents: `export * from ${JSON.stringify(args.path)}`,
+      };
+    });
   },
 });
 
@@ -80,7 +103,7 @@ async function buildAll(): Promise<void> {
       sourcemap: SOURCEMAP,
       banner: esmNodeSupportBanner,
       external: ["@opentelemetry/api"],
-      plugins: [externalCjsToEsmPlugin(peerDependencies)],
+      plugins: [externalCjsToEsmPlugin(["os", ...peerDependencies])],
     }),
     build({
       target: "esnext",
