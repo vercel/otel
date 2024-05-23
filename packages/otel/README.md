@@ -14,7 +14,7 @@ npm install @vercel/otel
 
 ## 📚 Usage
 
-To configure OpenTelemetry SDK, call the `registerOTel` in the `instumentation.ts`:
+To configure OpenTelemetry SDK, call the `registerOTel` in the `instrumentation.ts`:
 
 ```javascript
 import { registerOTel } from "@vercel/otel";
