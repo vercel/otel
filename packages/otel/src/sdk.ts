@@ -59,7 +59,7 @@ export class Sdk {
   private tracerProvider: BasicTracerProvider | undefined;
   private loggerProvider: LoggerProvider | undefined;
   private meterProvider: MeterProvider | undefined;
-  private disableInstumentations: (() => void) | undefined;
+  private disableInstrumentations: (() => void) | undefined;
 
   public constructor(private configuration: Configuration = {}) {}
 
@@ -186,7 +186,7 @@ export class Sdk {
       configuration.instrumentations,
       configuration.instrumentationConfig
     );
-    this.disableInstumentations = registerInstrumentations({
+    this.disableInstrumentations = registerInstrumentations({
       instrumentations,
     });
 
@@ -217,9 +217,9 @@ export class Sdk {
     if (this.contextManager) {
       this.contextManager.disable();
     }
-    const { disableInstumentations } = this;
-    if (disableInstumentations) {
-      disableInstumentations();
+    const { disableInstrumentations } = this;
+    if (disableInstrumentations) {
+      disableInstrumentations();
     }
   }
 }
