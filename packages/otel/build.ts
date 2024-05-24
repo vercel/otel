@@ -3,7 +3,7 @@ import type { Plugin } from "esbuild";
 import { build } from "esbuild";
 
 const MINIFY = true;
-const SOURCEMAP = false;
+const SOURCEMAP = true;
 
 const MAX_SIZES = {
   "dist/node/index.js": 210_000,
