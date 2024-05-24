@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.8.3
+
+### Patch Changes
+
+- 2e78b07: Enable sourcemaps
+
 ## 1.8.2
 
 ### Patch Changes
