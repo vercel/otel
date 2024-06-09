@@ -1,0 +1,79 @@
+{
+  "name": "otelzero",
+  "version": "1.7.0",
+  "private": true,
+  "description": "Vercel wrapper around OpenTelemetry APIs",
+  "author": "Vercel Inc",
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "edge": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "edge-light": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "worker": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "workerd": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/edge/index.js"
+      },
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/node/index.js"
+      },
+      "node": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/node/index.js"
+      },
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/edge/index.js"
+    }
+  },
+  "types": "./dist/types/index.d.ts",
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types",
+    "build-only": "pnpm tsx build.ts",
+    "build-types": "tsc --noEmit false --declaration --emitDeclarationOnly --stripInternal --declarationDir dist/types src/index.ts",
+    "clean": "rimraf dist && rimraf dist-site",
+    "eslint": "eslint-runner",
+    "eslint-fix": "eslint-runner --fix",
+    "prepublishOnly": "pnpm build",
+    "type-check": "tsc --noEmit",
+    "unit-test": "vitest --run",
+    "unit-test-watch": "vitest"
+  },
+  "devDependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/api-logs": "^0.46.0",
+    "@opentelemetry/sdk-node": "^0.51.1",
+    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "@types/node": "18.15.11",
+    "esbuild": "^0.19.4",
+    "eslint-config": "workspace:*",
+    "rimraf": "3.0.2",
+    "tsx": "^4.6.2",
+    "typedoc": "^0.25.8",
+    "typescript": "^5",
+    "typescript-config": "workspace:*",
+    "vitest": "0.33.0"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/api-logs": "^0.46.0"
+  }
+}
