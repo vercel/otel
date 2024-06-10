@@ -154,48 +154,6 @@ importers:
         specifier: ^20.11.0
         version: 20.11.0
 
-  packages/jstel:
-    devDependencies:
-      '@opentelemetry/api':
-        specifier: ^1.7.0
-        version: 1.7.0
-      '@opentelemetry/api-logs':
-        specifier: ^0.46.0
-        version: 0.46.0
-      '@opentelemetry/sdk-node':
-        specifier: ^0.51.1
-        version: 0.51.1(@opentelemetry/api@1.7.0)
-      '@opentelemetry/sdk-trace-base':
-        specifier: ^1.19.0
-        version: 1.24.1(@opentelemetry/api@1.7.0)
-      '@types/node':
-        specifier: 18.15.11
-        version: 18.15.11
-      esbuild:
-        specifier: ^0.19.4
-        version: 0.19.11
-      eslint-config:
-        specifier: workspace:*
-        version: link:../eslint-config
-      rimraf:
-        specifier: 3.0.2
-        version: 3.0.2
-      tsx:
-        specifier: ^4.6.2
-        version: 4.7.0
-      typedoc:
-        specifier: ^0.25.8
-        version: 0.25.8(typescript@5.3.3)
-      typescript:
-        specifier: ^5
-        version: 5.3.3
-      typescript-config:
-        specifier: workspace:*
-        version: link:../typescript-config
-      vitest:
-        specifier: 0.33.0
-        version: 0.33.0
-
   packages/otel:
     devDependencies:
       '@opentelemetry/api':
@@ -252,6 +210,45 @@ importers:
       protobufjs:
         specifier: ^7.2.6
         version: 7.2.6
+      rimraf:
+        specifier: 3.0.2
+        version: 3.0.2
+      tsx:
+        specifier: ^4.6.2
+        version: 4.7.0
+      typedoc:
+        specifier: ^0.25.8
+        version: 0.25.8(typescript@5.3.3)
+      typescript:
+        specifier: ^5
+        version: 5.3.3
+      typescript-config:
+        specifier: workspace:*
+        version: link:../typescript-config
+      vitest:
+        specifier: 0.33.0
+        version: 0.33.0
+
+  packages/otelzero:
+    devDependencies:
+      '@opentelemetry/api':
+        specifier: ^1.7.0
+        version: 1.7.0
+      '@opentelemetry/sdk-node':
+        specifier: ^0.51.1
+        version: 0.51.1(@opentelemetry/api@1.7.0)
+      '@opentelemetry/sdk-trace-base':
+        specifier: ^1.19.0
+        version: 1.24.1(@opentelemetry/api@1.7.0)
+      '@types/node':
+        specifier: 18.15.11
+        version: 18.15.11
+      esbuild:
+        specifier: ^0.19.4
+        version: 0.19.11
+      eslint-config:
+        specifier: workspace:*
+        version: link:../eslint-config
       rimraf:
         specifier: 3.0.2
         version: 3.0.2
@@ -6457,6 +6454,7 @@ packages:
 
   /rimraf@3.0.2:
     resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
+    deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
     dependencies:
       glob: 7.2.3

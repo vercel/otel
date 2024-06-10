@@ -5,15 +5,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { metrics as metricsApi } from "@opentelemetry/api";
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
+import { MeterRecorder } from "./test-util/meter-recorder";
 import {
   getActiveSpan,
   injectTraceContext,
   meterHistogram,
   rootTraceContext,
   trace,
-} from "./api";
-import { installViaOtelSdk } from "./via-otel-sdk";
-import { MeterRecorder } from "./meter-recorder";
+} from "./index";
 
 describe("via otel SDK", () => {
   let sdk: NodeSDK;
@@ -46,7 +45,6 @@ describe("via otel SDK", () => {
     meterRecorder = new MeterRecorder();
     metricsApi.setGlobalMeterProvider(meterRecorder);
     sdk.start();
-    installViaOtelSdk();
   });
 
   afterEach(async () => {

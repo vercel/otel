@@ -9,24 +9,22 @@ import type {
   MeterProvider as OtelMeterPropagator,
   TextMapSetter,
 } from "@opentelemetry/api";
-import type {
-  Span,
-  CarrierGetter,
-  CarrierSetter,
-  TraceProvider,
-  SpanOptions,
-  SpanCallback,
-  MeterProvider,
-  MeterOptions,
-} from "./api";
+import { SpanStatusCode, type Span, type SpanOptions } from "./span";
+import type { CarrierGetter, CarrierSetter } from "./carrier";
 import {
   NO_SPAN,
-  SPAN_STATUS_CODE_ERROR,
-  setMeterProvider,
+  type TraceProvider,
+  type SpanCallback,
   setTraceProvider,
-} from "./api";
+} from "./trace";
+import {
+  type MeterProvider,
+  type MeterOptions,
+  setMeterProvider,
+} from "./meter";
 
-export function installViaOtelSdk(): void {
+/** @internal */
+export function installOtelSdkProviders(): void {
   const traceProvider: TraceProvider = {
     getActiveSpan() {
       const otelContextManager = getOtelContextManager();
@@ -184,7 +182,7 @@ function endSpan(span: OtelSpan, error?: unknown): void {
   if (error) {
     const message = error instanceof Error ? error.message : String(error);
     span.recordException(error instanceof Error ? error : message);
-    span.setStatus({ code: SPAN_STATUS_CODE_ERROR, message });
+    span.setStatus({ code: SpanStatusCode.ERROR, message });
   }
   span.end();
 }
@@ -233,10 +231,6 @@ const defaultTextSetter: TextMapSetter<unknown> = {
 const GLOBAL_OPENTELEMETRY_API_KEY = Symbol.for("opentelemetry.js.api.1");
 
 function getOtelGlobal<T>(type: string): T | undefined {
-  // const globalVersion = _global[GLOBAL_OPENTELEMETRY_API_KEY]?.version;
-  // if (!globalVersion || !isCompatible(globalVersion)) {
-  //   return;
-  // }
   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
   return (globalThis as any)[GLOBAL_OPENTELEMETRY_API_KEY]?.[type] as
     | T

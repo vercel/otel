@@ -1,18 +1,18 @@
 import type {
-  BatchObservableCallback,
-  Counter,
-  Histogram,
-  Meter,
-  MeterOptions,
-  MeterProvider,
-  MetricOptions,
-  Observable,
-  ObservableCounter,
-  ObservableGauge,
-  ObservableUpDownCounter,
-  UpDownCounter,
+  BatchObservableCallback as OtelBatchObservableCallback,
+  Counter as OtelCounter,
+  Histogram as OtelHistogram,
+  Meter as OtelMeter,
+  MeterOptions as OtelMeterOptions,
+  MeterProvider as OtelMeterProvider,
+  MetricOptions as OtelMetricOptions,
+  Observable as OtelObservable,
+  ObservableCounter as OtelObservableCounter,
+  ObservableGauge as OtelObservableGauge,
+  ObservableUpDownCounter as OtelObservableUpDownCounter,
+  UpDownCounter as OtelUpDownCounter,
 } from "@opentelemetry/api";
-import type { Attributes } from "./api";
+import type { Attributes } from "../attribute";
 
 export interface Metric {
   type: "counter" | "histogram";
@@ -22,7 +22,7 @@ export interface Metric {
   attributes: Attributes | undefined;
 }
 
-export class MeterRecorder implements MeterProvider {
+export class MeterRecorder implements OtelMeterProvider {
   public readonly metrics: Metric[] = [];
   private meters = new Map<string, MeterImpl>();
 
@@ -30,7 +30,11 @@ export class MeterRecorder implements MeterProvider {
     return Promise.resolve();
   }
 
-  getMeter(name: string, version?: string, options?: MeterOptions): Meter {
+  getMeter(
+    name: string,
+    version?: string,
+    options?: OtelMeterOptions
+  ): OtelMeter {
     return alloc(
       this.meters,
       name,
@@ -39,63 +43,63 @@ export class MeterRecorder implements MeterProvider {
   }
 }
 
-class MeterImpl implements Meter {
+class MeterImpl implements OtelMeter {
   private readonly instruments = new Map<
     string,
-    Histogram | Counter | UpDownCounter
+    OtelHistogram | OtelCounter | OtelUpDownCounter
   >();
 
   constructor(
     private metrics: Metric[],
     private name: string,
     private version: string | undefined,
-    private options: MeterOptions | undefined
+    private options: OtelMeterOptions | undefined
   ) {}
 
   createHistogram<AttributesTypes extends Attributes = Attributes>(
     name: string,
-    options?: MetricOptions | undefined
-  ): Histogram<AttributesTypes> {
+    options?: OtelMetricOptions | undefined
+  ): OtelHistogram<AttributesTypes> {
     return alloc(
       this.instruments,
       name,
       () => new HistogramImpl(this.metrics, name, options)
-    ) as Histogram<AttributesTypes>;
+    ) as OtelHistogram<AttributesTypes>;
   }
 
   createCounter<AttributesTypes extends Attributes = Attributes>(
     name: string,
-    options?: MetricOptions | undefined
-  ): Counter<AttributesTypes> {
+    options?: OtelMetricOptions | undefined
+  ): OtelCounter<AttributesTypes> {
     return alloc(
       this.instruments,
       name,
       () => new CounterImpl(this.metrics, name, options)
-    ) as Counter<AttributesTypes>;
+    ) as OtelCounter<AttributesTypes>;
   }
 
   createUpDownCounter<AttributesTypes extends Attributes = Attributes>(
     name: string,
-    options?: MetricOptions | undefined
-  ): UpDownCounter<AttributesTypes> {
+    options?: OtelMetricOptions | undefined
+  ): OtelUpDownCounter<AttributesTypes> {
     return alloc(
       this.instruments,
       name,
       () => new CounterImpl(this.metrics, name, options)
-    ) as UpDownCounter<AttributesTypes>;
+    ) as OtelUpDownCounter<AttributesTypes>;
   }
 
   createObservableGauge<AttributesTypes extends Attributes = Attributes>(
     _name: string,
-    _options?: MetricOptions | undefined
-  ): ObservableGauge<AttributesTypes> {
+    _options?: OtelMetricOptions | undefined
+  ): OtelObservableGauge<AttributesTypes> {
     throw new Error("Method not implemented.");
   }
 
   createObservableCounter<AttributesTypes extends Attributes = Attributes>(
     _name: string,
-    _options?: MetricOptions | undefined
-  ): ObservableCounter<AttributesTypes> {
+    _options?: OtelMetricOptions | undefined
+  ): OtelObservableCounter<AttributesTypes> {
     throw new Error("Method not implemented.");
   }
 
@@ -103,14 +107,14 @@ class MeterImpl implements Meter {
     AttributesTypes extends Attributes = Attributes,
   >(
     _name: string,
-    _options?: MetricOptions | undefined
-  ): ObservableUpDownCounter<AttributesTypes> {
+    _options?: OtelMetricOptions | undefined
+  ): OtelObservableUpDownCounter<AttributesTypes> {
     throw new Error("Method not implemented.");
   }
 
   addBatchObservableCallback<AttributesTypes extends Attributes = Attributes>(
-    _callback: BatchObservableCallback<AttributesTypes>,
-    _observables: Observable<AttributesTypes>[]
+    _callback: OtelBatchObservableCallback<AttributesTypes>,
+    _observables: OtelObservable<AttributesTypes>[]
   ): void {
     throw new Error("Method not implemented.");
   }
@@ -118,18 +122,18 @@ class MeterImpl implements Meter {
   removeBatchObservableCallback<
     AttributesTypes extends Attributes = Attributes,
   >(
-    _callback: BatchObservableCallback<AttributesTypes>,
-    _observables: Observable<AttributesTypes>[]
+    _callback: OtelBatchObservableCallback<AttributesTypes>,
+    _observables: OtelObservable<AttributesTypes>[]
   ): void {
     throw new Error("Method not implemented.");
   }
 }
 
-class HistogramImpl implements Histogram {
+class HistogramImpl implements OtelHistogram {
   constructor(
     private metrics: Metric[],
     private name: string,
-    private options: MetricOptions | undefined
+    private options: OtelMetricOptions | undefined
   ) {}
 
   record(value: number, attributes?: Attributes, _context?: unknown): void {
@@ -143,11 +147,11 @@ class HistogramImpl implements Histogram {
   }
 }
 
-class CounterImpl implements Counter, UpDownCounter {
+class CounterImpl implements OtelCounter, OtelUpDownCounter {
   constructor(
     private metrics: Metric[],
     private name: string,
-    private options: MetricOptions | undefined
+    private options: OtelMetricOptions | undefined
   ) {}
 
   add(value: number, attributes?: Attributes, _context?: unknown): void {
