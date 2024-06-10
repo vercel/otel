@@ -1,4 +1,9 @@
+import type {
+  Meter as OtelMeter,
+  MeterProvider as OtelMeterPropagator,
+} from "@opentelemetry/api";
 import type { Attributes } from "./attribute";
+import { getOtelGlobal } from "./otel";
 
 export interface MeterOptions {
   library?:
@@ -16,8 +21,16 @@ export function meterCounter(
   value: number,
   opts?: MeterOptions
 ): void {
-  const provider = getMeterProvider();
-  return provider?.counter(name, value, opts ?? NO_OPTS);
+  const meter = getMeter(opts ?? NO_OPTS);
+  if (!meter) {
+    return;
+  }
+  const { unit, attributes } = opts ?? NO_OPTS;
+  const counter = meter.createCounter(name, {
+    // TODO: more opts: valueType, etc.
+    unit,
+  });
+  counter.add(value, attributes);
 }
 
 export function meterHistogram(
@@ -25,25 +38,31 @@ export function meterHistogram(
   value: number,
   opts?: MeterOptions
 ): void {
-  const provider = getMeterProvider();
-  return provider?.histogram(name, value, opts ?? NO_OPTS);
-}
-
-export interface MeterProvider {
-  counter: (name: string, value: number, opts: MeterOptions) => void;
-  histogram: (name: string, value: number, opts: MeterOptions) => void;
-}
-
-/** @internal */
-export function getMeterProvider(): MeterProvider | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-  return (globalThis as any)[meterProviderSymbol];
-}
-
-export function setMeterProvider(provider: MeterProvider | undefined): void {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-  (globalThis as any)[meterProviderSymbol] = provider;
+  const meter = getMeter(opts ?? NO_OPTS);
+  if (!meter) {
+    return;
+  }
+  const { unit, attributes } = opts ?? NO_OPTS;
+  const histogram = meter.createHistogram(name, {
+    // TODO: more opts: valueType, etc.
+    unit,
+  });
+  histogram.record(value, attributes);
 }
 
 const NO_OPTS: MeterOptions = {};
-const meterProviderSymbol = Symbol.for("otelzero/meterProvider");
+
+function getMeter(opts: MeterOptions): OtelMeter | undefined {
+  const otelMeterProvider = getOtelMeterProvider();
+  if (!otelMeterProvider) {
+    return undefined;
+  }
+  const { library } = opts;
+  const channelName =
+    (typeof library === "string" ? library : library?.name) || "default";
+  return otelMeterProvider.getMeter(channelName);
+}
+
+function getOtelMeterProvider(): OtelMeterPropagator | undefined {
+  return getOtelGlobal<OtelMeterPropagator>("metrics");
+}

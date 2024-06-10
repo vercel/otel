@@ -5,7 +5,7 @@ const MINIFY = true;
 const SOURCEMAP = true;
 
 const MAX_SIZES = {
-  "dist/index.js": 3_500,
+  "dist/index.js": 2_800,
 };
 
 async function buildAll(): Promise<void> {

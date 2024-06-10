@@ -7,5 +7,5 @@ The `@opentelemetry/api` has a few drawbacks:
 
 This experimental library tries to address both of these issues:
 
-1. The complete (prior to tree-shaking) size is 3.3K
+1. The complete (prior to tree-shaking) size is 2.8K
 2. `trace`, `wrapTrace`, and `meter` provide simple API shapes for common use cases.

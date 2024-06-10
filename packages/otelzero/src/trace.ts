@@ -2,10 +2,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
+import type {
+  Context as OtelContext,
+  ContextManager as OtelContextManager,
+  Span as OtelSpan,
+  TracerProvider as OtelTracerProvider,
+  TextMapPropagator as OtelPropagator,
+  TextMapGetter,
+  TextMapSetter,
+} from "@opentelemetry/api";
 import type { CarrierGetter, CarrierSetter } from "./carrier";
-import type { Span, SpanContext, SpanOptions } from "./span";
+import {
+  SpanStatusCode,
+  type Span,
+  type SpanContext,
+  type SpanOptions,
+} from "./span";
+import { getOtelGlobal } from "./otel";
 
 export type SpanCallback<T> = (span: Span) => T;
 
@@ -14,11 +28,15 @@ export function rootTraceContext<T, Carrier = unknown>(
   carrier?: Carrier,
   getter?: CarrierGetter<Carrier>
 ): T {
-  const provider = getTraceProvider();
-  if (provider) {
-    return provider.rootContext(fn, carrier, getter);
-  }
-  return fn();
+  return rootTraceContextImpl(fn, carrier, getter);
+}
+
+export function injectTraceContext<Carrier>(
+  span: Span | undefined | null,
+  carrier: Carrier,
+  setter?: CarrierSetter<Carrier>
+): void {
+  injectTraceContextImpl(span, carrier, setter);
 }
 
 export function trace<T>(name: string, fn: SpanCallback<T>): T;
@@ -35,13 +53,8 @@ export function trace<T>(
   maybeFn?: SpanCallback<T>
 ): T {
   const opts = typeof optsOrFn === "function" ? NO_OPTS : optsOrFn;
-
   const fn = typeof optsOrFn === "function" ? optsOrFn : maybeFn!;
-  const provider = getTraceProvider();
-  if (provider) {
-    return provider.trace(name, opts, fn);
-  }
-  return fn(NO_SPAN);
+  return traceImpl(name, opts, fn);
 }
 
 export function wrapTrace<F extends (...args: any[]) => any>(
@@ -71,60 +84,34 @@ export function startSpan(
   opts?: SpanOptions,
   parent?: Span
 ): Span {
-  const provider = getTraceProvider();
-  return provider?.startSpan(name, opts ?? NO_OPTS, parent) ?? NO_SPAN;
+  const otelTraceProvider = getOtelTraceProvider();
+  const otelContextManager = getOtelContextManager();
+  if (!otelTraceProvider || !otelContextManager) {
+    return NO_SPAN;
+  }
+
+  const { library, ...other } = opts ?? NO_OPTS;
+  const channelName =
+    (typeof library === "string" ? library : library?.name) || "default";
+
+  let context = otelContextManager.active();
+  if (parent) {
+    context = setOtelSpan(context, parent);
+  }
+
+  const tracer = otelTraceProvider.getTracer(channelName);
+  return tracer.startSpan(name, other, context);
 }
 
 export function getActiveSpan(): Span | undefined {
-  const provider = getTraceProvider();
-  return provider?.getActiveSpan();
-}
-
-export function injectTraceContext<Carrier>(
-  span: Span | undefined | null,
-  carrier: Carrier,
-  setter?: CarrierSetter<Carrier>
-): void {
-  const provider = getTraceProvider();
-  provider?.injectContext(span, carrier, setter);
+  const otelContextManager = getOtelContextManager();
+  if (!otelContextManager) {
+    return undefined;
+  }
+  return getOtelSpan(otelContextManager.active());
 }
 
 const NO_OPTS: SpanOptions = {};
-
-export interface TraceProvider {
-  rootContext: <T, C>(
-    fn: () => T,
-    carrier: C | undefined,
-    getter: CarrierGetter<C> | undefined
-  ) => T;
-
-  trace: <T>(name: string, opts: SpanOptions, fn: SpanCallback<T>) => T;
-
-  startSpan: (
-    name: string,
-    opts: SpanOptions,
-    parent: Span | undefined
-  ) => Span;
-
-  getActiveSpan: () => Span | undefined;
-
-  injectContext: <Carrier>(
-    span: Span | undefined | null,
-    carrier: Carrier,
-    setter: CarrierSetter<Carrier> | undefined
-  ) => void;
-}
-
-/** @internal */
-export function getTraceProvider(): TraceProvider | undefined {
-  return (globalThis as any)[traceProviderSymbol];
-}
-
-export function setTraceProvider(provider: TraceProvider | undefined): void {
-  (globalThis as any)[traceProviderSymbol] = provider;
-}
-
-const traceProviderSymbol = Symbol.for("otelzero/traceProvider");
 
 const NO_CONTEXT: SpanContext = {
   traceId: "00000000000000000000000000000000",
@@ -133,7 +120,7 @@ const NO_CONTEXT: SpanContext = {
 };
 
 /** @internal */
-export const NO_SPAN: Span = {
+const NO_SPAN: Span = {
   isRecording(): boolean {
     return false;
   },
@@ -162,3 +149,133 @@ export const NO_SPAN: Span = {
     // no-op
   },
 };
+
+const defaultTextGetter: TextMapGetter<unknown> = {
+  keys(carrier: unknown): string[] {
+    if (carrier && typeof carrier === "object") {
+      return Object.keys(carrier);
+    }
+    return [];
+  },
+  get(carrier: unknown, key: string): string | string[] | undefined {
+    if (carrier && typeof carrier === "object") {
+      return (carrier as Record<string, string | string[] | undefined>)[
+        key
+      ] as unknown as string | string[] | undefined;
+    }
+    return undefined;
+  },
+};
+
+const defaultTextSetter: TextMapSetter<unknown> = {
+  set(carrier, key, value) {
+    if (carrier && typeof carrier === "object") {
+      (carrier as Record<string, unknown>)[key] = value;
+    }
+  },
+};
+
+function rootTraceContextImpl<T, Carrier = unknown>(
+  fn: () => T,
+  carrier: Carrier | undefined,
+  getter: CarrierGetter<Carrier> | undefined
+): T {
+  const otelPropagator = getOtelPropagator();
+  const otelContextManager = getOtelContextManager();
+  if (otelPropagator && otelContextManager) {
+    let context = otelContextManager.active();
+    context = context.deleteValue(SPAN_KEY);
+    if (carrier) {
+      context = otelPropagator.extract(
+        context,
+        carrier,
+        getter ?? defaultTextGetter
+      );
+    }
+    return otelContextManager.with(context, fn);
+  }
+  return fn();
+}
+
+function injectTraceContextImpl<Carrier>(
+  span: Span | undefined | null,
+  carrier: Carrier,
+  setter?: CarrierSetter<Carrier>
+): void {
+  const otelPropagator = getOtelPropagator();
+  const otelContextManager = getOtelContextManager();
+  if (otelPropagator && otelContextManager) {
+    let context = otelContextManager.active();
+    if (span) {
+      context = setOtelSpan(context, span);
+    }
+    otelPropagator.inject(context, carrier, setter ?? defaultTextSetter);
+  }
+}
+
+function traceImpl<T>(name: string, opts: SpanOptions, fn: SpanCallback<T>): T {
+  const otelTraceProvider = getOtelTraceProvider();
+  if (!otelTraceProvider) {
+    return fn(NO_SPAN);
+  }
+
+  const { library, ...other } = opts;
+  const channelName =
+    (typeof library === "string" ? library : library?.name) || "default";
+
+  const tracer = otelTraceProvider.getTracer(channelName);
+  return tracer.startActiveSpan(name, other, (span) => {
+    try {
+      const result = fn(span);
+      if (!result || typeof result !== "object" || !("then" in result)) {
+        endSpan(span);
+        return result;
+      }
+      return Promise.resolve(result).then(
+        (r) => {
+          endSpan(span);
+          return r;
+        },
+        (e) => {
+          endSpan(span, e);
+          throw e;
+        }
+      ) as T;
+    } catch (e) {
+      endSpan(span, e);
+      throw e;
+    }
+  });
+}
+
+function endSpan(span: OtelSpan, error?: unknown): void {
+  if (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    span.recordException(error instanceof Error ? error : message);
+    span.setStatus({ code: SpanStatusCode.ERROR, message });
+  }
+  span.end();
+}
+
+function getOtelTraceProvider(): OtelTracerProvider | undefined {
+  return getOtelGlobal<OtelTracerProvider>("trace");
+}
+
+function getOtelContextManager(): OtelContextManager | undefined {
+  return getOtelGlobal<OtelContextManager>("context");
+}
+
+function getOtelPropagator(): OtelPropagator | undefined {
+  return getOtelGlobal<OtelPropagator>("propagation");
+}
+
+const SPAN_KEY = Symbol.for("OpenTelemetry Context Key SPAN");
+
+function getOtelSpan(context: OtelContext): OtelSpan | undefined {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return (context.getValue(SPAN_KEY) as OtelSpan) || undefined;
+}
+
+function setOtelSpan(context: OtelContext, span: OtelSpan): OtelContext {
+  return context.setValue(SPAN_KEY, span);
+}

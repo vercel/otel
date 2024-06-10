@@ -1,5 +1,3 @@
-import { installOtelSdkProviders } from "./otel";
-
 export type { Link, Span, SpanContext, SpanOptions, SpanStatus } from "./span";
 export { SpanKind, SpanStatusCode } from "./span";
 export type { Attributes, AttributeValue } from "./attribute";
@@ -13,11 +11,7 @@ export {
   wrapTrace,
   startSpan,
   getActiveSpan,
-  setTraceProvider,
 } from "./trace";
-export type { TraceProvider } from "./trace";
 
-export type { MeterProvider, MeterOptions } from "./meter";
-export { meterCounter, meterHistogram, setMeterProvider } from "./meter";
-
-installOtelSdkProviders();
+export type { MeterOptions } from "./meter";
+export { meterCounter, meterHistogram } from "./meter";
