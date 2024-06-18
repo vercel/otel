@@ -150,7 +150,7 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   const { kind, attributes } = span;
   const {
     "operation.name": operationName,
-    "resouce.name": resourceName,
+    "resource.name": resourceName,
     "span.type": spanTypeAttr,
     "next.span_type": nextSpanType,
     "http.method": httpMethod,
