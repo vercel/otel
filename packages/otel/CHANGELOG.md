@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.8.4
+
+### Patch Changes
+
+- 560faed: Fix typo on key 'resource.name' when resolving Resource attributes
+
 ## 1.8.3
 
 ### Patch Changes
