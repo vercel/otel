@@ -35,7 +35,6 @@ import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-ho
 import {
   CompositePropagator,
   W3CBaggagePropagator,
-  W3CTraceContextPropagator,
   baggageUtils,
 } from "@opentelemetry/core";
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
@@ -51,6 +50,7 @@ import type {
   SpanProcessorOrName,
 } from "./types";
 import { FetchInstrumentation } from "./instrumentations/fetch";
+import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propagator";
 
 type Env = ReturnType<typeof parseEnvironment>;
 
