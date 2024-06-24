@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.9.1
+
+### Patch Changes
+
+- 8b741d4: Edge-comaptible W3CTraceContextPropagator
+
 ## 1.9.0
 
 ### Minor Changes
