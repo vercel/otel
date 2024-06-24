@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.9.0
+
+### Minor Changes
+
+- c7b72a9: OTEL logs and instrumentation deps restricted to be in the range of [0.46.0, 1.0.0)
+
 ## 1.8.4
 
 ### Patch Changes
