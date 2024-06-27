@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/sdk-trace-base": "^1.19.0",
     "eslint-config": "workspace:*",
     "typescript": "^5",
