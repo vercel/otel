@@ -117,6 +117,9 @@ export class Sdk {
           process.env.VERCEL_BRANCH_URL ||
           process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
           undefined,
+        "vercel.deployment_id":
+          process.env.VERCEL_DEPLOYMENT_ID ||
+          undefined,
         [SemanticResourceAttributes.SERVICE_VERSION]: process.env.VERCEL_DEPLOYMENT_ID,
 
         ...configuration.attributes,
