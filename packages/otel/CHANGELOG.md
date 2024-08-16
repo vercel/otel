@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.9.2
+
+### Patch Changes
+
+- 81abfa4: Set default otel service version to VERCEL_DEPLOYMENT_ID
+
 ## 1.9.1
 
 ### Patch Changes
