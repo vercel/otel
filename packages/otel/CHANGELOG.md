@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.10.0
+
+### Minor Changes
+
+- 4882239: Set vercel.deployment_id as a resource attribute
+
 ## 1.9.2
 
 ### Patch Changes
