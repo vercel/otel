@@ -24,9 +24,12 @@ export function getVercelRequestContextAttributes(
     [SemanticAttributes.HTTP_USER_AGENT]: context.headers["user-agent"],
     "http.referer": context.headers.referer,
 
-    "vercel.request_id": parseRequestId(context.headers["x-vercel-id"]),
+    // This semantic span attribute is not yet part of the semantic conventions package we are using, but it
+    // exists within the specification.
+    // https://opentelemetry.io/docs/specs/semconv/attributes-registry/faas/
+    "faas.invocation_id": parseRequestId(context.headers["x-vercel-id"]),
     "vercel.matched_path": context.headers["x-matched-path"],
-    "vercel.edge_region": context.headers["x-vercel-edge-region"],
+    [SemanticAttributes.FAAS_INVOKED_REGION]: context.headers["x-vercel-edge-region"],
 
     ...rootAttrs,
   });
