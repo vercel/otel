@@ -1,14 +1,14 @@
-import type { Attributes, Context } from "@opentelemetry/api";
-import { diag, SpanKind } from "@opentelemetry/api";
+import type { Attributes, Context } from '@opentelemetry/api';
+import { diag, SpanKind } from '@opentelemetry/api';
 import type {
   Span,
   ReadableSpan,
   SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
-import { getVercelRequestContext } from "../vercel-request-context/api";
-import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
-import { isSampled } from "../util/sampled";
-import type { AttributesFromHeaders } from "../types";
+} from '@opentelemetry/sdk-trace-base';
+import { getVercelRequestContext } from '../vercel-request-context/api';
+import { getVercelRequestContextAttributes } from '../vercel-request-context/attributes';
+import { isSampled } from '../util/sampled';
+import type { AttributesFromHeaders } from '../types';
 
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
@@ -27,7 +27,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
     return Promise.all(
       this.processors.map((p) =>
         p.forceFlush().catch((e) => {
-          diag.error("@vercel/otel: forceFlush failed:", e);
+          diag.error('@vercel/otel: forceFlush failed:', e);
         })
       )
     ).then(() => undefined);
@@ -103,6 +103,8 @@ export class CompositeSpanProcessor implements SpanProcessor {
       }
     }
 
+    console.log('span attributes', span.attributes);
+
     if (isRoot) {
       this.rootSpanIds.delete(traceId);
       if (rootObj.open.length > 0) {
@@ -111,7 +113,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
             try {
               openSpan.end();
             } catch (e) {
-              diag.error("@vercel/otel: onEnd failed:", e);
+              diag.error('@vercel/otel: onEnd failed:', e);
             }
           }
         }
@@ -139,22 +141,22 @@ export class CompositeSpanProcessor implements SpanProcessor {
 }
 
 const SPAN_KIND_NAME: { [key in SpanKind]: string } = {
-  [SpanKind.INTERNAL]: "internal",
-  [SpanKind.SERVER]: "server",
-  [SpanKind.CLIENT]: "client",
-  [SpanKind.PRODUCER]: "producer",
-  [SpanKind.CONSUMER]: "consumer",
+  [SpanKind.INTERNAL]: 'internal',
+  [SpanKind.SERVER]: 'server',
+  [SpanKind.CLIENT]: 'client',
+  [SpanKind.PRODUCER]: 'producer',
+  [SpanKind.CONSUMER]: 'consumer',
 };
 
 function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   const { kind, attributes } = span;
   const {
-    "operation.name": operationName,
-    "resource.name": resourceName,
-    "span.type": spanTypeAttr,
-    "next.span_type": nextSpanType,
-    "http.method": httpMethod,
-    "http.route": httpRoute,
+    'operation.name': operationName,
+    'resource.name': resourceName,
+    'span.type': spanTypeAttr,
+    'next.span_type': nextSpanType,
+    'http.method': httpMethod,
+    'http.route': httpRoute,
   } = attributes;
   if (operationName) {
     return undefined;
@@ -163,9 +165,9 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   const resourceNameResolved =
     resourceName ??
     (httpMethod &&
-    typeof httpMethod === "string" &&
+    typeof httpMethod === 'string' &&
     httpRoute &&
-    typeof httpRoute === "string"
+    typeof httpRoute === 'string'
       ? `${httpMethod} ${httpRoute}`
       : httpRoute);
 
@@ -173,12 +175,12 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
     span.kind === SpanKind.SERVER &&
     httpMethod &&
     httpRoute &&
-    typeof httpMethod === "string" &&
-    typeof httpRoute === "string"
+    typeof httpMethod === 'string' &&
+    typeof httpRoute === 'string'
   ) {
     return {
-      "operation.name": "web.request",
-      "resource.name": resourceNameResolved,
+      'operation.name': 'web.request',
+      'resource.name': resourceNameResolved,
     };
   }
 
@@ -186,21 +188,21 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   // the default operation.name is "library name + span kind".
   const libraryName = span.instrumentationLibrary.name;
   const spanType = nextSpanType ?? spanTypeAttr;
-  if (spanType && typeof spanType === "string") {
+  if (spanType && typeof spanType === 'string') {
     const nextOperationName = toOperationName(libraryName, spanType);
     if (httpRoute) {
       return {
-        "operation.name": nextOperationName,
-        "resource.name": resourceNameResolved,
+        'operation.name': nextOperationName,
+        'resource.name': resourceNameResolved,
       };
     }
-    return { "operation.name": nextOperationName };
+    return { 'operation.name': nextOperationName };
   }
 
   return {
-    "operation.name": toOperationName(
+    'operation.name': toOperationName(
       libraryName,
-      kind === SpanKind.INTERNAL ? "" : SPAN_KIND_NAME[kind]
+      kind === SpanKind.INTERNAL ? '' : SPAN_KIND_NAME[kind]
     ),
   };
 }
@@ -209,8 +211,8 @@ function toOperationName(libraryName: string, name: string): string {
   if (!libraryName) {
     return name;
   }
-  let cleanLibraryName = libraryName.replace(/[ @./]/g, "_");
-  if (cleanLibraryName.startsWith("_")) {
+  let cleanLibraryName = libraryName.replace(/[ @./]/g, '_');
+  if (cleanLibraryName.startsWith('_')) {
     cleanLibraryName = cleanLibraryName.slice(1);
   }
   return name ? `${cleanLibraryName}.${name}` : cleanLibraryName;

@@ -1,0 +1,7 @@
+{
+  "name": "fixture",
+  "description": "This is a fixture",
+  "data": {
+    "key": "value"
+  }
+}

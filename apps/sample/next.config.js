@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["bridge-emulator"],
+  transpilePackages: ['bridge-emulator'],
   typescript: {
     ignoreBuildErrors: true,
   },

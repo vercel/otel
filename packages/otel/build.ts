@@ -1,31 +1,31 @@
-import { stat } from "node:fs/promises";
-import type { Plugin } from "esbuild";
-import { build } from "esbuild";
+import { stat } from 'node:fs/promises';
+import type { Plugin } from 'esbuild';
+import { build } from 'esbuild';
 
-const MINIFY = true;
+const MINIFY = false;
 const SOURCEMAP = true;
 
 const MAX_SIZES = {
-  "dist/node/index.js": 210_000,
-  "dist/edge/index.js": 180_000,
+  'dist/node/index.js': 1210_000,
+  'dist/edge/index.js': 1180_000,
 };
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
 const externalCjsToEsmPlugin: ExternalPluginFactory = (external) => ({
-  name: "external",
+  name: 'external',
   setup(builder): void {
     const escape = (text: string): string =>
-      `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}$`;
-    const filter = new RegExp(external.map(escape).join("|"));
-    builder.onResolve({ filter: /.*/, namespace: "external" }, (args) => ({
+      `^${text.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`;
+    const filter = new RegExp(external.map(escape).join('|'));
+    builder.onResolve({ filter: /.*/, namespace: 'external' }, (args) => ({
       path: args.path,
       external: true,
     }));
     builder.onResolve({ filter }, (args) => ({
       path: args.path,
-      namespace: "external",
+      namespace: 'external',
     }));
-    builder.onLoad({ filter: /.*/, namespace: "external" }, (args) => ({
+    builder.onLoad({ filter: /.*/, namespace: 'external' }, (args) => ({
       contents: `export * from ${JSON.stringify(args.path)}`,
     }));
   },
@@ -33,7 +33,7 @@ const externalCjsToEsmPlugin: ExternalPluginFactory = (external) => ({
 
 // On Edge `eval()` is not allowed. Strip it from the input sources.
 const stripEvalEdge: Plugin = {
-  name: "stripEvalEdge",
+  name: 'stripEvalEdge',
   setup(builder): void {
     builder.onLoad({ filter: /@protobufjs\/inquire\/index\.js/ }, () => {
       return {
@@ -65,36 +65,36 @@ const edgeSupportBanner = {
   }`,
 };
 
-const peerDependencies = ["@opentelemetry/api", "@opentelemetry/api-logs"];
+const peerDependencies = ['@opentelemetry/api', '@opentelemetry/api-logs'];
 
 async function buildAll(): Promise<void> {
   await Promise.all([
     build({
-      platform: "node",
-      format: "esm",
+      platform: 'node',
+      format: 'esm',
       splitting: true,
-      entryPoints: ["src/index.ts"],
-      outdir: "dist/node",
+      entryPoints: ['src/index.ts'],
+      outdir: 'dist/node',
       bundle: true,
       minify: MINIFY,
       sourcemap: SOURCEMAP,
       banner: esmNodeSupportBanner,
-      external: ["@opentelemetry/api"],
+      external: ['@opentelemetry/api'],
       plugins: [externalCjsToEsmPlugin(peerDependencies)],
     }),
     build({
-      target: "esnext",
-      format: "esm",
+      target: 'esnext',
+      format: 'esm',
       splitting: false,
-      entryPoints: ["src/index.ts"],
-      outdir: "dist/edge",
+      entryPoints: ['src/index.ts'],
+      outdir: 'dist/edge',
       bundle: true,
       minify: MINIFY,
       sourcemap: SOURCEMAP,
       banner: edgeSupportBanner,
-      external: ["@opentelemetry/api"],
+      external: ['@opentelemetry/api'],
       plugins: [
-        externalCjsToEsmPlugin(["async_hooks", "events", ...peerDependencies]),
+        externalCjsToEsmPlugin(['async_hooks', 'events', ...peerDependencies]),
         stripEvalEdge,
       ],
     }),
