@@ -1,5 +1,12 @@
 // This is the only import for user code.
-import { trace as tracing } from "@opentelemetry/api";
+import {
+  SpanContext,
+  TextMapPropagator,
+  trace as tracing,
+  context as contextApi,
+  propagation as propagationApi,
+  defaultTextMapGetter,
+} from "@opentelemetry/api";
 
 // All these imports are for SDK configuration, not user code.
 import {
@@ -12,6 +19,19 @@ import {
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import { Resource } from "@opentelemetry/resources";
 import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer";
+
+function bridgeGetContext(): {
+  rootSpanContext: SpanContext | undefined;
+} {
+  return {
+    rootSpanContext: {
+      traceId: "1111c0c11d8d177d28240e9eb0521111",
+      spanId: "1111c0c11d8d1111",
+      traceFlags: 1,
+      isRemote: true,
+    },
+  };
+}
 
 // This is SDK code. A normal user code doesn't write it, but it calls some
 // SDK configuration, such as `registerOTel` from `@vercel/otel`.
@@ -45,6 +65,19 @@ function setupTelemetry() {
     },
   };
 
+  const propagator: TextMapPropagator = {
+    inject: () => undefined,
+    fields: () => [],
+
+    extract: (context, carrier, getter) => {
+      const { rootSpanContext } = bridgeGetContext();
+      if (rootSpanContext) {
+        return tracing.setSpanContext(context, rootSpanContext);
+      }
+      return context;
+    },
+  };
+
   const tracerProvider = new BasicTracerProvider({
     resource,
     idGenerator,
@@ -55,7 +88,18 @@ function setupTelemetry() {
   // case for exporting.
   tracerProvider.addSpanProcessor(new SimpleSpanProcessor(spanExporter));
 
-  tracerProvider.register({ contextManager });
+  tracerProvider.register({ contextManager, propagator });
+}
+
+function callFramework(userHandler: () => Promise<any>) {
+  // Extract the propagated trace context from the request and call the user handler
+  // in this context.
+  // Next.js already does this!
+  const req = {};
+  const getter = defaultTextMapGetter;
+  const active = contextApi.active();
+  const context = propagationApi.extract(active, {}, getter);
+  return contextApi.with(context, userHandler);
 }
 
 setupTelemetry();
@@ -78,6 +122,7 @@ async function handler() {
   );
 }
 
-void handler().then((result) => {
+// Bridge calls the user/framework code.
+void callFramework(handler).then((result) => {
   console.log("Complete. Result = [", result, "]");
 });
