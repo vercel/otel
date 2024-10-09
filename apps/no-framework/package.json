@@ -1,0 +1,25 @@
+{
+  "name": "no-framework",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "dev": "tsx watch ./index.ts",
+    "prod": "tsx ./index.ts"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/context-async-hooks": "^1.19.0",
+    "@opentelemetry/otlp-transformer": "^0.46.0",
+    "@opentelemetry/resources": "^1.19.0",
+    "@opentelemetry/sdk-trace-base": "^1.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "autoprefixer": "^10.0.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.1-canary.7",
+    "tsx": "^4.6.2",
+    "typescript": "^5"
+  }
+}
