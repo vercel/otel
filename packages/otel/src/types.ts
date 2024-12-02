@@ -67,10 +67,11 @@ export interface Configuration {
    * including:
    * - `service.name` - the service name.
    * - `node.env` - the value of `NODE_ENV` environment variable.
-   * - `env` - the Vercel deployment environment such as "production" or "preview" (`VERCEL_ENV` environment variable).
-   * - `vercel.region` - the Vercel deployment region (`VERCEL_REGION` environment variable).
-   * - `vercel.runtime` - "nodejs" or "edge" (`NEXT_RUNTIME` environment variable).
-   * - `vercel.sha` - the Vercel deployment Git SHA (`VERCEL_GIT_COMMIT_SHA` environment variable).
+   * - `deployment.environment` - the Vercel deployment environment such as "production" or "preview" (`VERCEL_ENV` environment variable).
+   * - `cloud.region` - the Vercel deployment region (`VERCEL_REGION` environment variable).
+   * - `cloud.provider` - set to `vercel`
+   * - `process.runtime.name` - "nodejs" or "edge" (`NEXT_RUNTIME` environment variable).
+   * - `vcs.repository.ref.revision` - the Vercel deployment Git SHA (`VERCEL_GIT_COMMIT_SHA` environment variable).
    * - `vercel.host` - the Vercel deployment host for the Git SHA (`VERCEL_URL` environment variable).
    * - `vercel.branch_host` - the Vercel deployment host for the branch (`VERCEL_BRANCH_URL` environment variable).
    * - `vercel.deployment_id` - the Vercel deployment ID (`VERCEL_DEPLOYMENT_ID` environment variable).

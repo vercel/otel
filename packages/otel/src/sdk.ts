@@ -103,10 +103,14 @@ export class Sdk {
         // Vercel.
         // https://vercel.com/docs/projects/environment-variables/system-environment-variables
         // Vercel Env set as top level attribute for simplicity. One of 'production', 'preview' or 'development'.
-        env: process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
-        "vercel.region": process.env.VERCEL_REGION,
-        "vercel.runtime": runtime,
-        "vercel.sha":
+        [SemanticResourceAttributes.DEPLOYMENT_ENVIRONMENT]: process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
+        [SemanticResourceAttributes.CLOUD_REGION]: process.env.VERCEL_REGION,
+        [SemanticResourceAttributes.CLOUD_PROVIDER]: "vercel",
+        [SemanticResourceAttributes.PROCESS_RUNTIME_NAME]: runtime,
+        // This semantic resource attribute is not yet part of the semantic conventions package we are using, but it
+        // exists within the specification.
+        // https://github.com/open-telemetry/semantic-conventions/blob/b6793e2df75446a9f1c3e459deccc801fa512342/model/registry/vcs.yaml#L43C13-L43C40
+        "vcs.repository.ref.revision":
           process.env.VERCEL_GIT_COMMIT_SHA ||
           process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
         "vercel.host":
