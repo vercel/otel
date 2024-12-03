@@ -61,7 +61,7 @@ export class Sdk {
   private meterProvider: MeterProvider | undefined;
   private disableInstrumentations: (() => void) | undefined;
 
-  public constructor(private configuration: Configuration = {}) { }
+  public constructor(private configuration: Configuration = {}) {}
 
   public start(): void {
     const env = getEnv();
@@ -117,10 +117,9 @@ export class Sdk {
           process.env.VERCEL_BRANCH_URL ||
           process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
           undefined,
-        "vercel.deployment_id":
-          process.env.VERCEL_DEPLOYMENT_ID ||
-          undefined,
-        [SemanticResourceAttributes.SERVICE_VERSION]: process.env.VERCEL_DEPLOYMENT_ID,
+        "vercel.deployment_id": process.env.VERCEL_DEPLOYMENT_ID || undefined,
+        [SemanticResourceAttributes.SERVICE_VERSION]:
+          process.env.VERCEL_DEPLOYMENT_ID,
 
         ...configuration.attributes,
       })
@@ -168,7 +167,10 @@ export class Sdk {
     this.tracerProvider = tracerProvider;
 
     if (configuration.logRecordProcessor) {
-      const loggerProvider = new LoggerProvider({ resource });
+      const loggerProvider = new LoggerProvider({
+        resource,
+        logRecordLimits: {},
+      });
       this.loggerProvider = loggerProvider;
       loggerProvider.addLogRecordProcessor(configuration.logRecordProcessor);
       logs.setGlobalLoggerProvider(loggerProvider);
