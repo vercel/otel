@@ -26,7 +26,7 @@ export function getVercelRequestContextAttributes(
 
     "vercel.request_id": parseRequestId(context.headers["x-vercel-id"]),
     "vercel.matched_path": context.headers["x-matched-path"],
-    "vercel.edge_region": context.headers["x-vercel-edge-region"],
+    "vercel.edge_region": process.env.VERCEL_REGION,
 
     ...rootAttrs,
   });
