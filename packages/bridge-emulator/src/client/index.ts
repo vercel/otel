@@ -102,7 +102,9 @@ class BridgeEmulatorServer implements Bridge {
         const waiting = this.waitingAck.get(json.testId);
         if (waiting) {
           waiting.finally(() => {
-            this.waitingAck.delete(json.testId);
+            if ("testId" in json) {
+              this.waitingAck.delete(json.testId);
+            }
             res.writeHead(200, "OK", { "X-Server": "bridge" });
             res.write("{}");
             res.end();
