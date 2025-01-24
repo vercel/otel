@@ -1,4 +1,5 @@
 import { Server, type IncomingMessage, type ServerResponse } from "node:http";
+import formidable from "formidable";
 
 export interface Bridge {
   port: number;
@@ -59,20 +60,43 @@ class BridgeEmulatorServer implements Bridge {
       req: IncomingMessage,
       res: ServerResponse
     ): Promise<void> => {
-      const body = await new Promise<Buffer>((resolve, reject) => {
-        const acc: Buffer[] = [];
-        req.on("data", (chunk: Buffer) => {
-          acc.push(chunk);
+      let json: BridgeEmulatorRequest;
+      if ((req.headers["content-type"] ?? "").includes("multipart/form-data")) {
+        json = await new Promise<BridgeEmulatorRequest>((resolve, reject) => {
+          const inst = formidable({});
+          inst.parse(req, (err, fields, _files) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve({
+              cmd: Array.isArray(fields.cmd) ? fields.cmd[0] : fields.cmd,
+              data: Object.fromEntries(
+                Object.entries(fields)
+                  .filter(([key]) => key.startsWith("data."))
+                  .map(([key, value]) => [
+                    key.slice(5),
+                    Array.isArray(value) ? value[0] : value,
+                  ])
+              ),
+            } as unknown as BridgeEmulatorRequest);
+          });
         });
-        req.on("end", () => {
-          resolve(Buffer.concat(acc));
+      } else {
+        const body = await new Promise<Buffer>((resolve, reject) => {
+          const acc: Buffer[] = [];
+          req.on("data", (chunk: Buffer) => {
+            acc.push(chunk);
+          });
+          req.on("end", () => {
+            resolve(Buffer.concat(acc));
+          });
+          req.on("error", reject);
         });
-        req.on("error", reject);
-      });
-
-      const json = JSON.parse(
-        body.toString("utf-8") || "{}"
-      ) as BridgeEmulatorRequest;
+        json = JSON.parse(
+          body.toString("utf-8") || "{}"
+        ) as BridgeEmulatorRequest;
+      }
 
       if (json.cmd === "ack") {
         const waiting = this.waitingAck.get(json.testId);

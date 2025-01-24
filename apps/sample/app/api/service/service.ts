@@ -16,9 +16,20 @@ export function runService(request: Request): Promise<string> {
         return "<no data>";
       }
 
+      let body: BodyInit | null = null;
+      const isFormData = url.searchParams.get("mode") === "formdata";
+      if (isFormData) {
+        const fd = new FormData();
+        fd.set("cmd", "echo");
+        fd.set("data.foo", "bar");
+        body = fd;
+      } else {
+        body = JSON.stringify({ cmd: "echo", data: { foo: "bar" } });
+      }
+
       const response = await fetch(dataUrl, {
         method: "POST",
-        body: JSON.stringify({ cmd: "echo", data: { foo: "bar" } }),
+        body,
         headers: { "X-Cmd": "echo" },
         cache: "no-store",
       });

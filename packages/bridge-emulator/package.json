@@ -28,6 +28,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "formidable": "3.5.2",
     "next": "14.2.1-canary.7"
   },
   "peerDependencies": {
@@ -35,10 +36,11 @@
     "@vercel/otel": "workspace:^"
   },
   "devDependencies": {
+    "@types/formidable": "3.4.5",
     "@types/node": "^20",
     "@vercel/otel": "workspace:^",
     "eslint-config": "workspace:*",
-    "typescript-config": "workspace:*",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-config": "workspace:*"
   }
 }

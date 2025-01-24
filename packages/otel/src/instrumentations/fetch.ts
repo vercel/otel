@@ -304,6 +304,11 @@ export class FetchInstrumentation implements Instrumentation {
 
       try {
         const startTime = Date.now();
+        // Remove "content-type" for a FormData body because undici regenerates
+        // a new multipart separator each time.
+        if (init?.body && init.body instanceof FormData) {
+          req.headers.delete("content-type");
+        }
         const res = await originalFetch(input, {
           ...init,
           headers: req.headers,
