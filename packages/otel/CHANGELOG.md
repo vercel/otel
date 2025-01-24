@@ -1,5 +1,12 @@
 # @vercel/otel
 
+## 1.10.1
+
+### Patch Changes
+
+- 2f43edb: Use VERCEL_REGION system env var instead of reading internal header
+- 4019976: Fix FormData in fetch instrumentation
+
 ## 1.10.0
 
 ### Minor Changes
