@@ -8,6 +8,7 @@
   "description": "Vercel wrapper around OpenTelemetry APIs",
   "author": "Vercel Inc",
   "license": "MIT",
+  "repository": "vercel/otel",
   "sideEffects": false,
   "type": "module",
   "exports": {
