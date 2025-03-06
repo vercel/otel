@@ -14,25 +14,19 @@ export class VercelRuntimePropagator implements TextMapPropagator {
   extract(context: Context): Context {
     const vrc = getVercelRequestContext();
     if (!vrc?.telemetry) {
-      diag.debug(
-        "[BridgePropagator].extract() No Vercel request context found."
-      );
+      diag.warn("@vercel/otel: Vercel telemetry extension not found.");
       return context;
     }
 
     const { rootSpanContext } = vrc.telemetry;
     if (!rootSpanContext) {
-      diag.debug(
-        "[BridgePropagator].extract() No rootSpanContext found in Vercel request context."
-      );
       return context;
     }
 
     diag.debug(
-      "[BridgePropagator].extract() Extracted rootSpanContext from Vercel request context.",
+      "@vercel/otel: Extracted root SpanContext from Vercel request context.",
       rootSpanContext
     );
-
     return tracing.setSpanContext(context, {
       ...rootSpanContext,
       isRemote: true,
