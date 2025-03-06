@@ -151,6 +151,13 @@ export interface Configuration {
   logRecordProcessor?: LogRecordProcessor;
   metricReader?: MetricReader;
   views?: View[];
+
+  /**
+   * Experimental features.
+   */
+  experimental?: {
+    exportViaVercelRuntime?: boolean;
+  };
 }
 
 export type AttributesFromHeaderFunc = <Carrier = unknown>(
