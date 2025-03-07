@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.10.2
+
+### Patch Changes
+
+- fc87b45: An experimental option for trace export via Vercel Runtime
+
 ## 1.10.1
 
 ### Patch Changes
