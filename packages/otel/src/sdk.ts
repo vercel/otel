@@ -51,6 +51,8 @@ import type {
 } from "./types";
 import { FetchInstrumentation } from "./instrumentations/fetch";
 import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propagator";
+import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
+import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 
 type Env = ReturnType<typeof parseEnvironment>;
 
@@ -61,7 +63,7 @@ export class Sdk {
   private meterProvider: MeterProvider | undefined;
   private disableInstrumentations: (() => void) | undefined;
 
-  public constructor(private configuration: Configuration = {}) { }
+  public constructor(private configuration: Configuration = {}) {}
 
   public start(): void {
     const env = getEnv();
@@ -117,10 +119,9 @@ export class Sdk {
           process.env.VERCEL_BRANCH_URL ||
           process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
           undefined,
-        "vercel.deployment_id":
-          process.env.VERCEL_DEPLOYMENT_ID ||
-          undefined,
-        [SemanticResourceAttributes.SERVICE_VERSION]: process.env.VERCEL_DEPLOYMENT_ID,
+        "vercel.deployment_id": process.env.VERCEL_DEPLOYMENT_ID || undefined,
+        [SemanticResourceAttributes.SERVICE_VERSION]:
+          process.env.VERCEL_DEPLOYMENT_ID,
 
         ...configuration.attributes,
       })
@@ -136,7 +137,11 @@ export class Sdk {
       resource = resource.merge(detectResourcesSync(internalConfig));
     }
 
-    const propagators = parsePropagators(configuration.propagators, env);
+    const propagators = parsePropagators(
+      configuration.propagators,
+      configuration,
+      env
+    );
     const traceSampler = parseSampler(configuration.traceSampler, env);
     const spanProcessors = parseSpanProcessor(
       configuration.spanProcessors,
@@ -260,6 +265,7 @@ function parseInstrumentations(
 
 function parsePropagators(
   arg: PropagatorOrName[] | undefined,
+  configuration: Configuration,
   env: Env
 ): TextMapPropagator[] {
   const envPropagators =
@@ -272,10 +278,31 @@ function parsePropagators(
         return [];
       }
       if (propagatorOrName === "auto") {
+        const autoList: { name: string; propagator: TextMapPropagator }[] = [];
+        autoList.push({
+          name: "tracecontext",
+          propagator: new W3CTraceContextPropagator(),
+        });
+        autoList.push({
+          name: "baggage",
+          propagator: new W3CBaggagePropagator(),
+        });
+
+        // It's important that Vercel Runtime propagator is the last in the
+        // list, because the last one wins.
+        if (configuration.experimental?.exportViaVercelRuntime) {
+          autoList.push({
+            name: "vercel-runtime",
+            propagator: new VercelRuntimePropagator(),
+          });
+        }
+
         diag.debug(
-          "@vercel/otel: Configure propagators: tracecontext, baggage"
+          `@vercel/otel: Configure propagators: ${autoList
+            .map((i) => i.name)
+            .join(", ")}`
         );
-        return [new W3CTraceContextPropagator(), new W3CBaggagePropagator()];
+        return autoList.map((i) => i.propagator);
       }
       if (propagatorOrName === "tracecontext") {
         diag.debug("@vercel/otel: Configure propagator: tracecontext");
@@ -382,6 +409,11 @@ function parseSpanProcessor(
     ...(arg ?? ["auto"])
       .map((spanProcessorOrName) => {
         if (spanProcessorOrName === "auto") {
+          if (configuration.experimental?.exportViaVercelRuntime) {
+            diag.debug("@vercel/otel: Configure vercel-runtime exporter");
+            return new BatchSpanProcessor(new VercelRuntimeSpanExporter());
+          }
+
           if (process.env.VERCEL_OTEL_ENDPOINTS) {
             // OTEL collector is configured on 4318 port.
             const port = process.env.VERCEL_OTEL_ENDPOINTS_PORT || "4318";

@@ -3,6 +3,8 @@
  * Replace with the real package once it's published.
  */
 
+import type { SpanContext } from "@opentelemetry/api";
+
 /** @internal */
 export interface VercelRequestContext {
   waitUntil: (
@@ -10,6 +12,10 @@ export interface VercelRequestContext {
   ) => void;
   headers: Record<string, string | undefined>;
   url: string;
+  telemetry?: {
+    reportSpans: (data: unknown) => void;
+    rootSpanContext?: SpanContext;
+  };
   [key: symbol]: unknown;
 }
 
