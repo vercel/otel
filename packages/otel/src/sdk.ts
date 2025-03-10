@@ -15,7 +15,7 @@ import {
   BatchSpanProcessor,
   RandomIdGenerator,
 } from "@opentelemetry/sdk-trace-base";
-import { metrics, diag, DiagConsoleLogger } from "@opentelemetry/api";
+import { metrics, diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { registerInstrumentations } from "@opentelemetry/instrumentation/build/src/autoLoader";
 import {
@@ -27,7 +27,6 @@ import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import {
-  getEnvWithoutDefaults,
   parseEnvironment,
   DEFAULT_ENVIRONMENT,
 } from "@opentelemetry/core/build/src/utils/environment";
@@ -56,6 +55,16 @@ import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 
 type Env = ReturnType<typeof parseEnvironment>;
 
+const logLevelMap: Record<string, DiagLogLevel> = {
+  ALL: DiagLogLevel.ALL,
+  VERBOSE: DiagLogLevel.VERBOSE,
+  DEBUG: DiagLogLevel.DEBUG,
+  INFO: DiagLogLevel.INFO,
+  WARN: DiagLogLevel.WARN,
+  ERROR: DiagLogLevel.ERROR,
+  NONE: DiagLogLevel.NONE,
+};
+
 export class Sdk {
   private contextManager: ContextManager | undefined;
   private tracerProvider: BasicTracerProvider | undefined;
@@ -63,11 +72,10 @@ export class Sdk {
   private meterProvider: MeterProvider | undefined;
   private disableInstrumentations: (() => void) | undefined;
 
-  public constructor(private configuration: Configuration = {}) {}
+  public constructor(private configuration: Configuration = {}) { }
 
   public start(): void {
     const env = getEnv();
-    const envWithoutDefaults = getEnvWithoutDefaults();
     const configuration = this.configuration;
     const runtime = process.env.NEXT_RUNTIME || "nodejs";
 
@@ -75,9 +83,9 @@ export class Sdk {
 
     // Default is INFO, use environment without defaults to check
     // if the user originally set the environment variable.
-    if (envWithoutDefaults.OTEL_LOG_LEVEL) {
+    if (process.env.OTEL_LOG_LEVEL) {
       diag.setLogger(new DiagConsoleLogger(), {
-        logLevel: envWithoutDefaults.OTEL_LOG_LEVEL,
+        logLevel: logLevelMap[process.env.OTEL_LOG_LEVEL.toUpperCase()],
       });
     }
 
@@ -407,11 +415,12 @@ function parseSpanProcessor(
 ): SpanProcessor[] {
   return [
     ...(arg ?? ["auto"])
-      .map((spanProcessorOrName) => {
+      .flatMap((spanProcessorOrName) => {
         if (spanProcessorOrName === "auto") {
+          const processors: SpanProcessor[] = [];
           if (configuration.experimental?.exportViaVercelRuntime) {
             diag.debug("@vercel/otel: Configure vercel-runtime exporter");
-            return new BatchSpanProcessor(new VercelRuntimeSpanExporter());
+            processors.push(new BatchSpanProcessor(new VercelRuntimeSpanExporter()));
           }
 
           if (process.env.VERCEL_OTEL_ENDPOINTS) {
@@ -434,7 +443,7 @@ function parseSpanProcessor(
               protocol === "http/protobuf"
                 ? new OTLPHttpProtoTraceExporter(config)
                 : new OTLPHttpJsonTraceExporter(config);
-            return new BatchSpanProcessor(exporter);
+            processors.push(new BatchSpanProcessor(exporter));
           }
 
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
@@ -444,10 +453,10 @@ function parseSpanProcessor(
             env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
             env.OTEL_EXPORTER_OTLP_ENDPOINT
           ) {
-            return new BatchSpanProcessor(parseTraceExporter(env));
+            processors.push(new BatchSpanProcessor(parseTraceExporter(env)));
           }
 
-          return undefined;
+          return processors.length > 0 ? processors : undefined;
         }
         return spanProcessorOrName;
       })
