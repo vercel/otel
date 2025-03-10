@@ -298,7 +298,7 @@ function parsePropagators(
 
         // It's important that Vercel Runtime propagator is the last in the
         // list, because the last one wins.
-        if (configuration.experimental?.exportViaVercelRuntime) {
+        if (configuration.spanProcessors.indexOf('experimental-vercel-trace') >= 0) {
           autoList.push({
             name: "vercel-runtime",
             propagator: new VercelRuntimePropagator(),
