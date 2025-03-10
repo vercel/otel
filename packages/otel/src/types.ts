@@ -37,7 +37,7 @@ export type SampleOrName =
   | "parentbased_traceidratio"
   | "traceidratio";
 
-export type SpanProcessorOrName = SpanProcessor | "auto";
+export type SpanProcessorOrName = SpanProcessor | "auto" | "experimental-vercel-trace";
 
 export type SpanExporterOrName = SpanExporter | "auto";
 
@@ -151,13 +151,6 @@ export interface Configuration {
   logRecordProcessor?: LogRecordProcessor;
   metricReader?: MetricReader;
   views?: View[];
-
-  /**
-   * Experimental features.
-   */
-  experimental?: {
-    exportViaVercelRuntime?: boolean;
-  };
 }
 
 export type AttributesFromHeaderFunc = <Carrier = unknown>(

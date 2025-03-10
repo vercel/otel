@@ -15,7 +15,7 @@ import {
   BatchSpanProcessor,
   RandomIdGenerator,
 } from "@opentelemetry/sdk-trace-base";
-import { metrics, diag, DiagConsoleLogger } from "@opentelemetry/api";
+import { metrics, diag, DiagConsoleLogger, DiagLogLevel } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { registerInstrumentations } from "@opentelemetry/instrumentation/build/src/autoLoader";
 import {
@@ -27,7 +27,6 @@ import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import {
-  getEnvWithoutDefaults,
   parseEnvironment,
   DEFAULT_ENVIRONMENT,
 } from "@opentelemetry/core/build/src/utils/environment";
@@ -56,6 +55,16 @@ import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 
 type Env = ReturnType<typeof parseEnvironment>;
 
+const logLevelMap: Record<string, DiagLogLevel> = {
+  ALL: DiagLogLevel.ALL,
+  VERBOSE: DiagLogLevel.VERBOSE,
+  DEBUG: DiagLogLevel.DEBUG,
+  INFO: DiagLogLevel.INFO,
+  WARN: DiagLogLevel.WARN,
+  ERROR: DiagLogLevel.ERROR,
+  NONE: DiagLogLevel.NONE,
+};
+
 export class Sdk {
   private contextManager: ContextManager | undefined;
   private tracerProvider: BasicTracerProvider | undefined;
@@ -63,11 +72,10 @@ export class Sdk {
   private meterProvider: MeterProvider | undefined;
   private disableInstrumentations: (() => void) | undefined;
 
-  public constructor(private configuration: Configuration = {}) {}
+  public constructor(private configuration: Configuration = {}) { }
 
   public start(): void {
     const env = getEnv();
-    const envWithoutDefaults = getEnvWithoutDefaults();
     const configuration = this.configuration;
     const runtime = process.env.NEXT_RUNTIME || "nodejs";
 
@@ -75,9 +83,9 @@ export class Sdk {
 
     // Default is INFO, use environment without defaults to check
     // if the user originally set the environment variable.
-    if (envWithoutDefaults.OTEL_LOG_LEVEL) {
+    if (process.env.OTEL_LOG_LEVEL) {
       diag.setLogger(new DiagConsoleLogger(), {
-        logLevel: envWithoutDefaults.OTEL_LOG_LEVEL,
+        logLevel: logLevelMap[process.env.OTEL_LOG_LEVEL.toUpperCase()],
       });
     }
 
@@ -290,7 +298,7 @@ function parsePropagators(
 
         // It's important that Vercel Runtime propagator is the last in the
         // list, because the last one wins.
-        if (configuration.experimental?.exportViaVercelRuntime) {
+        if (configuration.spanProcessors?.includes('experimental-vercel-trace')) {
           autoList.push({
             name: "vercel-runtime",
             propagator: new VercelRuntimePropagator(),
@@ -409,11 +417,6 @@ function parseSpanProcessor(
     ...(arg ?? ["auto"])
       .map((spanProcessorOrName) => {
         if (spanProcessorOrName === "auto") {
-          if (configuration.experimental?.exportViaVercelRuntime) {
-            diag.debug("@vercel/otel: Configure vercel-runtime exporter");
-            return new BatchSpanProcessor(new VercelRuntimeSpanExporter());
-          }
-
           if (process.env.VERCEL_OTEL_ENDPOINTS) {
             // OTEL collector is configured on 4318 port.
             const port = process.env.VERCEL_OTEL_ENDPOINTS_PORT || "4318";
@@ -448,6 +451,9 @@ function parseSpanProcessor(
           }
 
           return undefined;
+        } else if (spanProcessorOrName === 'experimental-vercel-trace') {
+          diag.debug("@vercel/otel: Configure vercel-runtime exporter");
+          return new BatchSpanProcessor(new VercelRuntimeSpanExporter());
         }
         return spanProcessorOrName;
       })
