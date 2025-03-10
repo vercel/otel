@@ -37,7 +37,7 @@ export type SampleOrName =
   | "parentbased_traceidratio"
   | "traceidratio";
 
-export type SpanProcessorOrName = SpanProcessor | "auto";
+export type SpanProcessorOrName = SpanProcessor | "auto" | "experimental-vercel-trace";
 
 export type SpanExporterOrName = SpanExporter | "auto";
 

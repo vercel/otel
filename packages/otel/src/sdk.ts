@@ -415,14 +415,8 @@ function parseSpanProcessor(
 ): SpanProcessor[] {
   return [
     ...(arg ?? ["auto"])
-      .flatMap((spanProcessorOrName) => {
+      .map((spanProcessorOrName) => {
         if (spanProcessorOrName === "auto") {
-          const processors: SpanProcessor[] = [];
-          if (configuration.experimental?.exportViaVercelRuntime) {
-            diag.debug("@vercel/otel: Configure vercel-runtime exporter");
-            processors.push(new BatchSpanProcessor(new VercelRuntimeSpanExporter()));
-          }
-
           if (process.env.VERCEL_OTEL_ENDPOINTS) {
             // OTEL collector is configured on 4318 port.
             const port = process.env.VERCEL_OTEL_ENDPOINTS_PORT || "4318";
@@ -443,7 +437,7 @@ function parseSpanProcessor(
               protocol === "http/protobuf"
                 ? new OTLPHttpProtoTraceExporter(config)
                 : new OTLPHttpJsonTraceExporter(config);
-            processors.push(new BatchSpanProcessor(exporter));
+            return new BatchSpanProcessor(exporter);
           }
 
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
@@ -453,10 +447,13 @@ function parseSpanProcessor(
             env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
             env.OTEL_EXPORTER_OTLP_ENDPOINT
           ) {
-            processors.push(new BatchSpanProcessor(parseTraceExporter(env)));
+            return new BatchSpanProcessor(parseTraceExporter(env));
           }
 
-          return processors.length > 0 ? processors : undefined;
+          return undefined;
+        } else if (spanProcessorOrName === 'experimental-vercel-trace') {
+          diag.debug("@vercel/otel: Configure vercel-runtime exporter");
+          return new BatchSpanProcessor(new VercelRuntimeSpanExporter());
         }
         return spanProcessorOrName;
       })
