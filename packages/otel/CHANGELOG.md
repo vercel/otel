@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.10.3
+
+### Patch Changes
+
+- 78b9c47: Removes the experimental configuration. Adds new `experimental-vercel-trace` spanProcessor
+
 ## 1.10.2
 
 ### Patch Changes

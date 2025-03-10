@@ -1,6 +1,6 @@
 {
   "name": "@vercel/otel",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "private": false,
   "publishConfig": {
     "access": "public"
