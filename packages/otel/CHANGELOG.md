@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.10.4
+
+### Patch Changes
+
+- 4488770: Fixes the experiment-vercel-trace propagator registration
+
 ## 1.10.3
 
 ### Patch Changes
