@@ -277,7 +277,8 @@ function parsePropagators(
   env: Env
 ): TextMapPropagator[] {
   const envPropagators =
-    env.OTEL_PROPAGATORS && env.OTEL_PROPAGATORS.length > 0
+    process.env.OTEL_PROPAGATORS &&
+      env.OTEL_PROPAGATORS && env.OTEL_PROPAGATORS.length > 0
       ? env.OTEL_PROPAGATORS
       : undefined;
   return (arg ?? envPropagators ?? ["auto"])
@@ -296,21 +297,16 @@ function parsePropagators(
           propagator: new W3CBaggagePropagator(),
         });
 
-        // It's important that Vercel Runtime propagator is the last in the
-        // list, because the last one wins.
-        if (configuration.spanProcessors?.includes('experimental-vercel-trace')) {
-          autoList.push({
-            name: "vercel-runtime",
-            propagator: new VercelRuntimePropagator(),
-          });
-        }
-
         diag.debug(
           `@vercel/otel: Configure propagators: ${autoList
             .map((i) => i.name)
             .join(", ")}`
         );
         return autoList.map((i) => i.propagator);
+      }
+      if (propagatorOrName === "experimental-vercel-trace") {
+        diag.debug("@vercel/otel: Configure propagator: vercel-runtime");
+        return new VercelRuntimePropagator();
       }
       if (propagatorOrName === "tracecontext") {
         diag.debug("@vercel/otel: Configure propagator: tracecontext");
