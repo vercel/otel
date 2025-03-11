@@ -277,7 +277,8 @@ function parsePropagators(
   env: Env
 ): TextMapPropagator[] {
   const envPropagators =
-    env.OTEL_PROPAGATORS && env.OTEL_PROPAGATORS.length > 0
+    process.env.OTEL_PROPAGATORS &&
+      env.OTEL_PROPAGATORS && env.OTEL_PROPAGATORS.length > 0
       ? env.OTEL_PROPAGATORS
       : undefined;
   return (arg ?? envPropagators ?? ["auto"])
