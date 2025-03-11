@@ -23,6 +23,7 @@ import type { FetchInstrumentationConfig } from "./instrumentations/fetch";
 export type PropagatorOrName =
   | TextMapPropagator
   | "auto"
+  | "experimental-vercel-trace"
   | "none"
   | "tracecontext"
   | "baggage";
