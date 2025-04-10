@@ -23,7 +23,6 @@ import type { FetchInstrumentationConfig } from "./instrumentations/fetch";
 export type PropagatorOrName =
   | TextMapPropagator
   | "auto"
-  | "experimental-vercel-trace"
   | "none"
   | "tracecontext"
   | "baggage";
@@ -38,7 +37,7 @@ export type SampleOrName =
   | "parentbased_traceidratio"
   | "traceidratio";
 
-export type SpanProcessorOrName = SpanProcessor | "auto" | "experimental-vercel-trace";
+export type SpanProcessorOrName = SpanProcessor | "auto";
 
 export type SpanExporterOrName = SpanExporter | "auto";
 
