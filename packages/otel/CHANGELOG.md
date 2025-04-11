@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.11.0
+
+### Minor Changes
+
+- bc25833: Releases the `vercel-runtime` trace propagator and span processor
+
 ## 1.10.4
 
 ### Patch Changes
