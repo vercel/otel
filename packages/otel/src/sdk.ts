@@ -417,7 +417,7 @@ function parseSpanProcessor(
 ): SpanProcessor[] {
   return [
     ...(arg ?? ["auto"])
-      .map((spanProcessorOrName) => {
+      .flatMap((spanProcessorOrName) => {
         if (spanProcessorOrName === "auto") {
           const processors: SpanProcessor[] = [
             new BatchSpanProcessor(new VercelRuntimeSpanExporter()),
@@ -443,11 +443,13 @@ function parseSpanProcessor(
               protocol === "http/protobuf"
                 ? new OTLPHttpProtoTraceExporter(config)
                 : new OTLPHttpJsonTraceExporter(config);
+
             processors.push(new BatchSpanProcessor(exporter));
+            // return new BatchSpanProcessor(exporter);
           }
 
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
-          if (
+          else if (
             !configuration.traceExporter ||
             configuration.traceExporter === "auto" ||
             env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
@@ -456,7 +458,7 @@ function parseSpanProcessor(
             return new BatchSpanProcessor(parseTraceExporter(env));
           }
 
-          return undefined;
+          return processors;
         }
         return spanProcessorOrName;
       })
