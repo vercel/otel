@@ -1,6 +1,7 @@
 import type { Configuration } from "@vercel/otel";
 import type {
   Context,
+  SpanContext,
   TextMapGetter,
   TextMapPropagator,
   TextMapSetter,
@@ -12,6 +13,10 @@ export interface VercelRequestContext {
   ) => void;
   headers: Record<string, string | undefined>;
   url: string;
+  telemetry?: {
+    reportSpans: (data: unknown) => void;
+    rootSpanContext?: SpanContext;
+  };
   [key: symbol]: unknown;
 }
 
@@ -99,6 +104,12 @@ export class BridgeEmulatorContextReader implements TextMapPropagator {
                 console.error("[BridgeEmulatorServer] waitUntil error:", e);
               }
             });
+        },
+        telemetry: {
+          reportSpans: (data): void => {
+            // eslint-disable-next-line no-console
+            console.log("[BridgeEmulatorServer] reportSpans", data);
+          },
         },
       };
     }
