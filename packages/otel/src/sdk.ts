@@ -445,7 +445,6 @@ function parseSpanProcessor(
                 : new OTLPHttpJsonTraceExporter(config);
 
             processors.push(new BatchSpanProcessor(exporter));
-            // return new BatchSpanProcessor(exporter);
           }
 
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
