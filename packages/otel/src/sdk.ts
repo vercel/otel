@@ -454,7 +454,7 @@ function parseSpanProcessor(
             env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
             env.OTEL_EXPORTER_OTLP_ENDPOINT
           ) {
-            return new BatchSpanProcessor(parseTraceExporter(env));
+            processors.push(new BatchSpanProcessor(parseTraceExporter(env)));
           }
 
           return processors;
