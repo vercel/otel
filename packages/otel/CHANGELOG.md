@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.12.0
+
+### Minor Changes
+
+- 26167e7: Fixes an issue where VERCEL_OTEL_ENDPOINTS is not set
+
 ## 1.11.0
 
 ### Minor Changes
