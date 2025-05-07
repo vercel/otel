@@ -20,8 +20,13 @@ To configure OpenTelemetry SDK, call the `registerOTel` in the `instrumentation.
 import { registerOTel } from "@vercel/otel";
 
 export function register() {
-  // Register the OpenTelemetry.
-  registerOTel("your-service-name");
+  // Register the OpenTelemetry and get SDK instance
+  const sdk = registerOTel("your-service-name");
+
+  // Optionally store SDK instance for shutdown
+  process.on("SIGTERM", async () => {
+    await sdk.shutdown();
+  });
 }
 ```
 
@@ -36,15 +41,15 @@ const span = trace.getTracer("your-component").startSpan("your-operation");
 
 ## 📖 API Reference
 
-### `registerOTel(serviceName: string)`
+### `registerOTel(serviceName: string): Sdk`
 
-Registers the OpenTelemetry SDK with the specified service name and the default configuration.
+Registers the OpenTelemetry SDK with the specified service name and the default configuration. Returns SDK instance for managing lifecycle.
 
-- `serviceName`: The name of your service, used as the app name in many OpenTelemetry backends.
+- serviceName: The name of your service, used as the app name in many OpenTelemetry backends.
 
-### `registerOTel(config: Configuration)`
+### `registerOTel(config: Configuration): Sdk`
 
-Registers the OpenTelemetry SDK with the specified configuration. Configuration options include:
+Registers the OpenTelemetry SDK with the specified configuration. Returns SDK instance for managing lifecycle. Configuration options include:
 
 - `serviceName`: The name of your service, used as the app name in many OpenTelemetry backends.
 - `attributes`: The resource attributes. By default, `@vercel/otel` configures relevant Vercel attributes based on [the environment](https://vercel.com/docs/projects/environment-variables/system-environment-variables), such as `env`, `vercel.runtime`, `vercel.host`, etc.
