@@ -272,7 +272,6 @@ export class FetchInstrumentation implements Instrumentation {
         let url: URL;
         let options: RequestOptions = {};
         let callback: Callback | undefined;
-        const args = [];
 
         // Parse arguments based on overload signatures
         if (typeof urlOrOptions === "string" || urlOrOptions instanceof URL) {
@@ -290,14 +289,12 @@ export class FetchInstrumentation implements Instrumentation {
             // url, options
             options = optionsOrCallback;
           }
-          args.push(url, options, callback);
         } else {
           // options[, callback] signature
           options = urlOrOptions;
           if (typeof optionsOrCallback === "function") {
             callback = optionsOrCallback;
           }
-          args.push(options, callback);
 
           // Construct URL from options
           const protocol = options.protocol || protocolFromModule;
