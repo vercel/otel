@@ -160,6 +160,7 @@ export class FetchInstrumentation implements Instrumentation {
       return match.test(urlString);
     });
   }
+
   shouldPropagate(
     url: URL,
     init: InternalRequestInit | undefined
@@ -215,7 +216,7 @@ export class FetchInstrumentation implements Instrumentation {
     });
   };
 
-  private _startSpan(tracer: Tracer, url: URL, fetchType: 'http' | 'fetch', method = "GET"): Span {
+  startSpan(tracer: Tracer, url: URL, fetchType: 'http' | 'fetch', method = "GET"): Span {
 
     const resourceNameTemplate = this.config.resourceNameTemplate;
 
@@ -305,7 +306,7 @@ export class FetchInstrumentation implements Instrumentation {
 
         const parentContext = context.active();
 
-        const span = this._startSpan(
+        const span = this.startSpan(
           tracer,
           url,
           'http',
@@ -425,7 +426,7 @@ export class FetchInstrumentation implements Instrumentation {
 
       const parentContext = context.active();
 
-      const span = this._startSpan(
+      const span = this.startSpan(
         tracer,
         url,
         'fetch',
