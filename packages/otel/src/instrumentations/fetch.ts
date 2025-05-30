@@ -163,7 +163,7 @@ export class FetchInstrumentation implements Instrumentation {
 
   shouldPropagate(
     url: URL,
-    init: InternalRequestInit | undefined
+    init?: InternalRequestInit
   ): boolean {
     const host =
       process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL || null;
@@ -322,7 +322,7 @@ export class FetchInstrumentation implements Instrumentation {
           return original.apply(this, [url, options, callback]);
         }
 
-        if (this.shouldPropagate(url, undefined)) {
+        if (this.shouldPropagate(url)) {
           const httpContext = traceApi.setSpan(parentContext, span);
           propagation.inject(httpContext, options.headers || {}, HEADERS_SETTER);
         }
@@ -330,7 +330,6 @@ export class FetchInstrumentation implements Instrumentation {
         if (attributesFromRequestHeaders) {
           headersToAttributes(span, attributesFromRequestHeaders, new Headers(convertHeaders(options.headers)));
         }
-
 
         try {
           const startTime = Date.now();
