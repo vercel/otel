@@ -8,6 +8,7 @@ import {
 import type {
   Attributes,
   Span,
+  SpanStatus,
   TextMapSetter,
   Tracer,
   TracerProvider,
@@ -335,9 +336,14 @@ export class FetchInstrumentation implements Instrumentation {
           const startTime = Date.now();
           const req = original.apply(this, [url, options, callback]);
 
-          req.on("response", (res: IncomingMessage) => {
+          req.prependListener('response', (res: IncomingMessage & { aborted?: boolean }) => {
             const duration = Date.now() - startTime;
             span.setAttribute("http.response_time", duration);
+
+            if (req.listenerCount('response') <= 1) {
+              res.resume();
+            }
+
             if (res.statusCode !== undefined) {
               span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.statusCode);
               if (res.statusCode >= 500) {
@@ -352,6 +358,16 @@ export class FetchInstrumentation implements Instrumentation {
             }
 
             res.on("end", () => {
+              let status: SpanStatus;
+              const statusCode = res.statusCode;
+              if (res.aborted && !res.complete) {
+                status = { code: SpanStatusCode.ERROR };
+              } else if (statusCode && statusCode >= 100 && statusCode < 500) {
+                status = { code: SpanStatusCode.UNSET };
+              } else {
+                status = { code: SpanStatusCode.ERROR };
+              }
+              span.setStatus(status);
               if (span.isRecording()) {
                 span.setAttribute(
                   SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
@@ -368,6 +384,13 @@ export class FetchInstrumentation implements Instrumentation {
               span.end();
             }
           });
+
+          req.on('close', () => {
+            if (span.isRecording()) {
+              span.end();
+            }
+          });
+
 
           return req;
         } catch (err) {
