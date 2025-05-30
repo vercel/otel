@@ -371,10 +371,8 @@ export class FetchInstrumentation implements Instrumentation {
 
           return req;
         } catch (err) {
-          if (span.isRecording()) {
-            onError(span, err);
-            span.end();
-          }
+          onError(span, err);
+          span.end();
           throw err;
         }
       };
