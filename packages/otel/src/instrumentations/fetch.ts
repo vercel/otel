@@ -324,7 +324,7 @@ export class FetchInstrumentation implements Instrumentation {
         if (this.shouldPropagate(url)) {
           const parentContext = context.active();
           const httpContext = traceApi.setSpan(parentContext, span);
-          propagation.inject(httpContext, options.headers || {}, HEADERS_SETTER);
+          propagation.inject(httpContext, options.headers || {}, HTTP_HEADERS_SETTER);
         }
 
         if (attributesFromRequestHeaders) {
@@ -461,7 +461,7 @@ export class FetchInstrumentation implements Instrumentation {
       if (this.shouldPropagate(url, init)) {
         const parentContext = context.active();
         const fetchContext = traceApi.setSpan(parentContext, span);
-        propagation.inject(fetchContext, req.headers, HEADERS_SETTER);
+        propagation.inject(fetchContext, req.headers, FETCH_HEADERS_SETTER);
       }
 
       if (attributesFromRequestHeaders) {
@@ -545,9 +545,16 @@ export class FetchInstrumentation implements Instrumentation {
   }
 }
 
-const HEADERS_SETTER: TextMapSetter<Headers | OutgoingHttpHeaders> = {
+const FETCH_HEADERS_SETTER: TextMapSetter<Headers> = {
   set(carrier: Headers, key: string, value: string): void {
     carrier.set(key, value);
+  },
+};
+
+const HTTP_HEADERS_SETTER: TextMapSetter<IncomingHttpHeaders> = {
+  set(carrier: IncomingHttpHeaders, key: string, value: string): void {
+    // Convert to lower case to match Node.js behavior.
+    carrier[key.toLowerCase()] = value;
   },
 };
 
