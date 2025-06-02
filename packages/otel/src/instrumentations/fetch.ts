@@ -216,7 +216,7 @@ export class FetchInstrumentation implements Instrumentation {
     });
   };
 
-  private startSpan(tracer: Tracer, url: URL, fetchType: 'http' | 'fetch', method = "GET", name?: string): Span {
+  private startSpan({ tracer, url, fetchType, method = "GET", name, attributes = {} }: { tracer: Tracer; url: URL; fetchType: 'http' | 'fetch'; method?: string; name?: string; attributes?: Attributes }): Span {
 
     const resourceNameTemplate = this.config.resourceNameTemplate;
 
@@ -245,6 +245,7 @@ export class FetchInstrumentation implements Instrumentation {
           ...attrs,
           "operation.name": `${fetchType}.${method}`,
           "resource.name": resourceName,
+          ...attributes,
         },
       },
       parentContext
@@ -306,12 +307,12 @@ export class FetchInstrumentation implements Instrumentation {
 
         const parentContext = context.active();
 
-        const span = this.startSpan(
+        const span = this.startSpan({
           tracer,
           url,
-          'http',
-          options.method || "GET"
-        );
+          fetchType: 'http',
+          method: options.method || "GET"
+        });
 
         if (this.shouldIgnore(url)) {
           return original.apply(this, [url, options, callback]);
@@ -447,13 +448,14 @@ export class FetchInstrumentation implements Instrumentation {
 
       const parentContext = context.active();
 
-      const span = this.startSpan(
+      const span = this.startSpan({
         tracer,
         url,
-        'fetch',
-        req.method,
-        init?.opentelemetry?.spanName,
-      );
+        fetchType: 'fetch',
+        method: req.method,
+        name: init?.opentelemetry?.spanName,
+        attributes: init?.opentelemetry?.attributes,
+      });
 
       if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
         span.end();
