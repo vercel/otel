@@ -328,7 +328,12 @@ export class FetchInstrumentation implements Instrumentation {
         }
 
         if (attributesFromRequestHeaders) {
-          headersToAttributes(span, attributesFromRequestHeaders, new Headers(convertHeaders(options.headers)));
+            headersToAttributes<OutgoingHttpHeaders>(
+            span,
+            attributesFromRequestHeaders,
+            options.headers || {},
+            HTTP_HEADERS_GETTER
+            );
         }
 
         try {
@@ -349,7 +354,7 @@ export class FetchInstrumentation implements Instrumentation {
             }
 
             if (attributesFromResponseHeaders) {
-              headersToAttributes(span, attributesFromResponseHeaders, convertHeaders(res.headers));
+              headersToAttributes<IncomingHttpHeaders>(span, attributesFromResponseHeaders, res.headers, HTTP_HEADERS_GETTER);
             }
 
             if (req.listenerCount('response') <= 1) {
@@ -465,7 +470,7 @@ export class FetchInstrumentation implements Instrumentation {
       }
 
       if (attributesFromRequestHeaders) {
-        headersToAttributes(span, attributesFromRequestHeaders, req.headers);
+        headersToAttributes<Headers>(span, attributesFromRequestHeaders, req.headers, FETCH_HEADERS_GETTER);
       }
 
       try {
@@ -483,7 +488,7 @@ export class FetchInstrumentation implements Instrumentation {
         span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
         span.setAttribute("http.response_time", duration);
         if (attributesFromResponseHeaders) {
-          headersToAttributes(span, attributesFromResponseHeaders, res.headers);
+          headersToAttributes<Headers>(span, attributesFromResponseHeaders, res.headers, FETCH_HEADERS_GETTER);
         }
         if (res.status >= 500) {
           onError(span, `Status: ${res.status} (${res.statusText})`);
@@ -545,16 +550,42 @@ export class FetchInstrumentation implements Instrumentation {
   }
 }
 
+export interface HeaderGetter<Carrier = unknown> {
+  /**
+   * Get the value of a specific key from the carrier.
+   *
+   * @param carrier - The carrier object to retrieve the value from
+   * @param key - The key to retrieve the value for
+   */
+  get: (carrier: Carrier, key: string) => undefined | string | string[];
+}
+
 const FETCH_HEADERS_SETTER: TextMapSetter<Headers> = {
   set(carrier: Headers, key: string, value: string): void {
     carrier.set(key, value);
   },
 };
 
+const FETCH_HEADERS_GETTER: HeaderGetter<Headers> = {
+  get(carrier: Headers, key: string): string | string[] | undefined {
+    const value = carrier.get(key);
+    if (value === null) {
+      return undefined;
+    }
+    return value.includes(",") ? value.split(",").map(v => v.trimStart()) : value;
+  }
+};
+
 const HTTP_HEADERS_SETTER: TextMapSetter<IncomingHttpHeaders> = {
   set(carrier: IncomingHttpHeaders, key: string, value: string): void {
     // Convert to lower case to match Node.js behavior.
     carrier[key.toLowerCase()] = value;
+  },
+};
+
+const HTTP_HEADERS_GETTER: HeaderGetter<OutgoingHttpHeaders> = {
+  get(carrier: OutgoingHttpHeaders, key: string): string | string[] | undefined {
+    return carrier[key.toLowerCase()] as string | string[] | undefined;
   },
 };
 
@@ -598,30 +629,16 @@ function onError(span: Span, err: unknown): void {
   }
 }
 
-function headersToAttributes(
+function headersToAttributes<T = unknown>(
   span: Span,
   attrsToHeadersMap: Record<string, string>,
-  headers: Headers
+  headers: T,
+  getter: HeaderGetter<T>
 ): void {
   for (const [attrName, headerName] of Object.entries(attrsToHeadersMap)) {
-    const headerValue = headers.get(headerName);
-    if (headerValue !== null) {
+    const headerValue = getter.get(headers, headerName);
+    if (headerValue !== undefined) {
       span.setAttribute(attrName, headerValue);
     }
   }
-}
-
-function convertHeaders(incomingHeaders: IncomingHttpHeaders | OutgoingHttpHeaders | undefined): Headers {
-  const headers = new Headers();
-  if (!incomingHeaders) {
-    return headers;
-  }
-  for (const [key, value] of Object.entries(incomingHeaders)) {
-    if (Array.isArray(value)) {
-      headers.append(key, value.join(", "));
-    } else if (value !== undefined) {
-      headers.append(key, value.toString());
-    }
-  }
-  return headers;
 }
