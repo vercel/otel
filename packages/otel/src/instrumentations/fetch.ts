@@ -305,7 +305,9 @@ export class FetchInstrumentation implements Instrumentation {
           url = new URL(`${protocol}//${host}${path}`);
         }
 
-        const parentContext = context.active();
+        if (this.shouldIgnore(url)) {
+          return original.apply(this, [url, options, callback]);
+        }
 
         const span = this.startSpan({
           tracer,
@@ -314,16 +316,13 @@ export class FetchInstrumentation implements Instrumentation {
           method: options.method || "GET"
         });
 
-        if (this.shouldIgnore(url)) {
-          return original.apply(this, [url, options, callback]);
-        }
-
         if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
           span.end();
           return original.apply(this, [url, options, callback]);
         }
 
         if (this.shouldPropagate(url)) {
+          const parentContext = context.active();
           const httpContext = traceApi.setSpan(parentContext, span);
           propagation.inject(httpContext, options.headers || {}, HEADERS_SETTER);
         }
@@ -416,7 +415,6 @@ export class FetchInstrumentation implements Instrumentation {
       this.instrumentationVersion
     );
 
-
     const { attributesFromRequestHeaders, attributesFromResponseHeaders } =
       this.config;
 
@@ -446,8 +444,6 @@ export class FetchInstrumentation implements Instrumentation {
         return originalFetch(input, init);
       }
 
-      const parentContext = context.active();
-
       const span = this.startSpan({
         tracer,
         url,
@@ -463,6 +459,7 @@ export class FetchInstrumentation implements Instrumentation {
       }
 
       if (this.shouldPropagate(url, init)) {
+        const parentContext = context.active();
         const fetchContext = traceApi.setSpan(parentContext, span);
         propagation.inject(fetchContext, req.headers, HEADERS_SETTER);
       }
