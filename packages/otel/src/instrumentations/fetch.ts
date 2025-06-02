@@ -23,7 +23,6 @@ import { resolveTemplate } from "../util/template";
 import { getVercelRequestContext } from "../vercel-request-context/api";
 import type { Callback, Http, Https, IncomingHttpHeaders, IncomingMessage, OutgoingHttpHeaders, RequestOptions } from './types';
 
-
 /**
  * Configuration for the "fetch" instrumentation.
  *
@@ -139,7 +138,7 @@ export class FetchInstrumentation implements Instrumentation {
   setMeterProvider(): void {
     // Nothing.
   }
-  shouldIgnore(
+  private shouldIgnore(
     url: URL,
     init?: InternalRequestInit
   ): boolean {
@@ -162,7 +161,7 @@ export class FetchInstrumentation implements Instrumentation {
     });
   }
 
-  shouldPropagate(
+  private shouldPropagate(
     url: URL,
     init?: InternalRequestInit
   ): boolean {
@@ -217,7 +216,7 @@ export class FetchInstrumentation implements Instrumentation {
     });
   };
 
-  startSpan(tracer: Tracer, url: URL, fetchType: 'http' | 'fetch', method = "GET"): Span {
+  private startSpan(tracer: Tracer, url: URL, fetchType: 'http' | 'fetch', method = "GET", name?: string): Span {
 
     const resourceNameTemplate = this.config.resourceNameTemplate;
 
