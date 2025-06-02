@@ -17,7 +17,7 @@ import type {
   Instrumentation,
   InstrumentationConfig,
 } from "@opentelemetry/instrumentation";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import * as SemanticAttributes from "../semantic-resource-attributes";
 import { isSampled } from "../util/sampled";
 import { resolveTemplate } from "../util/template";
 import { getVercelRequestContext } from "../vercel-request-context/api";
