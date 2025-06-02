@@ -233,7 +233,7 @@ export class FetchInstrumentation implements Instrumentation {
       ? resolveTemplate(resourceNameTemplate, attrs)
       : removeSearch(url.toString());
 
-    const spanName = `${fetchType} ${method} ${url.toString()}`;
+    const spanName = name ?? `${fetchType} ${method} ${url.toString()}`;
 
     const parentContext = context.active();
 
@@ -451,7 +451,8 @@ export class FetchInstrumentation implements Instrumentation {
         tracer,
         url,
         'fetch',
-        req.method
+        req.method,
+        init?.opentelemetry?.spanName,
       );
 
       if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
