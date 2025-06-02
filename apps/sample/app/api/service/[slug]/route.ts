@@ -6,7 +6,8 @@ export async function GET(
   request: Request,
   { params }: { params: { slug: string } }
 ) {
-  const data = await runService(request);
+  const http = await import('node:http')
+  const data = await runService(request, http);
   return new Response(`Success ${params.slug} ${data}`, {
     status: 200,
   });
