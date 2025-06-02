@@ -339,10 +339,6 @@ export class FetchInstrumentation implements Instrumentation {
             const duration = Date.now() - startTime;
             span.setAttribute("http.response_time", duration);
 
-            if (req.listenerCount('response') <= 1) {
-              res.resume();
-            }
-
             if (res.statusCode !== undefined) {
               span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.statusCode);
               if (res.statusCode >= 500) {
@@ -354,6 +350,10 @@ export class FetchInstrumentation implements Instrumentation {
 
             if (attributesFromResponseHeaders) {
               headersToAttributes(span, attributesFromResponseHeaders, convertHeaders(res.headers));
+            }
+
+            if (req.listenerCount('response') <= 1) {
+              res.resume();
             }
 
             res.on("end", () => {
