@@ -1,3 +1,5 @@
+import type * as http from 'node:http';
+import type * as https from 'node:https';
 import {
   SpanKind,
   SpanStatusCode,
@@ -21,8 +23,15 @@ import * as SemanticAttributes from "../semantic-resource-attributes";
 import { isSampled } from "../util/sampled";
 import { resolveTemplate } from "../util/template";
 import { getVercelRequestContext } from "../vercel-request-context/api";
-import type { Callback, Http, Https, IncomingHttpHeaders, IncomingMessage, OutgoingHttpHeaders, RequestOptions } from './types';
 
+type RequestOptions = http.RequestOptions;
+type IncomingMessage = http.IncomingMessage;
+
+type IncomingHttpHeaders = http.IncomingHttpHeaders;
+type OutgoingHttpHeaders = http.OutgoingHttpHeaders;
+type Callback = (res: IncomingMessage) => void;
+type Http = typeof http;
+type Https = typeof https;
 /**
  * Configuration for the "fetch" instrumentation.
  *
