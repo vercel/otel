@@ -367,10 +367,10 @@ export class FetchInstrumentation implements Instrumentation {
                 status = { code: SpanStatusCode.ERROR };
               }
               span.setStatus(status);
-              if (span.isRecording()) {
+              if (span.isRecording() && res.headers["content-length"]) {
                 span.setAttribute(
                   SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
-                  res.headers["content-length"] || 0
+                  res.headers["content-length"]
                 );
                 span.end();
               }
