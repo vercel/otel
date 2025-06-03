@@ -226,7 +226,6 @@ export class FetchInstrumentation implements Instrumentation {
   };
 
   private startSpan({ tracer, url, fetchType, method = "GET", name, attributes = {} }: { tracer: Tracer; url: URL; fetchType: 'http' | 'fetch'; method?: string; name?: string; attributes?: Attributes }): Span {
-
     const resourceNameTemplate = this.config.resourceNameTemplate;
 
     const attrs = {
@@ -307,11 +306,7 @@ export class FetchInstrumentation implements Instrumentation {
             callback = optionsOrCallback;
           }
 
-          // Construct URL from options
-          const protocol = options.protocol || protocolFromModule;
-          const host = options.host || options.hostname || "localhost";
-          const path = options.path || "/";
-          url = new URL(`${protocol}//${host}${path}`);
+          url = constructUrlFromRequestOptions(options, protocolFromModule);
         }
 
         if (this.shouldIgnore(url)) {
@@ -650,4 +645,83 @@ function headersToAttributes<T = unknown>(
       span.setAttribute(attrName, headerValue);
     }
   }
+}
+
+function constructUrlFromRequestOptions(options: http.RequestOptions, protocolFromModule: string): URL {
+  if (options.socketPath) {
+    throw new Error(
+      'Cannot construct a network URL: options.socketPath is specified, indicating a Unix domain socket.'
+    );
+  }
+
+  let protocol = options.protocol ?? protocolFromModule;
+
+  if (protocol && !protocol.endsWith(':')) {
+    protocol += ':';
+  }
+
+  // Per documentation: "hostname will be used if both host and hostname are specified."
+  // If options.hostname is present, it takes precedence.
+  // If options.hostname is absent, options.host is used (which might contain 'hostname:port').
+  let hostname = options.hostname;
+  let port = options.port ?? options.defaultPort; // Can be string (e.g. from URL.port), number, or undefined
+
+  if (!hostname && options.host) {
+    // Try to parse hostname and port from options.host
+    const hostParts = options.host.split(':');
+    hostname = hostParts[0];
+    const portPart = hostParts[1];
+    if (hostParts.length > 1 && portPart && port === undefined) {
+      const parsedPort = parseInt(portPart, 10);
+      if (!isNaN(parsedPort)) {
+        port = parsedPort;
+      }
+    }
+  }
+
+  // If hostname is still not determined (e.g. options.host was also undefined or only a port like ':8080')
+  // use default 'localhost' as per http.request behavior for options.host.
+  if (!hostname) {
+    hostname = 'localhost';
+  }
+
+  if (!hostname) { // Should not happen if default to localhost is applied
+    throw new Error('Cannot construct URL: Hostname could not be determined.');
+  }
+
+
+  // Resolve port: use options.port if provided, otherwise default based on protocol.
+  // Note: options.defaultPort is an internal http.request mechanism. For reconstruction,
+  // if options.port is missing, we assume standard default ports.
+  let numericPort;
+  if (port !== undefined && port !== '') {
+    const parsed = parseInt(String(port), 10);
+    if (!isNaN(parsed)) {
+      numericPort = parsed;
+    } else {
+      // Invalid port value, fall back to default for protocol
+      numericPort = (protocol === 'https:') ? 443 : 80;
+    }
+  } else {
+    numericPort = (protocol === 'https:') ? 443 : 80;
+  }
+
+  const path = options.path || '/';
+
+  // Construct the base URL string (protocol://hostname:port)
+  // The URL constructor handles default ports correctly (omits them if standard).
+  const baseUrlString = `${protocol}//${hostname}:${numericPort}`;
+
+  const url = new URL(path, baseUrlString);
+
+  // Handle auth (user:password)
+  if (options.auth) {
+    const authParts = options.auth.split(':');
+    url.username = decodeURIComponent(authParts[0] || '');
+    if (authParts.length > 1) {
+      url.password = decodeURIComponent(authParts[1] || '');
+    }
+  }
+
+  return url;
 }
