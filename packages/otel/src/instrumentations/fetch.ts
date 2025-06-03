@@ -334,7 +334,7 @@ export class FetchInstrumentation implements Instrumentation {
         }
 
         if (attributesFromRequestHeaders) {
-            headersToAttributes<OutgoingHttpHeaders>(
+            headersToAttributes(
             span,
             attributesFromRequestHeaders,
             options.headers || {},
@@ -360,7 +360,7 @@ export class FetchInstrumentation implements Instrumentation {
             }
 
             if (attributesFromResponseHeaders) {
-              headersToAttributes<IncomingHttpHeaders>(span, attributesFromResponseHeaders, res.headers, HTTP_HEADERS_GETTER);
+              headersToAttributes(span, attributesFromResponseHeaders, res.headers, HTTP_HEADERS_GETTER);
             }
 
             if (req.listenerCount('response') <= 1) {
@@ -478,7 +478,7 @@ export class FetchInstrumentation implements Instrumentation {
       }
 
       if (attributesFromRequestHeaders) {
-        headersToAttributes<Headers>(span, attributesFromRequestHeaders, req.headers, FETCH_HEADERS_GETTER);
+        headersToAttributes(span, attributesFromRequestHeaders, req.headers, FETCH_HEADERS_GETTER);
       }
 
       try {
@@ -496,7 +496,7 @@ export class FetchInstrumentation implements Instrumentation {
         span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
         span.setAttribute("http.response_time", duration);
         if (attributesFromResponseHeaders) {
-          headersToAttributes<Headers>(span, attributesFromResponseHeaders, res.headers, FETCH_HEADERS_GETTER);
+          headersToAttributes(span, attributesFromResponseHeaders, res.headers, FETCH_HEADERS_GETTER);
         }
         if (res.status >= 500) {
           onError(span, `Status: ${res.status} (${res.statusText})`);
@@ -637,11 +637,11 @@ function onError(span: Span, err: unknown): void {
   }
 }
 
-function headersToAttributes<T = unknown>(
+function headersToAttributes(
   span: Span,
   attrsToHeadersMap: Record<string, string>,
-  headers: T,
-  getter: HeaderGetter<T>
+  headers: Headers | IncomingHttpHeaders | OutgoingHttpHeaders,
+  getter: TextMapGetter<Headers | IncomingHttpHeaders | OutgoingHttpHeaders>
 ): void {
   for (const [attrName, headerName] of Object.entries(attrsToHeadersMap)) {
     const headerValue = getter.get(headers, headerName);
