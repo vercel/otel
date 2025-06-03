@@ -1,7 +1,7 @@
 import type * as http from 'node:http';
 import { Span, trace } from "@opentelemetry/api";
 
-export function runService(request: Request): Promise<string> {
+export function runService(request: Request, httpModule?: typeof http): Promise<string> {
   const url = new URL(request.url);
   const fetchType = url.searchParams.get("fetchType") ?? "fetch";
   return trace.getTracer("sample").startActiveSpan(
@@ -29,20 +29,26 @@ export function runService(request: Request): Promise<string> {
       } else {
         body = JSON.stringify({ cmd: "echo", data: { foo: "bar" } });
       }
-      if (fetchType === "http") {
-        const req = new Request(location.origin, {
-          method: `POST`,
+      if (httpModule && fetchType === "http") {
+        const internalServiceRequest = new Request(dataUrl, {
+          method: "POST",
           body,
         });
         const td = new TextDecoder('utf-8');
-        const httpBody = td.decode(await req.arrayBuffer());
+        const httpBody = td.decode(await internalServiceRequest.arrayBuffer());
+        const headersForNodeRequest: Record<string, string> = {}
+        internalServiceRequest.headers.forEach((value, key) => {
+          headersForNodeRequest[key] = value
+        })
+        headersForNodeRequest["Content-Length"] = String(Buffer.byteLength(httpBody, "utf-8"))
         return makeApiCallWithHttp(
           dataUrl,
           {
             body: httpBody,
-            headers: { "X-Cmd": "echo" }
+            headers: { "X-Cmd": "echo", ...headersForNodeRequest }
           },
-          span
+          span,
+          httpModule
         );
       }
       return makeApiCallWithFetch(
@@ -79,31 +85,33 @@ async function makeApiCallWithFetch(
   return json.foo;
 }
 
-function makeApiCallWithHttp(
+async function makeApiCallWithHttp(
   dataUrl: string,
   { body, headers }: {
     body: Buffer | string;
     headers: Record<string, string>;
   },
-  span: Span
+  span: Span,
+  httpModule: typeof http
 ): Promise<string> {
-  const protocol = dataUrl.startsWith("https") ? "https" : "http";
   return new Promise((resolve, reject) => {
-    const { request } = require(protocol);
+    const parsedUrl = new URL(dataUrl);
     const options = {
       method: "POST",
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port,
+      path: parsedUrl.pathname + parsedUrl.search,
       headers: {
         ...headers,
-        "Content-Type": "application/json",
       },
     };
 
-    const req = request(dataUrl, options, (res: http.IncomingMessage) => {
+    const request = httpModule.request(options, (response: http.IncomingMessage) => {
       let data = "";
-      res.on("data", (chunk) => {
+      response.on("data", (chunk) => {
         data += chunk;
       });
-      res.on("end", () => {
+      response.on("end", () => {
         span.end();
         if (dataUrl.includes("example")) {
           resolve(data);
@@ -119,12 +127,12 @@ function makeApiCallWithHttp(
       });
     });
 
-    req.on("error", (err: unknown) => {
+    request.on("error", (err: unknown) => {
       reject(err);
     });
 
-    req.write(body);
-    req.end();
+    request.write(body);
+    request.end();
   });
 }
 
