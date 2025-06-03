@@ -252,6 +252,7 @@ export class FetchInstrumentation implements Instrumentation {
         attributes: {
           ...attrs,
           "operation.name": `${fetchType}.${method}`,
+          'http.client.name': fetchType,
           "resource.name": resourceName,
           ...attributes,
         },
