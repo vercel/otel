@@ -264,7 +264,7 @@ describe("vercel deployment: api inbound with http", {}, (props) => {
     });
   });
 
-  it.only("should trace api with FormData for serverless", async () => {
+  it("should trace api with FormData for serverless", async () => {
     const { port, collector, bridge } = props();
 
     const execResp = await bridge.fetch(
