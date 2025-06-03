@@ -11,6 +11,7 @@ import type {
   Attributes,
   Span,
   SpanStatus,
+  TextMapGetter,
   TextMapSetter,
   Tracer,
   TracerProvider,
@@ -557,30 +558,27 @@ export class FetchInstrumentation implements Instrumentation {
   }
 }
 
-export interface HeaderGetter<Carrier = unknown> {
-  /**
-   * Get the value of a specific key from the carrier.
-   *
-   * @param carrier - The carrier object to retrieve the value from
-   * @param key - The key to retrieve the value for
-   */
-  get: (carrier: Carrier, key: string) => undefined | string | string[];
-}
-
 const FETCH_HEADERS_SETTER: TextMapSetter<Headers> = {
   set(carrier: Headers, key: string, value: string): void {
     carrier.set(key, value);
   },
 };
 
-const FETCH_HEADERS_GETTER: HeaderGetter<Headers> = {
+const FETCH_HEADERS_GETTER: TextMapGetter<Headers> = {
   get(carrier: Headers, key: string): string | string[] | undefined {
     const value = carrier.get(key);
     if (value === null) {
       return undefined;
     }
     return value.includes(",") ? value.split(",").map(v => v.trimStart()) : value;
-  }
+  },
+  keys(carrier: Headers): string[] {
+    const keys: string[] = [];
+    carrier.forEach((_, key) => {
+      keys.push(key);
+    });
+    return keys;
+  },
 };
 
 const HTTP_HEADERS_SETTER: TextMapSetter<IncomingHttpHeaders> = {
@@ -590,10 +588,13 @@ const HTTP_HEADERS_SETTER: TextMapSetter<IncomingHttpHeaders> = {
   },
 };
 
-const HTTP_HEADERS_GETTER: HeaderGetter<OutgoingHttpHeaders> = {
+const HTTP_HEADERS_GETTER: TextMapGetter<OutgoingHttpHeaders> = {
   get(carrier: OutgoingHttpHeaders, key: string): string | string[] | undefined {
     return carrier[key.toLowerCase()] as string | string[] | undefined;
   },
+  keys(carrier): string[] {
+    return Object.keys(carrier);
+  }
 };
 
 function removeSearch(url: string): string {
