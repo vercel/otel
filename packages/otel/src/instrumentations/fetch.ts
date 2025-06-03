@@ -376,11 +376,13 @@ export class FetchInstrumentation implements Instrumentation {
                 status = { code: SpanStatusCode.ERROR };
               }
               span.setStatus(status);
-              if (span.isRecording() && res.headers["content-length"]) {
-                span.setAttribute(
-                  SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
-                  res.headers["content-length"]
-                );
+              if (span.isRecording()) {
+                if (res.headers["content-length"]) {
+                  span.setAttribute(
+                    SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
+                    res.headers["content-length"]
+                  );
+                }
                 span.end();
               }
             });
