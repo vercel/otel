@@ -52,7 +52,7 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
-              attributes: { scope: "sample", foo: "bar", "fetch.type": "fetch" },
+              attributes: { scope: "sample", foo: "bar" },
               spans: [
                 {
                   name: `fetch POST http://localhost:${bridge.port}/`,
@@ -62,6 +62,7 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
                     "http.url": `http://localhost:${bridge.port}/`,
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
+                    "http.client.name": "fetch",
                   },
                   spans: [],
                 },
@@ -121,7 +122,7 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
-              attributes: { scope: "sample", foo: "bar", "fetch.type": "fetch" },
+              attributes: { scope: "sample", foo: "bar" },
               spans: [
                 {
                   name: `fetch POST http://localhost:${bridge.port}/`,
@@ -131,6 +132,7 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
                     "http.url": `http://localhost:${bridge.port}/`,
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
+                    "http.client.name": "fetch",
                   },
                   spans: [],
                 },
@@ -174,7 +176,7 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
         {
           name: "sample-span",
           kind: SpanKind.INTERNAL,
-          attributes: { scope: "sample", foo: "bar", "fetch.type": "fetch" },
+          attributes: { scope: "sample", foo: "bar" },
           spans: [
             {
               name: `fetch POST http://localhost:${bridge.port}/`,
@@ -184,6 +186,7 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
                 "http.url": `http://localhost:${bridge.port}/`,
                 "net.peer.name": "localhost",
                 "net.peer.port": `${bridge.port}`,
+                "http.client.name": "fetch",
               },
               spans: [],
             },
@@ -243,7 +246,7 @@ describe("vercel deployment: api inbound with http", {}, (props) => {
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
-              attributes: { scope: "sample", foo: "bar", "fetch.type": "http" },
+              attributes: { scope: "sample", foo: "bar" },
               spans: [
                 {
                   name: `http POST http://localhost:${bridge.port}/`,
@@ -253,6 +256,7 @@ describe("vercel deployment: api inbound with http", {}, (props) => {
                     "http.url": `http://localhost:${bridge.port}/`,
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
+                    "http.client.name": "http",
                   },
                   spans: [],
                 },
@@ -312,7 +316,7 @@ describe("vercel deployment: api inbound with http", {}, (props) => {
             {
               name: "sample-span",
               kind: SpanKind.INTERNAL,
-              attributes: { scope: "sample", foo: "bar", "fetch.type": "http" },
+              attributes: { scope: "sample", foo: "bar" },
               spans: [
                 {
                   name: `http POST http://localhost:${bridge.port}/`,
@@ -322,6 +326,7 @@ describe("vercel deployment: api inbound with http", {}, (props) => {
                     "http.url": `http://localhost:${bridge.port}/`,
                     "net.peer.name": "localhost",
                     "net.peer.port": `${bridge.port}`,
+                    "http.client.name": "http",
                   },
                   spans: [],
                 },
