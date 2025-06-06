@@ -689,10 +689,6 @@ function constructUrlFromRequestOptions(options: http.RequestOptions, protocolFr
     hostname = 'localhost';
   }
 
-  if (!hostname) { // Should not happen if default to localhost is applied
-    throw new Error('Cannot construct URL: Hostname could not be determined.');
-  }
-
 
   // Resolve port: use options.port if provided, otherwise default based on protocol.
   // Note: options.defaultPort is an internal http.request mechanism. For reconstruction,
