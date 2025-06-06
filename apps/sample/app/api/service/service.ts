@@ -1,7 +1,7 @@
-import type * as http from 'node:http';
+import type * as Http from 'node:http';
 import { Span, trace } from "@opentelemetry/api";
 
-export function runService(request: Request, httpModule?: typeof http): Promise<string> {
+export function runService(request: Request, httpModule?: typeof Http): Promise<string> {
   const url = new URL(request.url);
   const fetchType = url.searchParams.get("fetchType") ?? "fetch";
   return trace.getTracer("sample").startActiveSpan(
@@ -41,13 +41,13 @@ export function runService(request: Request, httpModule?: typeof http): Promise<
         })
         headersForNodeRequest["Content-Length"] = String(Buffer.byteLength(httpBody, "utf-8"))
         return makeApiCallWithHttp(
+          httpModule,
           dataUrl,
           {
             body: httpBody,
             headers: { "X-Cmd": "echo", ...headersForNodeRequest }
           },
           span,
-          httpModule
         );
       }
       return makeApiCallWithFetch(
@@ -85,13 +85,13 @@ async function makeApiCallWithFetch(
 }
 
 async function makeApiCallWithHttp(
+  httpModule: typeof Http,
   dataUrl: string,
   { body, headers }: {
     body: Buffer | string;
     headers: Record<string, string>;
   },
   span: Span,
-  httpModule: typeof http
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const parsedUrl = new URL(dataUrl);
@@ -105,7 +105,7 @@ async function makeApiCallWithHttp(
       },
     };
 
-    const request = httpModule.request(options, (response: http.IncomingMessage) => {
+    const request = httpModule.request(options, (response: Http.IncomingMessage) => {
       let data = "";
       response.on("data", (chunk) => {
         data += chunk;
