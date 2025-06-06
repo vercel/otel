@@ -1,5 +1,12 @@
 # @vercel/otel
 
+## 1.13.0
+
+### Minor Changes
+
+- a724e57: add support for auto HTTP instrumentation
+- d04fbdd: Expand a set of OTEL versions for peer dependencies
+
 ## 1.12.0
 
 ### Minor Changes
