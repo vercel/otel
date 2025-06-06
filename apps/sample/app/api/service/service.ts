@@ -9,7 +9,6 @@ export function runService(request: Request, httpModule?: typeof http): Promise<
     {
       attributes: {
         foo: "bar",
-        "fetch.type": fetchType,
       },
     },
     async (span) => {
