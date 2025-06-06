@@ -30,7 +30,6 @@ import {
 } from "@opentelemetry/resources";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
 import {
   parseEnvironment,
   DEFAULT_ENVIRONMENT,
@@ -41,6 +40,7 @@ import {
   W3CBaggagePropagator,
   baggageUtils,
 } from "@opentelemetry/core";
+import * as SemanticResourceAttributes from "./semantic-resource-attributes";
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
 import { OTLPHttpJsonTraceExporter } from "./exporters/exporter-trace-otlp-http-fetch";
 import { OTLPHttpProtoTraceExporter } from "./exporters/exporter-trace-otlp-proto-fetch";

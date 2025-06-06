@@ -1,25 +1,38 @@
+import type * as http from 'node:http';
+import type * as https from 'node:https';
 import {
   SpanKind,
   SpanStatusCode,
-  propagation,
   context,
+  propagation,
   trace as traceApi,
 } from "@opentelemetry/api";
 import type {
   Attributes,
   Span,
+  SpanStatus,
+  TextMapGetter,
   TextMapSetter,
+  Tracer,
   TracerProvider,
 } from "@opentelemetry/api";
 import type {
   Instrumentation,
   InstrumentationConfig,
 } from "@opentelemetry/instrumentation";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import * as SemanticAttributes from "../semantic-resource-attributes";
+import { isSampled } from "../util/sampled";
 import { resolveTemplate } from "../util/template";
 import { getVercelRequestContext } from "../vercel-request-context/api";
-import { isSampled } from "../util/sampled";
 
+type RequestOptions = http.RequestOptions;
+type IncomingMessage = http.IncomingMessage;
+
+type IncomingHttpHeaders = http.IncomingHttpHeaders;
+type OutgoingHttpHeaders = http.OutgoingHttpHeaders;
+type Callback = (res: IncomingMessage) => void;
+type Http = typeof http;
+type Https = typeof https;
 /**
  * Configuration for the "fetch" instrumentation.
  *
@@ -135,10 +148,121 @@ export class FetchInstrumentation implements Instrumentation {
   setMeterProvider(): void {
     // Nothing.
   }
+  private shouldIgnore(
+    url: URL,
+    init?: InternalRequestInit
+  ): boolean {
+    const ignoreUrls = this.config.ignoreUrls ?? [];
+    if (init?.opentelemetry?.ignore !== undefined) {
+      return init.opentelemetry.ignore;
+    }
+    if (ignoreUrls.length === 0) {
+      return false;
+    }
+    const urlString = url.toString();
+    return ignoreUrls.some((match) => {
+      if (typeof match === "string") {
+        if (match === "*") {
+          return true;
+        }
+        return urlString.startsWith(match);
+      }
+      return match.test(urlString);
+    });
+  }
 
-  public enable(): void {
-    this.disable();
+  private shouldPropagate(
+    url: URL,
+    init?: InternalRequestInit
+  ): boolean {
+    const host =
+      process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL || null;
+    const branchHost =
+      process.env.VERCEL_BRANCH_URL ||
+      process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
+      null;
+    const propagateContextUrls = this.config.propagateContextUrls ?? [];
+    const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
+    if (init?.opentelemetry?.propagateContext) {
+      return init.opentelemetry.propagateContext;
+    }
+    const urlString = url.toString();
+    if (
+      dontPropagateContextUrls.length > 0 &&
+      dontPropagateContextUrls.some((match) => {
+        if (typeof match === "string") {
+          if (match === "*") {
+            return true;
+          }
+          return urlString.startsWith(match);
+        }
+        return match.test(urlString);
+      })
+    ) {
+      return false;
+    }
+    // Allow same origin.
+    if (
+      host &&
+      url.protocol === "https:" &&
+      (url.host === host ||
+        url.host === branchHost ||
+        url.host === getVercelRequestContext()?.headers.host)
+    ) {
+      return true;
+    }
+    // Allow localhost for testing in a dev mode.
+    if (!host && url.protocol === "http:" && url.hostname === "localhost") {
+      return true;
+    }
+    return propagateContextUrls.some((match) => {
+      if (typeof match === "string") {
+        if (match === "*") {
+          return true;
+        }
+        return urlString.startsWith(match);
+      }
+      return match.test(urlString);
+    });
+  };
 
+  private startSpan({ tracer, url, fetchType, method = "GET", name, attributes = {} }: { tracer: Tracer; url: URL; fetchType: 'http' | 'fetch'; method?: string; name?: string; attributes?: Attributes }): Span {
+    const resourceNameTemplate = this.config.resourceNameTemplate;
+
+    const attrs = {
+      [SemanticAttributes.HTTP_METHOD]: method,
+      [SemanticAttributes.HTTP_URL]: url.toString(),
+      [SemanticAttributes.HTTP_HOST]: url.host,
+      [SemanticAttributes.HTTP_SCHEME]: url.protocol.replace(":", ""),
+      [SemanticAttributes.NET_PEER_NAME]: url.hostname,
+      [SemanticAttributes.NET_PEER_PORT]: url.port,
+    };
+
+    const resourceName = resourceNameTemplate
+      ? resolveTemplate(resourceNameTemplate, attrs)
+      : removeSearch(url.toString());
+
+    const spanName = name ?? `${fetchType} ${method} ${url.toString()}`;
+
+    const parentContext = context.active();
+
+    return tracer.startSpan(
+      spanName,
+      {
+        kind: SpanKind.CLIENT,
+        attributes: {
+          ...attrs,
+          "operation.name": `${fetchType}.${method}`,
+          'http.client.name': fetchType,
+          "resource.name": resourceName,
+          ...attributes,
+        },
+      },
+      parentContext
+    );
+  }
+
+  instrumentHttp(httpModule: Http | Https, protocolFromModule: 'https:' | 'http:'): void {
     const { tracerProvider } = this;
     if (!tracerProvider) {
       return;
@@ -149,88 +273,163 @@ export class FetchInstrumentation implements Instrumentation {
       this.instrumentationVersion
     );
 
-    const ignoreUrls = this.config.ignoreUrls ?? [];
-
-    const shouldIgnore = (
-      url: URL,
-      init: InternalRequestInit | undefined
-    ): boolean => {
-      if (init?.opentelemetry?.ignore !== undefined) {
-        return init.opentelemetry.ignore;
-      }
-      if (ignoreUrls.length === 0) {
-        return false;
-      }
-      const urlString = url.toString();
-      return ignoreUrls.some((match) => {
-        if (typeof match === "string") {
-          if (match === "*") {
-            return true;
-          }
-          return urlString.startsWith(match);
-        }
-        return match.test(urlString);
-      });
-    };
-
-    const host =
-      process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL || null;
-    const branchHost =
-      process.env.VERCEL_BRANCH_URL ||
-      process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
-      null;
-    const propagateContextUrls = this.config.propagateContextUrls ?? [];
-    const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
-    const resourceNameTemplate = this.config.resourceNameTemplate;
     const { attributesFromRequestHeaders, attributesFromResponseHeaders } =
       this.config;
 
-    const shouldPropagate = (
-      url: URL,
-      init: InternalRequestInit | undefined
-    ): boolean => {
-      if (init?.opentelemetry?.propagateContext) {
-        return init.opentelemetry.propagateContext;
-      }
-      const urlString = url.toString();
-      if (
-        dontPropagateContextUrls.length > 0 &&
-        dontPropagateContextUrls.some((match) => {
-          if (typeof match === "string") {
-            if (match === "*") {
-              return true;
-            }
-            return urlString.startsWith(match);
+    const originalRequest = httpModule.request;
+    const originalGet = httpModule.get;
+
+    const instrumentRequest = (original: typeof httpModule.request) => {
+      return (urlOrOptions: string | URL | RequestOptions, optionsOrCallback?: RequestOptions | Callback, optionalCallback?: Callback) => {
+        let url: URL;
+        let options: RequestOptions = {};
+        let callback: Callback | undefined;
+
+        // Parse arguments based on overload signatures
+        if (typeof urlOrOptions === "string" || urlOrOptions instanceof URL) {
+          // url[, options][, callback] signature
+          url = new URL(urlOrOptions.toString());
+
+          if (typeof optionsOrCallback === "function") {
+            // url, callback
+            callback = optionsOrCallback;
+          } else if (optionsOrCallback && typeof optionalCallback === "function") {
+            // url, options, callback
+            options = optionsOrCallback;
+            callback = optionalCallback;
+          } else if (optionsOrCallback) {
+            // url, options
+            options = optionsOrCallback;
           }
-          return match.test(urlString);
-        })
-      ) {
-        return false;
-      }
-      // Allow same origin.
-      if (
-        host &&
-        url.protocol === "https:" &&
-        (url.host === host ||
-          url.host === branchHost ||
-          url.host === getVercelRequestContext()?.headers.host)
-      ) {
-        return true;
-      }
-      // Allow localhost for testing in a dev mode.
-      if (!host && url.protocol === "http:" && url.hostname === "localhost") {
-        return true;
-      }
-      return propagateContextUrls.some((match) => {
-        if (typeof match === "string") {
-          if (match === "*") {
-            return true;
+        } else {
+          // options[, callback] signature
+          options = urlOrOptions;
+          if (typeof optionsOrCallback === "function") {
+            callback = optionsOrCallback;
           }
-          return urlString.startsWith(match);
+
+          url = constructUrlFromRequestOptions(options, protocolFromModule);
         }
-        return match.test(urlString);
-      });
+
+        if (this.shouldIgnore(url)) {
+          return original.apply(this, [url, options, callback]);
+        }
+
+        const span = this.startSpan({
+          tracer,
+          url,
+          fetchType: 'http',
+          method: options.method || "GET"
+        });
+
+        if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
+          span.end();
+          return original.apply(this, [url, options, callback]);
+        }
+
+        if (this.shouldPropagate(url)) {
+          const parentContext = context.active();
+          const httpContext = traceApi.setSpan(parentContext, span);
+          propagation.inject(httpContext, options.headers || {}, HTTP_HEADERS_SETTER);
+        }
+
+        if (attributesFromRequestHeaders) {
+            headersToAttributes(
+            span,
+            attributesFromRequestHeaders,
+            options.headers || {},
+            HTTP_HEADERS_GETTER
+            );
+        }
+
+        try {
+          const startTime = Date.now();
+          const req = original.apply(this, [url, options, callback]);
+
+          req.prependListener('response', (res: IncomingMessage & { aborted?: boolean }) => {
+            const duration = Date.now() - startTime;
+            span.setAttribute("http.response_time", duration);
+
+            if (res.statusCode !== undefined) {
+              span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.statusCode);
+              if (res.statusCode >= 500) {
+                onError(span, `Status: ${res.statusCode}`);
+              }
+            } else {
+              onError(span, "Response status code is undefined");
+            }
+
+            if (attributesFromResponseHeaders) {
+              headersToAttributes(span, attributesFromResponseHeaders, res.headers, HTTP_HEADERS_GETTER);
+            }
+
+            if (req.listenerCount('response') <= 1) {
+              res.resume();
+            }
+
+            res.on("end", () => {
+              let status: SpanStatus;
+              const statusCode = res.statusCode;
+              if (res.aborted && !res.complete) {
+                status = { code: SpanStatusCode.ERROR };
+              } else if (statusCode && statusCode >= 100 && statusCode < 500) {
+                status = { code: SpanStatusCode.UNSET };
+              } else {
+                status = { code: SpanStatusCode.ERROR };
+              }
+              span.setStatus(status);
+              if (span.isRecording()) {
+                if (res.headers["content-length"]) {
+                  span.setAttribute(
+                    SemanticAttributes.HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED,
+                    res.headers["content-length"]
+                  );
+                }
+                span.end();
+              }
+            });
+          });
+
+          req.on("error", (err: unknown) => {
+            if (span.isRecording()) {
+              onError(span, err);
+              span.end();
+            }
+          });
+
+          req.on('close', () => {
+            if (span.isRecording()) {
+              span.end();
+            }
+          });
+
+
+          return req;
+        } catch (err) {
+          onError(span, err);
+          span.end();
+          throw err;
+        }
+      };
     };
+
+    httpModule.request = instrumentRequest(originalRequest);
+    httpModule.get = instrumentRequest(originalGet);
+  }
+
+  instrumentFetch(): void {
+    const { tracerProvider } = this;
+    if (!tracerProvider) {
+      return;
+    }
+
+    const tracer = tracerProvider.getTracer(
+      this.instrumentationName,
+      this.instrumentationVersion
+    );
+
+    const { attributesFromRequestHeaders, attributesFromResponseHeaders } =
+      this.config;
 
     // Disable fetch tracing in Next.js.
     process.env.NEXT_OTEL_FETCH_DISABLED = "1";
@@ -254,52 +453,32 @@ export class FetchInstrumentation implements Instrumentation {
         init
       );
       const url = new URL(req.url);
-      if (shouldIgnore(url, init)) {
+      if (this.shouldIgnore(url, init)) {
         return originalFetch(input, init);
       }
 
-      const attrs = {
-        [SemanticAttributes.HTTP_METHOD]: req.method,
-        [SemanticAttributes.HTTP_URL]: req.url,
-        [SemanticAttributes.HTTP_HOST]: url.host,
-        [SemanticAttributes.HTTP_SCHEME]: url.protocol.replace(":", ""),
-        [SemanticAttributes.NET_PEER_NAME]: url.hostname,
-        [SemanticAttributes.NET_PEER_PORT]: url.port,
-      };
-      const resourceName = resourceNameTemplate
-        ? resolveTemplate(resourceNameTemplate, attrs)
-        : removeSearch(req.url);
+      const span = this.startSpan({
+        tracer,
+        url,
+        fetchType: 'fetch',
+        method: req.method,
+        name: init?.opentelemetry?.spanName,
+        attributes: init?.opentelemetry?.attributes,
+      });
 
-      const spanName =
-        init?.opentelemetry?.spanName ?? `fetch ${req.method} ${req.url}`;
-
-      const parentContext = context.active();
-
-      const span = tracer.startSpan(
-        spanName,
-        {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            ...attrs,
-            "operation.name": `fetch.${req.method}`,
-            "resource.name": resourceName,
-            ...init?.opentelemetry?.attributes,
-          },
-        },
-        parentContext
-      );
       if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
         span.end();
         return originalFetch(input, init);
       }
 
-      if (shouldPropagate(url, init)) {
+      if (this.shouldPropagate(url, init)) {
+        const parentContext = context.active();
         const fetchContext = traceApi.setSpan(parentContext, span);
-        propagation.inject(fetchContext, req.headers, HEADERS_SETTER);
+        propagation.inject(fetchContext, req.headers, FETCH_HEADERS_SETTER);
       }
 
       if (attributesFromRequestHeaders) {
-        headersToAttributes(span, attributesFromRequestHeaders, req.headers);
+        headersToAttributes(span, attributesFromRequestHeaders, req.headers, FETCH_HEADERS_GETTER);
       }
 
       try {
@@ -317,7 +496,7 @@ export class FetchInstrumentation implements Instrumentation {
         span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, res.status);
         span.setAttribute("http.response_time", duration);
         if (attributesFromResponseHeaders) {
-          headersToAttributes(span, attributesFromResponseHeaders, res.headers);
+          headersToAttributes(span, attributesFromResponseHeaders, res.headers, FETCH_HEADERS_GETTER);
         }
         if (res.status >= 500) {
           onError(span, `Status: ${res.status} (${res.statusText})`);
@@ -356,6 +535,22 @@ export class FetchInstrumentation implements Instrumentation {
     globalThis.fetch = doFetch;
   }
 
+  public enable(): void {
+    this.disable();
+
+    this.instrumentFetch();
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const httpModule = require('node:http') as Http;
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const httpsModule = require('node:https') as Https;
+      this.instrumentHttp(httpModule, 'http:');
+      this.instrumentHttp(httpsModule, 'https:');
+    } catch {
+      // Must be a non-Node env. Ignore.
+    }
+  }
+
   public disable(): void {
     if (this.originalFetch) {
       globalThis.fetch = this.originalFetch;
@@ -363,10 +558,43 @@ export class FetchInstrumentation implements Instrumentation {
   }
 }
 
-const HEADERS_SETTER: TextMapSetter<Headers> = {
+const FETCH_HEADERS_SETTER: TextMapSetter<Headers> = {
   set(carrier: Headers, key: string, value: string): void {
     carrier.set(key, value);
   },
+};
+
+const FETCH_HEADERS_GETTER: TextMapGetter<Headers> = {
+  get(carrier: Headers, key: string): string | string[] | undefined {
+    const value = carrier.get(key);
+    if (value === null) {
+      return undefined;
+    }
+    return value.includes(",") ? value.split(",").map(v => v.trimStart()) : value;
+  },
+  keys(carrier: Headers): string[] {
+    const keys: string[] = [];
+    carrier.forEach((_, key) => {
+      keys.push(key);
+    });
+    return keys;
+  },
+};
+
+const HTTP_HEADERS_SETTER: TextMapSetter<IncomingHttpHeaders> = {
+  set(carrier: IncomingHttpHeaders, key: string, value: string): void {
+    // Convert to lower case to match Node.js behavior.
+    carrier[key.toLowerCase()] = value;
+  },
+};
+
+const HTTP_HEADERS_GETTER: TextMapGetter<OutgoingHttpHeaders> = {
+  get(carrier: OutgoingHttpHeaders, key: string): string | string[] | undefined {
+    return carrier[key.toLowerCase()] as string | string[] | undefined;
+  },
+  keys(carrier): string[] {
+    return Object.keys(carrier);
+  }
 };
 
 function removeSearch(url: string): string {
@@ -412,12 +640,88 @@ function onError(span: Span, err: unknown): void {
 function headersToAttributes(
   span: Span,
   attrsToHeadersMap: Record<string, string>,
-  headers: Headers
+  headers: Headers | IncomingHttpHeaders | OutgoingHttpHeaders,
+  getter: TextMapGetter<Headers | IncomingHttpHeaders | OutgoingHttpHeaders>
 ): void {
   for (const [attrName, headerName] of Object.entries(attrsToHeadersMap)) {
-    const headerValue = headers.get(headerName);
-    if (headerValue !== null) {
+    const headerValue = getter.get(headers, headerName);
+    if (headerValue !== undefined) {
       span.setAttribute(attrName, headerValue);
     }
   }
+}
+
+function constructUrlFromRequestOptions(options: http.RequestOptions, protocolFromModule: string): URL {
+  if (options.socketPath) {
+    throw new Error(
+      'Cannot construct a network URL: options.socketPath is specified, indicating a Unix domain socket.'
+    );
+  }
+
+  let protocol = options.protocol ?? protocolFromModule;
+
+  if (protocol && !protocol.endsWith(':')) {
+    protocol += ':';
+  }
+
+  // Per documentation: "hostname will be used if both host and hostname are specified."
+  // If options.hostname is present, it takes precedence.
+  // If options.hostname is absent, options.host is used (which might contain 'hostname:port').
+  let hostname = options.hostname;
+  let port = options.port ?? options.defaultPort; // Can be string (e.g. from URL.port), number, or undefined
+
+  if (!hostname && options.host) {
+    // Try to parse hostname and port from options.host
+    const hostParts = options.host.split(':');
+    hostname = hostParts[0];
+    const portPart = hostParts[1];
+    if (hostParts.length > 1 && portPart && port === undefined) {
+      const parsedPort = parseInt(portPart, 10);
+      if (!isNaN(parsedPort)) {
+        port = parsedPort;
+      }
+    }
+  }
+
+  // If hostname is still not determined (e.g. options.host was also undefined or only a port like ':8080')
+  // use default 'localhost' as per http.request behavior for options.host.
+  if (!hostname) {
+    hostname = 'localhost';
+  }
+
+
+  // Resolve port: use options.port if provided, otherwise default based on protocol.
+  // Note: options.defaultPort is an internal http.request mechanism. For reconstruction,
+  // if options.port is missing, we assume standard default ports.
+  let numericPort;
+  if (port !== undefined && port !== '') {
+    const parsed = parseInt(String(port), 10);
+    if (!isNaN(parsed)) {
+      numericPort = parsed;
+    } else {
+      // Invalid port value, fall back to default for protocol
+      numericPort = (protocol === 'https:') ? 443 : 80;
+    }
+  } else {
+    numericPort = (protocol === 'https:') ? 443 : 80;
+  }
+
+  const path = options.path || '/';
+
+  // Construct the base URL string (protocol://hostname:port)
+  // The URL constructor handles default ports correctly (omits them if standard).
+  const baseUrlString = `${protocol}//${hostname}:${numericPort}`;
+
+  const url = new URL(path, baseUrlString);
+
+  // Handle auth (user:password)
+  if (options.auth) {
+    const authParts = options.auth.split(':');
+    url.username = decodeURIComponent(authParts[0] || '');
+    if (authParts.length > 1) {
+      url.password = decodeURIComponent(authParts[1] || '');
+    }
+  }
+
+  return url;
 }

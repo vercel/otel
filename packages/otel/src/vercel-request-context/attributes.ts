@@ -1,8 +1,8 @@
 import type { Attributes, TextMapGetter } from "@opentelemetry/api";
-import { SemanticAttributes } from "@opentelemetry/semantic-conventions";
+import * as SemanticAttributes from "../semantic-resource-attributes";
+import type { AttributesFromHeaders } from "../types";
 import { omitUndefinedAttributes } from "../util/attributes";
 import { parseRequestId } from "../util/request-id";
-import type { AttributesFromHeaders } from "../types";
 import type { VercelRequestContext } from "./api";
 import { getVercelRequestContext } from "./api";
 

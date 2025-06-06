@@ -78,7 +78,6 @@
     "@opentelemetry/sdk-logs": "^0.46.0",
     "@opentelemetry/sdk-metrics": "^1.19.0",
     "@opentelemetry/sdk-trace-base": "^1.19.0",
-    "@opentelemetry/semantic-conventions": "^1.19.0",
     "@types/node": "18.15.11",
     "esbuild": "^0.19.4",
     "eslint-config": "workspace:*",
