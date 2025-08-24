@@ -1,15 +1,28 @@
 import { describe, expect, it } from "vitest";
 import type { TimedEvent, ReadableSpan } from "@opentelemetry/sdk-trace-base";
-import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer";
-import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace";
+import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
+import { JsonTraceSerializer } from "@opentelemetry/otlp-transformer";
+import type { InstrumentationScope } from "@opentelemetry/core";
 import { ServiceClientType } from "@opentelemetry/otlp-proto-exporter-base/build/src/platform/index";
 import { getExportRequestProto } from "@opentelemetry/otlp-proto-exporter-base/build/src/platform/util";
 import { hrTime, TraceState } from "@opentelemetry/core";
-import type { InstrumentationLibrary } from "@opentelemetry/core";
 import type { Attributes, Link, HrTime, SpanStatus } from "@opentelemetry/api";
 import { TraceFlags, SpanKind, SpanStatusCode } from "@opentelemetry/api";
-import { Resource } from "@opentelemetry/resources";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import { encodeTraceServiceRequest } from "./proto";
+
+// Helper function to replace createExportTraceServiceRequest
+function createExportTraceServiceRequest(
+  spans: ReadableSpan[],
+  _options?: any
+): IExportTraceServiceRequest {
+  // Use JsonTraceSerializer to get the request object structure
+  const serialized = JsonTraceSerializer.serializeRequest(spans);
+  if (!serialized) {
+    throw new Error("Failed to serialize spans");
+  }
+  return JSON.parse(new TextDecoder().decode(serialized));
+}
 
 describe("OTLP Protobuf", () => {
   const performanceOffset = new Date("2024-04-25T00:00:00.000Z").getTime();
@@ -18,13 +31,13 @@ describe("OTLP Protobuf", () => {
   function createSpan({
     name,
     kind,
-    parentSpanId,
+    parentSpanContext,
     attributes,
     startTime,
     endTime,
     links,
     events,
-    instrumentationLibrary,
+    instrumentationScope,
     droppedAttributesCount,
     droppedEventsCount,
     droppedLinksCount,
@@ -33,20 +46,20 @@ describe("OTLP Protobuf", () => {
   }: {
     name?: string;
     kind?: SpanKind;
-    parentSpanId?: string;
+    parentSpanContext?: string;
     attributes?: Attributes;
     startTime?: LocalTime;
     endTime?: LocalTime;
     links?: Link[];
     events?: TimedEvent[];
-    instrumentationLibrary?: InstrumentationLibrary;
+    instrumentationScope?: InstrumentationScope;
     droppedAttributesCount?: number;
     droppedEventsCount?: number;
     droppedLinksCount?: number;
     status?: SpanStatus;
     traceState?: TraceState;
   }): ReadableSpan {
-    const resource = new Resource({
+    const resource = resourceFromAttributes({
       env: "production",
     });
 
@@ -64,10 +77,18 @@ describe("OTLP Protobuf", () => {
       name: name ?? "span1",
       kind: kind ?? SpanKind.SERVER,
       spanContext: () => spanContext,
-      parentSpanId:
-        parentSpanId !== undefined
-          ? parentSpanId || undefined
-          : "7e2a325411bdc191",
+      parentSpanContext:
+        parentSpanContext !== undefined && parentSpanContext
+          ? {
+              spanId: parentSpanContext,
+              traceId: "ee75cd9e534ff5e9ed78b4a0c706f0f2",
+              traceFlags: TraceFlags.SAMPLED,
+            }
+          : {
+              spanId: "7e2a325411bdc191",
+              traceId: "ee75cd9e534ff5e9ed78b4a0c706f0f2",
+              traceFlags: TraceFlags.SAMPLED,
+            },
       startTime: time(startTimeLocal),
       endTime: time(endTimeLocal),
       status: status ?? { code: SpanStatusCode.UNSET },
@@ -77,7 +98,7 @@ describe("OTLP Protobuf", () => {
       duration: time(endTimeLocal - startTimeLocal),
       ended: true,
       resource,
-      instrumentationLibrary: instrumentationLibrary ?? { name: "default" },
+      instrumentationScope: instrumentationScope ?? { name: "default" },
       droppedAttributesCount: droppedAttributesCount ?? 0,
       droppedEventsCount: droppedEventsCount ?? 0,
       droppedLinksCount: droppedLinksCount ?? 0,
@@ -162,8 +183,8 @@ describe("OTLP Protobuf", () => {
     expect(actual.toString()).toEqual(expected.toString());
   });
 
-  it("should match an empty parentSpanId", () => {
-    const span = createSpan({ parentSpanId: "" });
+  it("should match an empty parentSpanContext", () => {
+    const span = createSpan({ parentSpanContext: "" });
     const request = createExportTraceServiceRequest([span], undefined);
     const expected = encodeViaOtlpLibrary(request);
     const actual = encodeTraceServiceRequest(request);
@@ -191,10 +212,10 @@ describe("OTLP Protobuf", () => {
     expect(actual.toString()).toEqual(expected.toString());
   });
 
-  describe("instrumentationLibrary", () => {
-    it("should match instrumentationLibrary", () => {
+  describe("instrumentationScope", () => {
+    it("should match instrumentationScope", () => {
       const span = createSpan({
-        instrumentationLibrary: { name: "lib1" },
+        instrumentationScope: { name: "lib1" },
       });
       const request = createExportTraceServiceRequest([span], undefined);
       const expected = encodeViaOtlpLibrary(request);
@@ -202,9 +223,9 @@ describe("OTLP Protobuf", () => {
       expect(actual.toString()).toEqual(expected.toString());
     });
 
-    it("should match instrumentationLibrary with version", () => {
+    it("should match instrumentationScope with version", () => {
       const span = createSpan({
-        instrumentationLibrary: { name: "lib1", version: "1.0.1" },
+        instrumentationScope: { name: "lib1", version: "1.0.1" },
       });
       const request = createExportTraceServiceRequest([span], undefined);
       const expected = encodeViaOtlpLibrary(request);
@@ -212,9 +233,9 @@ describe("OTLP Protobuf", () => {
       expect(actual.toString()).toEqual(expected.toString());
     });
 
-    it("should match instrumentationLibrary with schema", () => {
+    it("should match instrumentationScope with schema", () => {
       const span = createSpan({
-        instrumentationLibrary: {
+        instrumentationScope: {
           name: "lib1",
           version: "1.0.1",
           schemaUrl: "https://vercel.com/schema1",

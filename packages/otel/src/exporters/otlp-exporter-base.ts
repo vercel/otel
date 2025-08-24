@@ -1,21 +1,25 @@
 import type { OTLPExporterError } from "@opentelemetry/otlp-exporter-base";
-import { OTLPExporterBase } from "@opentelemetry/otlp-exporter-base/build/src/OTLPExporterBase";
 import { diag } from "@opentelemetry/api";
+import type { ExportResult } from "@opentelemetry/core";
 import type { OTLPExporterConfig } from "./config";
 
 /** @internal */
-export abstract class OTLPExporterEdgeBase<
-  ExportItem,
-  ServiceRequest,
-> extends OTLPExporterBase<OTLPExporterConfig, ExportItem, ServiceRequest> {
+export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   /** @internal */
   private _headers: Record<string, unknown> | undefined;
+  /** @internal */
+  private _shutdownOnce = { isCalled: false };
+  /** @internal */
+  private _sendingPromises: Promise<void>[] = [];
+  /** @internal */
+  protected url: string;
 
   constructor(config: OTLPExporterConfig = {}) {
-    super(config);
+    this.url = config.url || this.getDefaultUrl(config);
     if (config.headers) {
       this._headers = config.headers;
     }
+    this.onInit();
   }
 
   onShutdown(): void {
@@ -24,6 +28,34 @@ export abstract class OTLPExporterEdgeBase<
 
   onInit(): void {
     diag.debug("@vercel/otel/otlp: onInit");
+  }
+
+  export(
+    items: ExportItem[],
+    resultCallback: (result: ExportResult) => void
+  ): void {
+    if (this._shutdownOnce.isCalled) {
+      diag.debug(
+        "@vercel/otel/otlp: Shutdown already started. Cannot send objects"
+      );
+      return;
+    }
+
+    this.send(
+      items,
+      () => resultCallback({ code: 0 }), // SUCCESS
+      (error: OTLPExporterError) => resultCallback({ code: 1, error }) // FAILED
+    );
+  }
+
+  async forceFlush(): Promise<void> {
+    await Promise.all(this._sendingPromises);
+  }
+
+  async shutdown(): Promise<void> {
+    this._shutdownOnce.isCalled = true;
+    this.onShutdown();
+    await this.forceFlush();
   }
 
   send(
@@ -53,7 +85,7 @@ export abstract class OTLPExporterEdgeBase<
 
     const promise = fetch(this.url, {
       method: "POST",
-      body,
+      body: body as BodyInit,
       headers: {
         ...this._headers,
         ...headers,
@@ -81,10 +113,8 @@ export abstract class OTLPExporterEdgeBase<
     this._sendingPromises.push(promise);
   }
 
-  getDefaultUrl(_config: OTLPExporterConfig): string {
-    throw new Error("Method not implemented.");
-  }
-
+  abstract convert(items: ExportItem[]): ServiceRequest;
+  abstract getDefaultUrl(config: OTLPExporterConfig): string;
   abstract toMessage(serviceRequest: ServiceRequest): {
     body: string | Uint8Array | Blob;
     contentType: string;

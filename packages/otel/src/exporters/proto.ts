@@ -18,20 +18,22 @@
  */
 
 import type {
-  IAnyValue,
-  IArrayValue,
-  IEvent,
   IExportTraceServiceRequest,
-  IInstrumentationScope,
-  IKeyValue,
-  IKeyValueList,
-  ILink,
-  IResource,
   IResourceSpans,
   IScopeSpans,
   ISpan,
   IStatus,
-} from "@opentelemetry/otlp-transformer";
+  IEvent,
+  ILink,
+} from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
+import type {
+  IAnyValue,
+  IArrayValue,
+  IInstrumentationScope,
+  IKeyValue,
+  IKeyValueList,
+  Resource,
+} from "@opentelemetry/otlp-transformer/build/src/common/internal-types";
 import type { Long } from "protobufjs/minimal";
 import { Writer } from "protobufjs/minimal";
 
@@ -73,7 +75,7 @@ function ResourceSpans_encode(message: IResourceSpans, writer: Writer): Writer {
   return writer;
 }
 
-function Resource_encode(message: IResource, writer: Writer): Writer {
+function Resource_encode(message: Resource, writer: Writer): Writer {
   if (message.attributes != null && message.attributes.length)
     for (let i = 0; i < message.attributes.length; ++i)
       KeyValue_encode(

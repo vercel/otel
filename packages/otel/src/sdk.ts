@@ -1,5 +1,5 @@
 import type { ContextManager, TextMapPropagator } from "@opentelemetry/api";
-import type { InstrumentationOption } from "@opentelemetry/instrumentation";
+import type { Instrumentation } from "@opentelemetry/instrumentation";
 import type { ResourceDetectionConfig } from "@opentelemetry/resources";
 import type {
   Sampler,
@@ -20,25 +20,24 @@ import {
   diag,
   DiagConsoleLogger,
   DiagLogLevel,
+  trace,
+  propagation,
 } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
-import { registerInstrumentations } from "@opentelemetry/instrumentation/build/src/autoLoader";
+import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import {
-  detectResourcesSync,
-  envDetectorSync,
-  Resource,
+  detectResources,
+  envDetector,
+  resourceFromAttributes,
 } from "@opentelemetry/resources";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import {
-  parseEnvironment,
-  DEFAULT_ENVIRONMENT,
-} from "@opentelemetry/core/build/src/utils/environment";
-import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks/build/src/AsyncLocalStorageContextManager";
+import { getStringFromEnv, getStringListFromEnv } from "@opentelemetry/core";
+import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import {
   CompositePropagator,
   W3CBaggagePropagator,
-  baggageUtils,
+  parseKeyPairsIntoRecord,
 } from "@opentelemetry/core";
 import * as SemanticResourceAttributes from "./semantic-resource-attributes";
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
@@ -58,7 +57,17 @@ import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propag
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 
-type Env = ReturnType<typeof parseEnvironment>;
+type Env = {
+  OTEL_SDK_DISABLED?: string;
+  OTEL_SERVICE_NAME?: string;
+  OTEL_PROPAGATORS?: string[];
+  OTEL_TRACES_SAMPLER?: string;
+  OTEL_TRACES_SAMPLER_ARG?: string;
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT?: string;
+  OTEL_EXPORTER_OTLP_ENDPOINT?: string;
+  OTEL_EXPORTER_OTLP_HEADERS?: string;
+  OTEL_EXPORTER_OTLP_TRACES_HEADERS?: string;
+};
 
 const logLevelMap: Record<string, DiagLogLevel> = {
   ALL: DiagLogLevel.ALL,
@@ -79,7 +88,7 @@ export class Sdk {
 
   public constructor(private configuration: Configuration = {}) {}
 
-  public start(): void {
+  public async start(): Promise<void> {
     const env = getEnv();
     const configuration = this.configuration;
     const runtime = process.env.NEXT_RUNTIME || "nodejs";
@@ -107,7 +116,7 @@ export class Sdk {
 
     const serviceName =
       env.OTEL_SERVICE_NAME || configuration.serviceName || "app";
-    let resource = new Resource(
+    let resource = resourceFromAttributes(
       omitUndefinedAttributes({
         [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
 
@@ -139,15 +148,15 @@ export class Sdk {
         ...configuration.attributes,
       })
     );
-    const resourceDetectors = configuration.resourceDetectors ?? [
-      envDetectorSync,
-    ];
+    const resourceDetectors = configuration.resourceDetectors ?? [envDetector];
     const autoDetectResources = configuration.autoDetectResources ?? true;
     if (autoDetectResources) {
       const internalConfig: ResourceDetectionConfig = {
         detectors: resourceDetectors,
       };
-      resource = resource.merge(detectResourcesSync(internalConfig));
+      const detectedResource = detectResources(internalConfig);
+      await detectedResource.waitForAsyncAttributes?.();
+      resource = resource.merge(detectedResource);
     }
 
     const propagators = parsePropagators(
@@ -172,17 +181,15 @@ export class Sdk {
       idGenerator,
       sampler: traceSampler,
       spanLimits,
+      spanProcessors: [
+        new CompositeSpanProcessor(
+          spanProcessors,
+          configuration.attributesFromHeaders
+        ),
+      ],
     });
-    tracerProvider.addSpanProcessor(
-      new CompositeSpanProcessor(
-        spanProcessors,
-        configuration.attributesFromHeaders
-      )
-    );
-    tracerProvider.register({
-      contextManager,
-      propagator: new CompositePropagator({ propagators }),
-    });
+    trace.setGlobalTracerProvider(tracerProvider);
+    propagation.setGlobalPropagator(new CompositePropagator({ propagators }));
     this.tracerProvider = tracerProvider;
 
     if (configuration.logRecordProcessor) {
@@ -196,10 +203,8 @@ export class Sdk {
       const meterProvider = new MeterProvider({
         resource,
         views: configuration.views ?? [],
+        readers: configuration.metricReader ? [configuration.metricReader] : [],
       });
-      if (configuration.metricReader) {
-        meterProvider.addMetricReader(configuration.metricReader);
-      }
       metrics.setGlobalMeterProvider(meterProvider);
       this.meterProvider = meterProvider;
     }
@@ -247,14 +252,29 @@ export class Sdk {
 }
 
 function getEnv(): Env {
-  const processEnv = parseEnvironment(process.env);
-  return { ...DEFAULT_ENVIRONMENT, ...processEnv };
+  return {
+    OTEL_SDK_DISABLED: getStringFromEnv("OTEL_SDK_DISABLED"),
+    OTEL_SERVICE_NAME: getStringFromEnv("OTEL_SERVICE_NAME"),
+    OTEL_PROPAGATORS: getStringListFromEnv("OTEL_PROPAGATORS"),
+    OTEL_TRACES_SAMPLER: getStringFromEnv("OTEL_TRACES_SAMPLER"),
+    OTEL_TRACES_SAMPLER_ARG: getStringFromEnv("OTEL_TRACES_SAMPLER_ARG"),
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: getStringFromEnv(
+      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+    ),
+    OTEL_EXPORTER_OTLP_ENDPOINT: getStringFromEnv(
+      "OTEL_EXPORTER_OTLP_ENDPOINT"
+    ),
+    OTEL_EXPORTER_OTLP_HEADERS: getStringFromEnv("OTEL_EXPORTER_OTLP_HEADERS"),
+    OTEL_EXPORTER_OTLP_TRACES_HEADERS: getStringFromEnv(
+      "OTEL_EXPORTER_OTLP_TRACES_HEADERS"
+    ),
+  };
 }
 
 function parseInstrumentations(
   arg: InstrumentationOptionOrName[] | undefined,
   instrumentationConfig: InstrumentationConfiguration | undefined
-): InstrumentationOption[] {
+): Instrumentation[] {
   return (arg ?? ["auto"])
     .map((instrumentationOrName) => {
       if (instrumentationOrName === "auto") {
@@ -479,10 +499,12 @@ function parseTraceExporter(env: Env): SpanExporter {
     "http/protobuf";
   const url = buildExporterUrlFromEnv(env);
   const headers = {
-    ...baggageUtils.parseKeyPairsIntoRecord(env.OTEL_EXPORTER_OTLP_HEADERS),
-    ...baggageUtils.parseKeyPairsIntoRecord(
-      env.OTEL_EXPORTER_OTLP_TRACES_HEADERS
-    ),
+    ...(env.OTEL_EXPORTER_OTLP_HEADERS
+      ? parseKeyPairsIntoRecord(env.OTEL_EXPORTER_OTLP_HEADERS)
+      : {}),
+    ...(env.OTEL_EXPORTER_OTLP_TRACES_HEADERS
+      ? parseKeyPairsIntoRecord(env.OTEL_EXPORTER_OTLP_TRACES_HEADERS)
+      : {}),
   };
   diag.debug(
     "@vercel/otel: Configure trace exporter: ",

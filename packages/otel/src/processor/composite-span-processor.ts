@@ -41,7 +41,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
   onStart(span: Span, parentContext: Context): void {
     const { traceId, spanId, traceFlags } = span.spanContext();
-    const isRoot = !span.parentSpanId || !this.rootSpanIds.has(traceId);
+    const isRoot = !span.parentSpanContext?.spanId || !this.rootSpanIds.has(traceId);
     if (isRoot) {
       this.rootSpanIds.set(traceId, { rootSpanId: spanId, open: [] });
     } else {
@@ -184,7 +184,7 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
 
   // Per https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml,
   // the default operation.name is "library name + span kind".
-  const libraryName = span.instrumentationLibrary.name;
+  const libraryName = span.instrumentationScope.name;
   const spanType = nextSpanType ?? spanTypeAttr;
   if (spanType && typeof spanType === "string") {
     const nextOperationName = toOperationName(libraryName, spanType);

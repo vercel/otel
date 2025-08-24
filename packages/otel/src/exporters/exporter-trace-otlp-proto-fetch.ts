@@ -1,6 +1,5 @@
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
-import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer";
-import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace";
+import { ProtobufTraceSerializer } from "@opentelemetry/otlp-transformer";
 import type { ExportResult } from "@opentelemetry/core";
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
@@ -38,22 +37,19 @@ export class OTLPHttpProtoTraceExporter implements SpanExporter {
 }
 
 /** @internal */
-class Impl extends OTLPExporterEdgeBase<
-  ReadableSpan,
-  IExportTraceServiceRequest
-> {
-  convert(spans: ReadableSpan[]): IExportTraceServiceRequest {
-    return createExportTraceServiceRequest(spans, undefined);
+class Impl extends OTLPExporterEdgeBase<ReadableSpan, ReadableSpan[]> {
+  convert(spans: ReadableSpan[]): ReadableSpan[] {
+    return spans;
   }
 
-  override toMessage(serviceRequest: IExportTraceServiceRequest): {
+  override toMessage(spans: ReadableSpan[]): {
     body: string | Uint8Array | Blob;
     contentType: string;
     headers?: Record<string, string> | undefined;
   } {
-    const body = encodeTraceServiceRequest(serviceRequest);
+    const body = ProtobufTraceSerializer.serializeRequest(spans);
     return {
-      body,
+      body: body!,
       contentType: "application/x-protobuf",
       headers: { accept: "application/x-protobuf" },
     };

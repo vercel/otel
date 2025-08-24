@@ -1,6 +1,5 @@
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
-import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer";
-import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace";
+import { JsonTraceSerializer } from "@opentelemetry/otlp-transformer";
 import type { ExportResult } from "@opentelemetry/core";
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
@@ -37,24 +36,19 @@ export class OTLPHttpJsonTraceExporter implements SpanExporter {
 }
 
 /** @internal */
-class Impl extends OTLPExporterEdgeBase<
-  ReadableSpan,
-  IExportTraceServiceRequest
-> {
-  convert(spans: ReadableSpan[]): IExportTraceServiceRequest {
-    return createExportTraceServiceRequest(spans, {
-      useHex: true,
-      useLongBits: false,
-    });
+class Impl extends OTLPExporterEdgeBase<ReadableSpan, ReadableSpan[]> {
+  convert(spans: ReadableSpan[]): ReadableSpan[] {
+    return spans;
   }
 
-  override toMessage(serviceRequest: IExportTraceServiceRequest): {
+  override toMessage(spans: ReadableSpan[]): {
     body: string | Uint8Array | Blob;
     contentType: string;
     headers?: Record<string, string> | undefined;
   } {
+    const serialized = JsonTraceSerializer.serializeRequest(spans);
     return {
-      body: JSON.stringify(serviceRequest),
+      body: new TextDecoder().decode(serialized),
       contentType: "application/json",
     };
   }
