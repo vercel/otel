@@ -4,7 +4,6 @@ import type { ExportResult } from "@opentelemetry/core";
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
 import type { OTLPExporterConfig } from "./config";
-import { encodeTraceServiceRequest } from "./proto";
 
 /**
  * OTLP exporter for the `http/protobuf` protocol. Compatible with the "edge" runtime.
@@ -48,8 +47,11 @@ class Impl extends OTLPExporterEdgeBase<ReadableSpan, ReadableSpan[]> {
     headers?: Record<string, string> | undefined;
   } {
     const body = ProtobufTraceSerializer.serializeRequest(spans);
+    if (!body) {
+      throw new Error("Failed to serialize spans to protobuf");
+    }
     return {
-      body: body!,
+      body,
       contentType: "application/x-protobuf",
       headers: { accept: "application/x-protobuf" },
     };

@@ -14,14 +14,16 @@ import { encodeTraceServiceRequest } from "./proto";
 // Helper function to replace createExportTraceServiceRequest
 function createExportTraceServiceRequest(
   spans: ReadableSpan[],
-  _options?: any
+  _options?: unknown
 ): IExportTraceServiceRequest {
-  // Use JsonTraceSerializer to get the request object structure
   const serialized = JsonTraceSerializer.serializeRequest(spans);
   if (!serialized) {
     throw new Error("Failed to serialize spans");
   }
-  return JSON.parse(new TextDecoder().decode(serialized));
+
+  return JSON.parse(
+    new TextDecoder().decode(serialized)
+  ) as IExportTraceServiceRequest;
 }
 
 describe("OTLP Protobuf", () => {

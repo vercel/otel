@@ -32,9 +32,10 @@ import {
 } from "@opentelemetry/resources";
 import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
-import { getStringFromEnv, getStringListFromEnv } from "@opentelemetry/core";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import {
+  getStringFromEnv,
+  getStringListFromEnv,
   CompositePropagator,
   W3CBaggagePropagator,
   parseKeyPairsIntoRecord,
@@ -57,7 +58,7 @@ import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propag
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 
-type Env = {
+interface Env {
   OTEL_SDK_DISABLED?: string;
   OTEL_SERVICE_NAME?: string;
   OTEL_PROPAGATORS?: string[];
@@ -67,7 +68,7 @@ type Env = {
   OTEL_EXPORTER_OTLP_ENDPOINT?: string;
   OTEL_EXPORTER_OTLP_HEADERS?: string;
   OTEL_EXPORTER_OTLP_TRACES_HEADERS?: string;
-};
+}
 
 const logLevelMap: Record<string, DiagLogLevel> = {
   ALL: DiagLogLevel.ALL,
