@@ -1,9 +1,10 @@
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
-import { ProtobufTraceSerializer } from "@opentelemetry/otlp-transformer";
+import { encodeTraceServiceRequest } from "./proto";
 import type { ExportResult } from "@opentelemetry/core";
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
 import type { OTLPExporterConfig } from "./config";
+import { createExportTraceServiceRequest } from "./trace-transform";
 
 /**
  * OTLP exporter for the `http/protobuf` protocol. Compatible with the "edge" runtime.
@@ -46,7 +47,8 @@ class Impl extends OTLPExporterEdgeBase<ReadableSpan, ReadableSpan[]> {
     contentType: string;
     headers?: Record<string, string> | undefined;
   } {
-    const body = ProtobufTraceSerializer.serializeRequest(spans);
+    const serviceRequest = createExportTraceServiceRequest(spans);
+    const body = encodeTraceServiceRequest(serviceRequest);
     if (!body) {
       throw new Error("Failed to serialize spans to protobuf");
     }
