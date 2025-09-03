@@ -1,23 +1,24 @@
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
+import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
 import { encodeTraceServiceRequest } from "./proto";
-import type { ExportResult } from "@opentelemetry/core";
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
 import type { OTLPExporterConfig } from "./config";
 import { createExportTraceServiceRequest } from "./trace-transform";
 
-/**
- * OTLP exporter for the `http/protobuf` protocol. Compatible with the "edge" runtime.
- */
+// Define ExportResult ourselves to avoid importing from @opentelemetry/core
+interface ExportResult {
+  code: number;
+  error?: Error;
+}
+
 export class OTLPHttpProtoTraceExporter implements SpanExporter {
-  /** @internal */
   private readonly impl: Impl;
 
   constructor(config: OTLPExporterConfig = {}) {
     this.impl = new Impl(config);
   }
 
-  /** See `SpanExporter#export()` */
   export(
     spans: ReadableSpan[],
     resultCallback: (result: ExportResult) => void
@@ -25,33 +26,29 @@ export class OTLPHttpProtoTraceExporter implements SpanExporter {
     this.impl.export(spans, resultCallback);
   }
 
-  /** See `SpanExporter#shutdown()` */
   shutdown(): Promise<void> {
     return this.impl.shutdown();
   }
 
-  /** See `SpanExporter#forceFlush()` */
   forceFlush(): Promise<void> {
     return this.impl.forceFlush();
   }
 }
 
-/** @internal */
-class Impl extends OTLPExporterEdgeBase<ReadableSpan, ReadableSpan[]> {
-  convert(spans: ReadableSpan[]): ReadableSpan[] {
-    return spans;
+class Impl extends OTLPExporterEdgeBase<
+  ReadableSpan,
+  IExportTraceServiceRequest
+> {
+  convert(spans: ReadableSpan[]): IExportTraceServiceRequest {
+    return createExportTraceServiceRequest(spans);
   }
 
-  override toMessage(spans: ReadableSpan[]): {
+  override toMessage(serviceRequest: IExportTraceServiceRequest): {
     body: string | Uint8Array | Blob;
     contentType: string;
     headers?: Record<string, string> | undefined;
   } {
-    const serviceRequest = createExportTraceServiceRequest(spans);
     const body = encodeTraceServiceRequest(serviceRequest);
-    if (!body) {
-      throw new Error("Failed to serialize spans to protobuf");
-    }
     return {
       body,
       contentType: "application/x-protobuf",

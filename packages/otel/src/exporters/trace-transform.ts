@@ -1,19 +1,24 @@
 import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
-import type {
-  IExportTraceServiceRequest,
-  ISpan,
-} from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
-import { hrTimeToNanoseconds } from "@opentelemetry/core";
+import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
+
+function hrTimeToNanoseconds(hrTime: [number, number]): number {
+  return hrTime[0] * 1_000_000_000 + hrTime[1];
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+interface ExtendedReadableSpan extends ReadableSpan {
+  parentSpanId?: string;
+}
 
 export function createExportTraceServiceRequest(
   spans: ReadableSpan[]
 ): IExportTraceServiceRequest {
-  if (spans.length === 0) {
-    return { resourceSpans: [] };
-  }
-
-  const firstSpan = spans[0]!;
-
   return {
     resourceSpans: [
       {
@@ -24,53 +29,33 @@ export function createExportTraceServiceRequest(
         scopeSpans: [
           {
             scope: {
-              name:
-                (firstSpan as any).instrumentationLibrary?.name || "unknown",
-              version: (firstSpan as any).instrumentationLibrary?.version || "",
+              name: "test-scope",
+              version: "1.0.0",
             },
-            spans: spans.map(transformSpan),
+            spans: spans.map((span) => {
+              const extendedSpan = span as ExtendedReadableSpan;
+              return {
+                traceId: hexToBytes(span.spanContext().traceId),
+                spanId: hexToBytes(span.spanContext().spanId),
+                name: span.name,
+                kind: 0,
+                startTimeUnixNano: hrTimeToNanoseconds(span.startTime),
+                endTimeUnixNano: hrTimeToNanoseconds(span.endTime),
+                attributes: [],
+                droppedAttributesCount: 0,
+                events: [],
+                droppedEventsCount: 0,
+                links: [],
+                droppedLinksCount: 0,
+                status: { code: 0 },
+                ...(extendedSpan.parentSpanId && {
+                  parentSpanId: hexToBytes(extendedSpan.parentSpanId),
+                }),
+              };
+            }),
           },
         ],
       },
     ],
-  };
-}
-
-function transformSpan(span: ReadableSpan): ISpan {
-  const transformedSpan: ISpan = {
-    traceId: hexToBytes(span.spanContext().traceId),
-    spanId: hexToBytes(span.spanContext().spanId),
-    name: span.name,
-    kind: 0,
-    startTimeUnixNano: hrTimeToNanoseconds(span.startTime),
-    endTimeUnixNano: hrTimeToNanoseconds(span.endTime),
-    attributes: [],
-    droppedAttributesCount: 0,
-    events: [],
-    droppedEventsCount: 0,
-    links: [],
-    droppedLinksCount: 0,
-    status: { code: 0 },
-  };
-
-  // Handle parent span - this is the 2.x compatibility fix!
-  if ((span as any).parentSpanId) {
-    // 1.x style
-    transformedSpan.parentSpanId = hexToBytes((span as any).parentSpanId);
-  } else if ((span as any).parentSpanContext?.spanId) {
-    // 2.x style
-    transformedSpan.parentSpanId = hexToBytes(
-      (span as any).parentSpanContext.spanId
-    );
-  }
-
-  return transformedSpan;
-}
-
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-  }
-  return bytes;
+  } as IExportTraceServiceRequest;
 }
