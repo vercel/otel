@@ -18,16 +18,6 @@ export class VercelRuntimeSpanExporter implements SpanExporter {
     }
 
     try {
-      // Converts a Span to IResourceSpans > IScopeSpans > ISpan structure, which
-      // is OTLP format. It's can be directly serialized to JSON or converted
-      // to Protobuf.
-      // {
-      //   // Uses hex-encoding trace and span IDs. Otherwise, base64 is used.
-      //   useHex: true,
-      //   // Uses `{high, low}` format for timestamps. Otherwise, `unixNanon` is used.
-      //   // TODO Fix this
-      //   useLongBits: false,
-      // }
       const serializedData = JsonTraceSerializer.serializeRequest(spans);
 
       if (!serializedData) {

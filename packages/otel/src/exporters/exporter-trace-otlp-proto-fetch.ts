@@ -7,7 +7,11 @@ import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
 import type { OTLPExporterConfig } from "./config";
 
+/**
+ * OTLP exporter for the `http/protobuf` protocol. Compatible with the "edge" runtime.
+ */
 export class OTLPHttpProtoTraceExporter implements SpanExporter {
+  /** @internal */
   private readonly impl: Impl;
 
   constructor(config: OTLPExporterConfig = {}) {
