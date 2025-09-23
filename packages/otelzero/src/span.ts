@@ -13,6 +13,8 @@ export interface Span {
     attributesOrStartTime?: Attributes | TimeInput,
     startTime?: TimeInput
   ) => this;
+  addLink: (link: Link) => this;
+  addLinks: (links: Link[]) => this;
   setStatus: (status: SpanStatus) => this;
   end: (endTime?: TimeInput) => void;
   isRecording: () => boolean;

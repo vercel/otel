@@ -139,6 +139,12 @@ const NO_SPAN: Span = {
   addEvent(): Span {
     return this;
   },
+  addLink(): Span {
+    return this;
+  },
+  addLinks(): Span {
+    return this;
+  },
   setStatus(): Span {
     return this;
   },
