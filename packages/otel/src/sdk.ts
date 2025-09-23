@@ -22,6 +22,7 @@ import {
   DiagLogLevel,
   trace,
   propagation,
+  context,
 } from "@opentelemetry/api";
 import { logs } from "@opentelemetry/api-logs";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
@@ -110,10 +111,7 @@ export class Sdk {
 
     const idGenerator = configuration.idGenerator ?? new RandomIdGenerator();
 
-    const contextManager =
-      configuration.contextManager ?? new AsyncLocalStorageContextManager();
-    contextManager.enable();
-    this.contextManager = contextManager;
+    setupContextManager(configuration.contextManager);
 
     const serviceName =
       env.OTEL_SERVICE_NAME || configuration.serviceName || "app";
@@ -546,4 +544,23 @@ function buildExporterUrlFromEnv(env: Env): string {
 
 function isNotNull<T>(x: T | null | undefined): x is T {
   return x !== null && x !== undefined;
+}
+
+function setupContextManager(
+  contextManager: ContextManager | undefined
+):void {
+  // undefined means 'register default'
+  if (contextManager === undefined) {
+    diag.debug(
+      "@vercel/otel: Configure context manager: default"
+    );
+    const defaultContextManager = new AsyncLocalStorageContextManager();
+    defaultContextManager.enable();
+    context.setGlobalContextManager(defaultContextManager);
+    return;
+  }
+
+  diag.debug("@vercel/otel: Configure context manager: from configuration");
+  contextManager.enable();
+  context.setGlobalContextManager(contextManager);
 }
