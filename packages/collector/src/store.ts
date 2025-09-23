@@ -3,13 +3,8 @@
  * See https://opentelemetry.io/docs/.
  */
 
-import { SemanticResourceAttributes } from "@opentelemetry/semantic-conventions";
-import type {
-  Fixed64,
-  IResource,
-  IResourceSpans,
-  ISpan,
-} from "@opentelemetry/otlp-transformer";
+import type { Fixed64, Resource } from '@opentelemetry/otlp-transformer/build/src/common/internal-types';
+import type { IResourceSpans, ISpan } from '@opentelemetry/otlp-transformer/build/src/trace/internal-types';
 import type { IHandler } from "./server";
 
 type ISpanWithService = ISpan & { serviceName: string };
@@ -25,7 +20,7 @@ export interface ITrace {
 }
 
 interface Store {
-  services: Record<string, IResource>;
+  services: Record<string, Resource>;
   traces: ITrace[];
 }
 
@@ -58,7 +53,7 @@ export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
       continue;
     }
     const serviceNameRaw = resource.attributes.find(
-      ({ key }) => key === SemanticResourceAttributes.SERVICE_NAME
+      ({ key }) => key === 'service.name'
     )?.value.stringValue;
     if (!serviceNameRaw) {
       continue;
@@ -83,12 +78,12 @@ export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
         if (!trace) {
           trace = {
             index: ++traceIndex,
-            traceId,
+            traceId: normalizeId(traceId),
             serviceName: "",
             name: "",
             spans: [],
             timestamp: unixNanoToMillis(span.startTimeUnixNano),
-          };
+          } satisfies ITrace;
           store.traces.push(trace);
         }
         trace.spans.push({
@@ -153,8 +148,8 @@ export function getServiceNames(): string[] {
   return Object.keys(store.services);
 }
 
-export function getServiceMap(): Record<string, IResource> {
-  return { ...store.services } as Record<string, IResource>;
+export function getServiceMap(): Record<string, Resource> {
+  return { ...store.services } as Record<string, Resource>;
 }
 
 export function getTraceCount(): number {
@@ -320,4 +315,11 @@ function unixNanoToMillis(unixNano: Fixed64): number {
     return seconds * 1000 + nanos / 1e6;
   }
   return unixNano / 1e6;
+}
+
+function normalizeId(id: string | Uint8Array): string {
+  if (typeof id === 'string') {
+    return id
+  }
+  return Buffer.from(id).toString('hex')
 }

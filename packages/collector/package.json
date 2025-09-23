@@ -19,6 +19,7 @@
     "@opentelemetry/otlp-transformer": "^0.205.0"
   },
   "devDependencies": {
+    "@types/node": "^20",
     "eslint-config": "workspace:*",
     "typescript": "^5",
     "typescript-config": "workspace:*"
