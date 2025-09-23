@@ -35,9 +35,9 @@
     "unit-test-watch": "vitest"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.7.0",
-    "@opentelemetry/sdk-node": "^0.51.1",
-    "@opentelemetry/sdk-trace-base": "^1.19.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-node": "^0.205.0",
+    "@opentelemetry/sdk-trace-base": "^2.1.0",
     "@types/node": "18.15.11",
     "esbuild": "^0.19.4",
     "eslint-config": "workspace:*",
