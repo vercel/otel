@@ -191,10 +191,12 @@ export class Sdk {
     propagation.setGlobalPropagator(new CompositePropagator({ propagators }));
     this.tracerProvider = tracerProvider;
 
-    if (configuration.logRecordProcessor) {
-      const loggerProvider = new LoggerProvider({ resource });
+    if (configuration.logRecordProcessors) {
+      const loggerProvider = new LoggerProvider({
+        resource,
+        processors: configuration.logRecordProcessors
+      });
       this.loggerProvider = loggerProvider;
-      loggerProvider.addLogRecordProcessor(configuration.logRecordProcessor);
       logs.setGlobalLoggerProvider(loggerProvider);
     }
 
