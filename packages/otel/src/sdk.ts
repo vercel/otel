@@ -91,7 +91,7 @@ export class Sdk {
 
   public constructor(private configuration: Configuration = {}) {}
 
-  public async start(): Promise<void> {
+  public start(): void {
     const env = getEnv();
     const configuration = this.configuration;
     const runtime = process.env.NEXT_RUNTIME || "nodejs";
@@ -155,7 +155,7 @@ export class Sdk {
         detectors: resourceDetectors,
       };
       const detectedResource = detectResources(internalConfig);
-      await detectedResource.waitForAsyncAttributes?.();
+      // Let async resource detection happen in background - don't wait for it
       resource = resource.merge(detectedResource);
     }
 
@@ -195,8 +195,12 @@ export class Sdk {
     if (configuration.logRecordProcessors) {
       const loggerProvider = new LoggerProvider({
         resource,
-        processors: configuration.logRecordProcessors
       });
+
+      configuration.logRecordProcessors.forEach((processor) => {
+        loggerProvider.addLogRecordProcessor(processor);
+      });
+
       this.loggerProvider = loggerProvider;
       logs.setGlobalLoggerProvider(loggerProvider);
     }
@@ -557,12 +561,10 @@ function isNotNull<T>(x: T | null | undefined): x is T {
 
 function setupContextManager(
   contextManager: ContextManager | undefined
-):ContextManager {
+): ContextManager {
   // undefined means 'register default'
   if (contextManager === undefined) {
-    diag.debug(
-      "@vercel/otel: Configure context manager: default"
-    );
+    diag.debug("@vercel/otel: Configure context manager: default");
     const defaultContextManager = new AsyncLocalStorageContextManager();
     defaultContextManager.enable();
     context.setGlobalContextManager(defaultContextManager);
