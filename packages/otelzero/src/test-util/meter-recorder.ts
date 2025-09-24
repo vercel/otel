@@ -11,6 +11,7 @@ import type {
   ObservableGauge as OtelObservableGauge,
   ObservableUpDownCounter as OtelObservableUpDownCounter,
   UpDownCounter as OtelUpDownCounter,
+  Gauge as OtelGauge,
 } from "@opentelemetry/api";
 import type { Attributes } from "../attribute";
 
@@ -87,6 +88,13 @@ class MeterImpl implements OtelMeter {
       name,
       () => new CounterImpl(this.metrics, name, options)
     ) as OtelUpDownCounter<AttributesTypes>;
+  }
+
+  createGauge<AttributesTypes extends Attributes = Attributes>(
+    _name: string,
+    _options?: OtelMetricOptions | undefined
+  ): OtelGauge<AttributesTypes> {
+    throw new Error("Method not implemented.");
   }
 
   createObservableGauge<AttributesTypes extends Attributes = Attributes>(
