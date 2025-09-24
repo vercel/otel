@@ -35,8 +35,6 @@ import { LoggerProvider } from "@opentelemetry/sdk-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import {
-  getStringFromEnv,
-  getStringListFromEnv,
   CompositePropagator,
   W3CBaggagePropagator,
   parseKeyPairsIntoRecord,
@@ -58,6 +56,7 @@ import { FetchInstrumentation } from "./instrumentations/fetch";
 import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propagator";
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
+import { getStringFromEnv, getStringListFromEnv } from "./utils/env-parser";
 
 interface Env {
   OTEL_SDK_DISABLED?: string;
@@ -111,7 +110,7 @@ export class Sdk {
 
     const idGenerator = configuration.idGenerator ?? new RandomIdGenerator();
 
-    setupContextManager(configuration.contextManager);
+    this.contextManager = setupContextManager(configuration.contextManager);
 
     const serviceName =
       env.OTEL_SERVICE_NAME || configuration.serviceName || "app";
@@ -495,8 +494,8 @@ function parseSpanProcessor(
  */
 function parseTraceExporter(env: Env): SpanExporter {
   const protocol =
-    process.env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL ??
-    process.env.OTEL_EXPORTER_OTLP_PROTOCOL ??
+    env.OTEL_EXPORTER_OTLP_TRACES_PROTOCOL ??
+    env.OTEL_EXPORTER_OTLP_PROTOCOL ??
     "http/protobuf";
   const url = buildExporterUrlFromEnv(env);
   const headers = {
@@ -550,7 +549,7 @@ function isNotNull<T>(x: T | null | undefined): x is T {
 
 function setupContextManager(
   contextManager: ContextManager | undefined
-):void {
+):ContextManager {
   // undefined means 'register default'
   if (contextManager === undefined) {
     diag.debug(
@@ -559,10 +558,11 @@ function setupContextManager(
     const defaultContextManager = new AsyncLocalStorageContextManager();
     defaultContextManager.enable();
     context.setGlobalContextManager(defaultContextManager);
-    return;
+    return defaultContextManager;
   }
 
   diag.debug("@vercel/otel: Configure context manager: from configuration");
   contextManager.enable();
   context.setGlobalContextManager(contextManager);
+  return contextManager;
 }
