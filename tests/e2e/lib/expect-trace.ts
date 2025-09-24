@@ -8,6 +8,7 @@ import type {
   SpanStatus,
 } from "@opentelemetry/api";
 import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
+import { normalizeId } from "./normalize-id";
 
 export interface TraceMatch {
   traceId?: string;
@@ -75,9 +76,9 @@ export async function expectTrace(
   for (let i = 0; i < foundTrace.spans.length; i++) {
     const span = foundTrace.spans[i]!;
     const spanForMatching: TraceMatch = {
-      traceId: span.traceId,
-      spanId: span.spanId,
-      parentSpanId: span.parentSpanId,
+      traceId: normalizeId(span.traceId),
+      spanId: normalizeId(span.spanId),
+      parentSpanId: span.parentSpanId ? normalizeId(span.parentSpanId) : undefined,
       name: span.name,
       kind: eSpanKindToSpanKind(span.kind),
       status: eStatusToStatus(span.status),

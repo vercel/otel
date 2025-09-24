@@ -3,6 +3,7 @@ import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import type { ITrace } from "collector";
 import { describe } from "../../lib/with-bridge";
 import { expectTrace } from "../../lib/expect-trace";
+import { normalizeId } from "../../lib/normalize-id";
 
 describe("vercel deployment: outbound with fetch", {}, (props) => {
   it("should create a span for fetch", async () => {
@@ -79,7 +80,7 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
     expect(fetch.headers.get("traceparent")).toEqual(
-      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
+      `00-${normalizeId(fetchSpan.traceId)}-${normalizeId(fetchSpan.spanId)}-01`
     );
   });
 
@@ -157,7 +158,7 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
     expect(fetch.headers.get("traceparent")).toEqual(
-      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
+      `00-${normalizeId(fetchSpan.traceId)}-${normalizeId(fetchSpan.spanId)}-01`
     );
   });
 
@@ -402,7 +403,7 @@ describe("vercel deployment: outbound with http", {}, (props) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
     expect(fetch.headers.get("traceparent")).toEqual(
-      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
+      `00-${normalizeId(fetchSpan.traceId)}-${normalizeId(fetchSpan.spanId)}-01`
     );
   });
 
