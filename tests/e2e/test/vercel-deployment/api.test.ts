@@ -59,6 +59,7 @@ describe("vercel deployment: api", {}, (props) => {
   });
 
   it("should trace render for edge", async () => {
+    console.log("trigger test");
     const { collector, bridge } = props();
 
     const execResp = await bridge.fetch("/api/service/baz/edge");
