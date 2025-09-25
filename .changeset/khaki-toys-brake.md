@@ -70,13 +70,24 @@ For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the 
    npm install @opentelemetry/sdk-logs@^0.205.0 @opentelemetry/instrumentation@^0.205.0 @opentelemetry/api-logs@^0.205.0
    ```
 
-2. **Update log processors configuration**: Change `logRecordProcessor` to `logRecordProcessors` and wrap single processors in an array:
+2. **Update configuration**:
+
+   **Log Record Processors** - Change `logRecordProcessor` to `logRecordProcessors`:
    ```typescript
    // Before
    { logRecordProcessor: myProcessor }
 
    // After
    { logRecordProcessors: [myProcessor] }
+   ```
+
+   **Metric Readers** - Change `metricReader` to `metricReaders`:
+   ```typescript
+   // Before
+   { metricReader: myReader }
+
+   // After
+   { metricReaders: [myReader] }
    ```
 
 3. **No code changes needed** for basic usage - the SDK interface remains the same for most common use cases.
