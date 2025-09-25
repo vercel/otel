@@ -10,7 +10,7 @@ Add support for OTel JS SDK 2.X
 ### 1. OpenTelemetry SDK dependencies updated
 
 **Stable packages** (updated to v2.x):
-- `@opentelemetry/api`: `>=1.9.0 <3.0.0` (was `>=1.7.0 <2.0.0`)
+- `@opentelemetry/api`: `>=1.9.0 <2.0.0` (was `>=1.7.0 <2.0.0`)
 - `@opentelemetry/resources`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 - `@opentelemetry/sdk-metrics`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 - `@opentelemetry/sdk-trace-base`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
