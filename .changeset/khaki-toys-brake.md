@@ -10,12 +10,14 @@ Add support for OTel JS SDK 2.X
 ### 1. OpenTelemetry SDK dependencies updated
 
 **Stable packages** (updated to v2.x):
+
 - `@opentelemetry/api`: `>=1.9.0 <2.0.0` (was `>=1.7.0 <2.0.0`)
 - `@opentelemetry/resources`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 - `@opentelemetry/sdk-metrics`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 - `@opentelemetry/sdk-trace-base`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 
 **Experimental packages** (updated to v0.2XX):
+
 - `@opentelemetry/api-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 - `@opentelemetry/instrumentation`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 - `@opentelemetry/sdk-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
@@ -27,6 +29,7 @@ The minimum supported Node.js has been raised to `^18.19.0 || >=20.6.0`. This me
 ### 3. Configuration changes
 
 **Log Record Processors:**
+
 ```typescript
 // Before (v1.x)
 registerOTel({
@@ -42,6 +45,7 @@ registerOTel({
 ```
 
 **Metric Readers:**
+
 ```typescript
 // Before (v1.x)
 registerOTel({
@@ -65,11 +69,13 @@ For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the 
 1. **Update peer dependencies**:
 
    **Stable packages** (upgrade to v2.x):
+
    ```bash
    npm install @opentelemetry/api@^1.9.0 @opentelemetry/resources@^2.1.0 @opentelemetry/sdk-trace-base@^2.1.0 @opentelemetry/sdk-metrics@^2.1.0
    ```
 
    **Experimental packages** (upgrade to v0.2XX):
+
    ```bash
    npm install @opentelemetry/sdk-logs@^0.205.0 @opentelemetry/instrumentation@^0.205.0 @opentelemetry/api-logs@^0.205.0
    ```
@@ -77,21 +83,31 @@ For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the 
 2. **Update configuration**:
 
    **Log Record Processors** - Change `logRecordProcessor` to `logRecordProcessors`:
+
    ```typescript
    // Before
-   { logRecordProcessor: myProcessor }
+   {
+     logRecordProcessor: myProcessor;
+   }
 
    // After
-   { logRecordProcessors: [myProcessor] }
+   {
+     logRecordProcessors: [myProcessor];
+   }
    ```
 
    **Metric Readers** - Change `metricReader` to `metricReaders`:
+
    ```typescript
    // Before
-   { metricReader: myReader }
+   {
+     metricReader: myReader;
+   }
 
    // After
-   { metricReaders: [myReader] }
+   {
+     metricReaders: [myReader];
+   }
    ```
 
 3. **No code changes needed** for basic usage - the SDK interface remains the same for most common use cases.
