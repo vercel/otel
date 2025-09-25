@@ -9,8 +9,8 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
 
     const execResp = await bridge.fetch(
       `/api/service/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}`
+        `http://localhost:${bridge.port}`,
+      )}`,
     );
     expect(execResp.status).toBe(200);
     expect(await execResp.text()).toEqual("Success baz bar");
@@ -79,8 +79,8 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
 
     const execResp = await bridge.fetch(
       `/api/service/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}&mode=formdata`
+        `http://localhost:${bridge.port}`,
+      )}&mode=formdata`,
     );
     expect(execResp.status).toBe(200);
     expect(await execResp.text()).toEqual("Success baz bar");
@@ -149,8 +149,8 @@ describe("vercel deployment: api inbound with fetch", {}, (props) => {
 
     const execResp = await bridge.fetch(
       `/api/service/baz/edge?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}`
+        `http://localhost:${bridge.port}`,
+      )}`,
     );
     expect(execResp.status).toBe(200);
     expect(await execResp.text()).toEqual("Success edge baz bar");
@@ -203,8 +203,8 @@ describe("vercel deployment: api inbound with http", {}, (props) => {
 
     const execResp = await bridge.fetch(
       `/api/service/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}&fetchType=http`
+        `http://localhost:${bridge.port}`,
+      )}&fetchType=http`,
     );
     expect(execResp.status).toBe(200);
     expect(await execResp.text()).toEqual("Success baz bar");
@@ -273,8 +273,8 @@ describe("vercel deployment: api inbound with http", {}, (props) => {
 
     const execResp = await bridge.fetch(
       `/api/service/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}&mode=formdata&fetchType=http`
+        `http://localhost:${bridge.port}`,
+      )}&mode=formdata&fetchType=http`,
     );
     expect(execResp.status).toBe(200);
     expect(await execResp.text()).toEqual("Success baz bar");

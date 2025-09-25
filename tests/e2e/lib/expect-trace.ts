@@ -26,7 +26,7 @@ export interface TraceMatch {
 
 export async function expectTrace(
   collector: OtelCollector,
-  tracesMatch: TraceMatch
+  tracesMatch: TraceMatch,
 ): Promise<void> {
   const numberOfSpans = countSpans(tracesMatch);
 
@@ -66,7 +66,7 @@ export async function expectTrace(
         traces.length
       }) [${traces
         .map((t) => `"${t.name}" (${t.spans.length} spans)`)
-        .join(", ")}]`
+        .join(", ")}]`,
     );
   }
 
@@ -78,7 +78,9 @@ export async function expectTrace(
     const spanForMatching: TraceMatch = {
       traceId: normalizeId(span.traceId),
       spanId: normalizeId(span.spanId),
-      parentSpanId: span.parentSpanId ? normalizeId(span.parentSpanId) : undefined,
+      parentSpanId: span.parentSpanId
+        ? normalizeId(span.parentSpanId)
+        : undefined,
       name: span.name,
       kind: eSpanKindToSpanKind(span.kind),
       status: eStatusToStatus(span.status),
@@ -157,14 +159,14 @@ const eStatusCodeToStatusCode = (eCode: number): SpanStatusCode => {
 };
 
 const eStatusToStatus = (
-  eStatus: ITrace["spans"][number]["status"]
+  eStatus: ITrace["spans"][number]["status"],
 ): SpanStatus => {
   const { code: eCode, message } = eStatus;
   return { code: eStatusCodeToStatusCode(eCode), message };
 };
 
 const eAttrValueToAttrValue = (
-  value: ITrace["spans"][number]["attributes"][number]["value"]
+  value: ITrace["spans"][number]["attributes"][number]["value"],
 ): AttributeValue | null => {
   if (value.stringValue !== undefined) {
     return value.stringValue;
@@ -187,7 +189,7 @@ const eAttrValueToAttrValue = (
 };
 
 const eAttrsToAttrs = (
-  attrs: ITrace["spans"][number]["attributes"]
+  attrs: ITrace["spans"][number]["attributes"],
 ): Attributes => {
   const result: Attributes = {};
   for (const { key, value } of attrs) {
@@ -210,7 +212,7 @@ export function printTraces(collector: OtelCollector): void {
       serviceMap[trace.serviceName]!.attributes.map(({ key, value }) => ({
         key,
         value: JSON.stringify(value),
-      }))
+      })),
     );
     for (const span of trace.spans) {
       console.log("  span:", span.name);

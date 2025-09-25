@@ -29,5 +29,5 @@ describe(
       await expectStdio(stdio.out, "name: 'GET /slugs/[slug]/edge'");
       expect(collector.getAllTraces().length).toBe(0);
     });
-  }
+  },
 );

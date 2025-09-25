@@ -2,7 +2,7 @@ import { expect } from "vitest";
 
 export async function expectStdio(
   stdio: string[],
-  match: string | RegExp | ((s: string) => boolean)
+  match: string | RegExp | ((s: string) => boolean),
 ): Promise<void> {
   const found = await Promise.race([
     new Promise<boolean>((resolve) => {
