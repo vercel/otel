@@ -1,0 +1,16 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "multiple-exporters": "0.1.0",
+    "sample": "0.1.0",
+    "bridge-emulator": "1.0.0",
+    "collector": "1.0.0",
+    "eslint-config": "1.0.0",
+    "@vercel/otel": "1.13.0",
+    "otelzero": "1.7.0",
+    "typescript-config": "1.0.0",
+    "e2e": "1.0.0"
+  },
+  "changesets": []
+}
