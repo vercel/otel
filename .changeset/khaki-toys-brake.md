@@ -7,17 +7,18 @@ Add support for OTel JS SDK 2.X
 
 ## Breaking Changes
 
-### 1. OpenTelemetry SDK dependencies updated to v2.x
+### 1. OpenTelemetry SDK dependencies updated
 
-The following peer dependencies have been updated to support OpenTelemetry JS SDK 2.x:
-
+**Stable packages** (updated to v2.x):
 - `@opentelemetry/api`: `>=1.9.0 <3.0.0` (was `>=1.7.0 <2.0.0`)
-- `@opentelemetry/api-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
-- `@opentelemetry/instrumentation`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 - `@opentelemetry/resources`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
-- `@opentelemetry/sdk-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 - `@opentelemetry/sdk-metrics`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 - `@opentelemetry/sdk-trace-base`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
+
+**Experimental packages** (updated to v0.2XX):
+- `@opentelemetry/api-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
+- `@opentelemetry/instrumentation`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
+- `@opentelemetry/sdk-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 
 ### 2. Log Record Processors configuration change
 
@@ -39,9 +40,20 @@ registerOTel({
 
 ## Migration Guide
 
-1. **Update peer dependencies**: Upgrade all stable OpenTelemetry packages to v2.x & experimental OpenTelemetry packages to v0.2XX in your package.json:
+For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the [official OpenTelemetry migration guide](https://github.com/open-telemetry/opentelemetry-js/blob/v2.0.0/doc/upgrade-to-2.x.md).
+
+### @vercel/otel specific changes:
+
+1. **Update peer dependencies**:
+
+   **Stable packages** (upgrade to v2.x):
    ```bash
-   npm install @opentelemetry/api@^1.9.0 @opentelemetry/resources@^2.1.0 @opentelemetry/sdk-trace-base@^2.1.0 @opentelemetry/sdk-metrics@^2.1.0 @opentelemetry/sdk-logs@^0.205.0 @opentelemetry/instrumentation@^0.205.0
+   npm install @opentelemetry/api@^1.9.0 @opentelemetry/resources@^2.1.0 @opentelemetry/sdk-trace-base@^2.1.0 @opentelemetry/sdk-metrics@^2.1.0
+   ```
+
+   **Experimental packages** (upgrade to v0.2XX):
+   ```bash
+   npm install @opentelemetry/sdk-logs@^0.205.0 @opentelemetry/instrumentation@^0.205.0 @opentelemetry/api-logs@^0.205.0
    ```
 
 2. **Update log processors configuration**: Change `logRecordProcessor` to `logRecordProcessors` and wrap single processors in an array:
