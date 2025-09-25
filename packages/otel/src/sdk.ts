@@ -195,10 +195,7 @@ export class Sdk {
     if (configuration.logRecordProcessors) {
       const loggerProvider = new LoggerProvider({
         resource,
-      });
-
-      configuration.logRecordProcessors.forEach((processor) => {
-        loggerProvider.addLogRecordProcessor(processor);
+        processors: configuration.logRecordProcessors
       });
 
       this.loggerProvider = loggerProvider;
