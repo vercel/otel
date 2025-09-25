@@ -73,12 +73,13 @@ export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
         if (!isValidSpan(span)) {
           continue;
         }
-        const { traceId, parentSpanId, name, attributes } = span;
+        const { traceId: traceIdRaw, parentSpanId, name, attributes } = span;
+        const traceId = normalizeId(traceIdRaw);
         let trace = store.traces.find((t) => t.traceId === traceId);
         if (!trace) {
           trace = {
             index: ++traceIndex,
-            traceId: normalizeId(traceId),
+            traceId,
             serviceName: "",
             name: "",
             spans: [],
