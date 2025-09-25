@@ -39,5 +39,5 @@ export function registerOTel(
     options = optionsOrServiceName;
   }
   const sdk = new Sdk(options);
-  void sdk.start();
+  sdk.start();
 }
