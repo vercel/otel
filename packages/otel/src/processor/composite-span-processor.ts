@@ -20,7 +20,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
   constructor(
     private processors: SpanProcessor[],
-    private attributesFromHeaders: AttributesFromHeaders | undefined
+    private attributesFromHeaders: AttributesFromHeaders | undefined,
   ) {}
 
   forceFlush(): Promise<void> {
@@ -28,20 +28,21 @@ export class CompositeSpanProcessor implements SpanProcessor {
       this.processors.map((p) =>
         p.forceFlush().catch((e) => {
           diag.error("@vercel/otel: forceFlush failed:", e);
-        })
-      )
+        }),
+      ),
     ).then(() => undefined);
   }
 
   shutdown(): Promise<void> {
     return Promise.all(
-      this.processors.map((p) => p.shutdown().catch(() => undefined))
+      this.processors.map((p) => p.shutdown().catch(() => undefined)),
     ).then(() => undefined);
   }
 
   onStart(span: Span, parentContext: Context): void {
     const { traceId, spanId, traceFlags } = span.spanContext();
-    const isRoot = !span.parentSpanContext?.spanId || !this.rootSpanIds.has(traceId);
+    const isRoot =
+      !span.parentSpanContext?.spanId || !this.rootSpanIds.has(traceId);
     if (isRoot) {
       this.rootSpanIds.set(traceId, { rootSpanId: spanId, open: [] });
     } else {
@@ -51,7 +52,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
       const vrc = getVercelRequestContext();
       const vercelRequestContextAttrs = getVercelRequestContextAttributes(
         vrc,
-        this.attributesFromHeaders
+        this.attributesFromHeaders,
       );
       if (vercelRequestContextAttrs) {
         span.setAttributes(vercelRequestContextAttrs);
@@ -200,7 +201,7 @@ function getResourceAttributes(span: ReadableSpan): Attributes | undefined {
   return {
     "operation.name": toOperationName(
       libraryName,
-      kind === SpanKind.INTERNAL ? "" : SPAN_KIND_NAME[kind]
+      kind === SpanKind.INTERNAL ? "" : SPAN_KIND_NAME[kind],
     ),
   };
 }

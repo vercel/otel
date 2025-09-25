@@ -45,7 +45,7 @@ export class W3CTraceContextPropagator implements TextMapPropagator {
       setter.set(
         carrier,
         TRACE_STATE_HEADER,
-        spanContext.traceState.serialize()
+        spanContext.traceState.serialize(),
       );
     }
   }
@@ -71,7 +71,7 @@ export class W3CTraceContextPropagator implements TextMapPropagator {
         ? traceStateHeader.join(",")
         : traceStateHeader;
       spanContext.traceState = createTraceState(
-        typeof state === "string" ? state : undefined
+        typeof state === "string" ? state : undefined,
       );
     }
     return traceApi.setSpanContext(context, spanContext);

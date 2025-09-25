@@ -8,7 +8,7 @@ import { getVercelRequestContext } from "./api";
 export class VercelRuntimeSpanExporter implements SpanExporter {
   export(
     spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void
+    resultCallback: (result: ExportResult) => void,
   ): void {
     const context = getVercelRequestContext();
     if (!context?.telemetry) {
@@ -25,7 +25,7 @@ export class VercelRuntimeSpanExporter implements SpanExporter {
       }
       // Convert back to object format for the Vercel telemetry API
       const data = JSON.parse(
-        new TextDecoder().decode(serializedData)
+        new TextDecoder().decode(serializedData),
       ) as IExportTraceServiceRequest;
 
       context.telemetry.reportSpans(data);

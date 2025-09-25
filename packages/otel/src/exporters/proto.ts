@@ -38,7 +38,7 @@ import type { Long } from "protobufjs/minimal";
 import { Writer } from "protobufjs/minimal";
 
 export function encodeTraceServiceRequest(
-  message: IExportTraceServiceRequest
+  message: IExportTraceServiceRequest,
 ): Uint8Array {
   const writer = new Writer();
   ExportTraceServiceRequest_encode(message, writer);
@@ -47,13 +47,13 @@ export function encodeTraceServiceRequest(
 
 export function ExportTraceServiceRequest_encode(
   message: IExportTraceServiceRequest,
-  writer: Writer
+  writer: Writer,
 ): Writer {
   if (message.resourceSpans != null && message.resourceSpans.length)
     for (let i = 0; i < message.resourceSpans.length; ++i)
       ResourceSpans_encode(
         message.resourceSpans[i]!,
-        writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+        writer.uint32(/* id 1, wireType 2 =*/ 10).fork(),
       ).ldelim();
   return writer;
 }
@@ -62,13 +62,13 @@ function ResourceSpans_encode(message: IResourceSpans, writer: Writer): Writer {
   if (message.resource != null)
     Resource_encode(
       message.resource,
-      writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+      writer.uint32(/* id 1, wireType 2 =*/ 10).fork(),
     ).ldelim();
   if (message.scopeSpans != null && message.scopeSpans.length)
     for (let i = 0; i < message.scopeSpans.length; ++i)
       ScopeSpans_encode(
         message.scopeSpans[i]!,
-        writer.uint32(/* id 2, wireType 2 =*/ 18).fork()
+        writer.uint32(/* id 2, wireType 2 =*/ 18).fork(),
       ).ldelim();
   if (message.schemaUrl != null)
     writer.uint32(/* id 3, wireType 2 =*/ 26).string(message.schemaUrl);
@@ -80,7 +80,7 @@ function Resource_encode(message: Resource, writer: Writer): Writer {
     for (let i = 0; i < message.attributes.length; ++i)
       KeyValue_encode(
         message.attributes[i]!,
-        writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+        writer.uint32(/* id 1, wireType 2 =*/ 10).fork(),
       ).ldelim();
   if (message.droppedAttributesCount != null)
     writer
@@ -93,13 +93,13 @@ function ScopeSpans_encode(message: IScopeSpans, writer: Writer): Writer {
   if (message.scope != null)
     InstrumentationScope_encode(
       message.scope,
-      writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+      writer.uint32(/* id 1, wireType 2 =*/ 10).fork(),
     ).ldelim();
   if (message.spans != null && message.spans.length)
     for (let i = 0; i < message.spans.length; ++i)
       Span_encode(
         message.spans[i]!,
-        writer.uint32(/* id 2, wireType 2 =*/ 18).fork()
+        writer.uint32(/* id 2, wireType 2 =*/ 18).fork(),
       ).ldelim();
   if (message.schemaUrl != null)
     writer.uint32(/* id 3, wireType 2 =*/ 26).string(message.schemaUrl);
@@ -112,7 +112,7 @@ function KeyValue_encode(message: IKeyValue, writer: Writer): Writer {
   if (message.value != null)
     AnyValue_encode(
       message.value,
-      writer.uint32(/* id 2, wireType 2 =*/ 18).fork()
+      writer.uint32(/* id 2, wireType 2 =*/ 18).fork(),
     ).ldelim();
   return writer;
 }
@@ -129,12 +129,12 @@ function AnyValue_encode(message: IAnyValue, writer: Writer): Writer {
   if (message.arrayValue != null)
     ArrayValue_encode(
       message.arrayValue,
-      writer.uint32(/* id 5, wireType 2 =*/ 42).fork()
+      writer.uint32(/* id 5, wireType 2 =*/ 42).fork(),
     ).ldelim();
   if (message.kvlistValue != null)
     KeyValueList_encode(
       message.kvlistValue,
-      writer.uint32(/* id 6, wireType 2 =*/ 50).fork()
+      writer.uint32(/* id 6, wireType 2 =*/ 50).fork(),
     ).ldelim();
   if (message.bytesValue != null)
     writer.uint32(/* id 7, wireType 2 =*/ 58).bytes(message.bytesValue);
@@ -146,7 +146,7 @@ function ArrayValue_encode(message: IArrayValue, writer: Writer): Writer {
     for (let i = 0; i < message.values.length; ++i)
       AnyValue_encode(
         message.values[i]!,
-        writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+        writer.uint32(/* id 1, wireType 2 =*/ 10).fork(),
       ).ldelim();
   return writer;
 }
@@ -156,14 +156,14 @@ function KeyValueList_encode(message: IKeyValueList, writer: Writer): Writer {
     for (let i = 0; i < message.values.length; ++i)
       KeyValue_encode(
         message.values[i]!,
-        writer.uint32(/* id 1, wireType 2 =*/ 10).fork()
+        writer.uint32(/* id 1, wireType 2 =*/ 10).fork(),
       ).ldelim();
   return writer;
 }
 
 function InstrumentationScope_encode(
   message: IInstrumentationScope,
-  writer: Writer
+  writer: Writer,
 ): Writer {
   if (message.name != null)
     writer.uint32(/* id 1, wireType 2 =*/ 10).string(message.name);
@@ -173,7 +173,7 @@ function InstrumentationScope_encode(
     for (let i = 0; i < message.attributes.length; ++i)
       KeyValue_encode(
         message.attributes[i]!,
-        writer.uint32(/* id 3, wireType 2 =*/ 26).fork()
+        writer.uint32(/* id 3, wireType 2 =*/ 26).fork(),
       ).ldelim();
   if (message.droppedAttributesCount != null)
     writer
@@ -207,7 +207,7 @@ function Span_encode(message: ISpan, writer: Writer): Writer {
     for (let i = 0; i < message.attributes.length; ++i)
       KeyValue_encode(
         message.attributes[i]!,
-        writer.uint32(/* id 9, wireType 2 =*/ 74).fork()
+        writer.uint32(/* id 9, wireType 2 =*/ 74).fork(),
       ).ldelim();
   if (message.droppedAttributesCount != null)
     writer
@@ -217,7 +217,7 @@ function Span_encode(message: ISpan, writer: Writer): Writer {
     for (let i = 0; i < message.events.length; ++i)
       Event_encode(
         message.events[i]!,
-        writer.uint32(/* id 11, wireType 2 =*/ 90).fork()
+        writer.uint32(/* id 11, wireType 2 =*/ 90).fork(),
       ).ldelim();
   if (message.droppedEventsCount != null)
     writer
@@ -227,7 +227,7 @@ function Span_encode(message: ISpan, writer: Writer): Writer {
     for (let i = 0; i < message.links.length; ++i)
       Link_encode(
         message.links[i]!,
-        writer.uint32(/* id 13, wireType 2 =*/ 106).fork()
+        writer.uint32(/* id 13, wireType 2 =*/ 106).fork(),
       ).ldelim();
   if (message.droppedLinksCount != null)
     writer
@@ -236,7 +236,7 @@ function Span_encode(message: ISpan, writer: Writer): Writer {
   if (message.status != null)
     Status_encode(
       message.status,
-      writer.uint32(/* id 15, wireType 2 =*/ 122).fork()
+      writer.uint32(/* id 15, wireType 2 =*/ 122).fork(),
     ).ldelim();
   return writer;
 }
@@ -260,7 +260,7 @@ function Event_encode(message: IEvent, writer: Writer): Writer {
     for (let i = 0; i < message.attributes.length; ++i)
       KeyValue_encode(
         message.attributes[i]!,
-        writer.uint32(/* id 3, wireType 2 =*/ 26).fork()
+        writer.uint32(/* id 3, wireType 2 =*/ 26).fork(),
       ).ldelim();
   if (message.droppedAttributesCount != null)
     writer
@@ -280,7 +280,7 @@ function Link_encode(message: ILink, writer: Writer): Writer {
     for (let i = 0; i < message.attributes.length; ++i)
       KeyValue_encode(
         message.attributes[i]!,
-        writer.uint32(/* id 4, wireType 2 =*/ 34).fork()
+        writer.uint32(/* id 4, wireType 2 =*/ 34).fork(),
       ).ldelim();
   if (message.droppedAttributesCount != null)
     writer

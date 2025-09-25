@@ -23,7 +23,7 @@ export interface OtelCollector {
 }
 
 export async function start(
-  opts?: OtelCollectorOptions
+  opts?: OtelCollectorOptions,
 ): Promise<OtelCollector> {
   const server = new Server();
   server.addHandlers(createCollectorHandlers());

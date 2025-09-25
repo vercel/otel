@@ -19,7 +19,7 @@ export interface MeterOptions {
 export function meterCounter(
   name: string,
   value: number,
-  opts?: MeterOptions
+  opts?: MeterOptions,
 ): void {
   const meter = getMeter(opts ?? NO_OPTS);
   if (!meter) {
@@ -36,7 +36,7 @@ export function meterCounter(
 export function meterHistogram(
   name: string,
   value: number,
-  opts?: MeterOptions
+  opts?: MeterOptions,
 ): void {
   const meter = getMeter(opts ?? NO_OPTS);
   if (!meter) {

@@ -3,8 +3,14 @@
  * See https://opentelemetry.io/docs/.
  */
 
-import type { Fixed64, Resource } from '@opentelemetry/otlp-transformer/build/src/common/internal-types';
-import type { IResourceSpans, ISpan } from '@opentelemetry/otlp-transformer/build/src/trace/internal-types';
+import type {
+  Fixed64,
+  Resource,
+} from "@opentelemetry/otlp-transformer/build/src/common/internal-types";
+import type {
+  IResourceSpans,
+  ISpan,
+} from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
 import type { IHandler } from "./server";
 
 type ISpanWithService = ISpan & { serviceName: string };
@@ -53,13 +59,13 @@ export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
       continue;
     }
     const serviceNameRaw = resource.attributes.find(
-      ({ key }) => key === 'service.name'
+      ({ key }) => key === "service.name",
     )?.value.stringValue;
     if (!serviceNameRaw) {
       continue;
     }
     const runtimeName = resource.attributes.find(
-      ({ key }) => key === "runtime.name" || key === "vercel.runtime"
+      ({ key }) => key === "runtime.name" || key === "vercel.runtime",
     )?.value.stringValue;
     const serviceName = `${serviceNameRaw}${
       runtimeName ? `:${runtimeName}` : ""
@@ -129,7 +135,7 @@ export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
             span.spanId,
             parentSpanId,
             span.spanId === rootSpan?.spanId,
-            rootSpan?.name
+            rootSpan?.name,
           );
         }
         if (span.spanId === rootSpan?.spanId) {
@@ -207,11 +213,11 @@ function createCollectorTraceHandler(): IHandler {
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.setHeader(
         "Access-Control-Allow-Methods",
-        "POST, GET, OPTIONS, DELETE"
+        "POST, GET, OPTIONS, DELETE",
       );
       res.setHeader(
         "Access-Control-Allow-Headers",
-        "content-type, accept, otel-encoding"
+        "content-type, accept, otel-encoding",
       );
       res.setHeader("Access-Control-Max-Age", "86400");
 
@@ -281,7 +287,7 @@ function createCollectorGetTraceHandler(): IHandler {
 function isValidSpan(span: ISpan): boolean {
   const { attributes } = span;
   const hasBubble = attributes.some(
-    ({ key, value }) => key === "next.bubble" && value.boolValue === true
+    ({ key, value }) => key === "next.bubble" && value.boolValue === true,
   );
   if (hasBubble) {
     return false;
@@ -319,8 +325,8 @@ function unixNanoToMillis(unixNano: Fixed64): number {
 }
 
 function normalizeId(id: string | Uint8Array): string {
-  if (typeof id === 'string') {
-    return id
+  if (typeof id === "string") {
+    return id;
   }
-  return Buffer.from(id).toString('hex')
+  return Buffer.from(id).toString("hex");
 }

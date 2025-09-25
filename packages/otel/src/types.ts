@@ -149,7 +149,7 @@ export interface Configuration {
 
 export type AttributesFromHeaderFunc = <Carrier = unknown>(
   headers: Carrier,
-  getter: TextMapGetter<Carrier>
+  getter: TextMapGetter<Carrier>,
 ) => Attributes | undefined;
 
 export type AttributesFromHeaders =

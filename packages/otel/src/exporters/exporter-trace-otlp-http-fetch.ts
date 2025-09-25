@@ -19,7 +19,7 @@ export class OTLPHttpJsonTraceExporter implements SpanExporter {
   /** See `SpanExporter#export()` */
   export(
     spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void
+    resultCallback: (result: ExportResult) => void,
   ): void {
     this.impl.export(spans, resultCallback);
   }

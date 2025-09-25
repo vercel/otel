@@ -28,7 +28,7 @@ export {
  * @param optionsOrServiceName - Either a service name as a string or a configuration object.
  */
 export function registerOTel(
-  optionsOrServiceName?: Configuration | string
+  optionsOrServiceName?: Configuration | string,
 ): void {
   let options: Configuration;
   if (!optionsOrServiceName) {

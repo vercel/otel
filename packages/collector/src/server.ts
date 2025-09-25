@@ -6,7 +6,7 @@ import {
 
 export type IHandler = (
   req: IncomingMessage,
-  res: ServerResponse
+  res: ServerResponse,
 ) => void | Promise<void>;
 
 export class Server {

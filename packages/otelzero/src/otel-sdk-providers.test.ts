@@ -57,7 +57,7 @@ describe("via otel SDK", () => {
       const value: number = trace(
         "test",
         { attributes: { foo: "bar" } },
-        () => 42
+        () => 42,
       );
       expect(value).toBe(42);
 
@@ -88,7 +88,7 @@ describe("via otel SDK", () => {
           },
           () => {
             return rootTraceContext(() => trace("test2", () => 42));
-          }
+          },
         );
       });
       expect(value).toBe(42);
@@ -108,12 +108,12 @@ describe("via otel SDK", () => {
             {
               attributes: { foo: "bar" },
             },
-            () => 42
+            () => 42,
           );
         },
         {
           traceparent: `00-ee75cd9e534ff5e9ed78b4a0c706f0f2-0f6a325411bdc432-01`,
-        }
+        },
       );
       expect(value).toBe(42);
 

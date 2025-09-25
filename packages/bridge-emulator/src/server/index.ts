@@ -9,7 +9,7 @@ import type {
 
 export interface VercelRequestContext {
   waitUntil: (
-    promiseOrFunc: Promise<unknown> | (() => Promise<unknown>)
+    promiseOrFunc: Promise<unknown> | (() => Promise<unknown>),
   ) => void;
   headers: Record<string, string | undefined>;
   url: string;
@@ -63,7 +63,7 @@ export class BridgeEmulatorContextReader implements TextMapPropagator {
           return [key, value[0]];
         }
         return [key, value];
-      })
+      }),
     );
     const {
       "x-otel-test-id": testId,

@@ -8,7 +8,7 @@ import type { SpanContext } from "@opentelemetry/api";
 /** @internal */
 export interface VercelRequestContext {
   waitUntil: (
-    promiseOrFunc: Promise<unknown> | (() => Promise<unknown>)
+    promiseOrFunc: Promise<unknown> | (() => Promise<unknown>),
   ) => void;
   headers: Record<string, string | undefined>;
   url: string;

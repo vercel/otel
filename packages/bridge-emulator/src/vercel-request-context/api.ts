@@ -5,7 +5,7 @@
 
 export interface VercelRequestContext {
   waitUntil: (
-    promiseOrFunc: Promise<unknown> | (() => Promise<unknown>)
+    promiseOrFunc: Promise<unknown> | (() => Promise<unknown>),
   ) => void;
   headers: Record<string, string | undefined>;
   url: string;
@@ -31,7 +31,7 @@ let testContext: VercelRequestContext | undefined;
 
 export function withRequestContext<T>(
   context: VercelRequestContext,
-  fn: () => T
+  fn: () => T,
 ): T {
   let reader = (globalThis as GlobalWithReader)[symbol];
   if (!reader) {

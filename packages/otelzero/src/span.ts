@@ -11,7 +11,7 @@ export interface Span {
   addEvent: (
     name: string,
     attributesOrStartTime?: Attributes | TimeInput,
-    startTime?: TimeInput
+    startTime?: TimeInput,
   ) => this;
   addLink: (link: Link) => this;
   addLinks: (links: Link[]) => this;

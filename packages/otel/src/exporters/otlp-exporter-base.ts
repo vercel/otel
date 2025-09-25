@@ -32,11 +32,11 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
 
   export(
     items: ExportItem[],
-    resultCallback: (result: ExportResult) => void
+    resultCallback: (result: ExportResult) => void,
   ): void {
     if (this._shutdownOnce.isCalled) {
       diag.debug(
-        "@vercel/otel/otlp: Shutdown already started. Cannot send objects"
+        "@vercel/otel/otlp: Shutdown already started. Cannot send objects",
       );
       return;
     }
@@ -44,7 +44,7 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     this.send(
       items,
       () => resultCallback({ code: 0 }), // SUCCESS
-      (error: OTLPExporterError) => resultCallback({ code: 1, error }) // FAILED
+      (error: OTLPExporterError) => resultCallback({ code: 1, error }), // FAILED
     );
   }
 
@@ -61,11 +61,11 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   send(
     items: ExportItem[],
     onSuccess: () => void,
-    onError: (error: OTLPExporterError) => void
+    onError: (error: OTLPExporterError) => void,
   ): void {
     if (this._shutdownOnce.isCalled) {
       diag.debug(
-        "@vercel/otel/otlp: Shutdown already started. Cannot send objects"
+        "@vercel/otel/otlp: Shutdown already started. Cannot send objects",
       );
       return;
     }

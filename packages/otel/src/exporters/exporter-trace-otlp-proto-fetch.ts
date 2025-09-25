@@ -20,7 +20,7 @@ export class OTLPHttpProtoTraceExporter implements SpanExporter {
 
   export(
     spans: ReadableSpan[],
-    resultCallback: (result: ExportResult) => void
+    resultCallback: (result: ExportResult) => void,
   ): void {
     this.impl.export(spans, resultCallback);
   }

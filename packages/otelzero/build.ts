@@ -29,7 +29,7 @@ async function buildAll(): Promise<void> {
     const s = await stat(file);
     if (s.size > maxSize) {
       errors.push(
-        `${file}: the size of ${s.size} is over the maximum allowed size of ${maxSize}`
+        `${file}: the size of ${s.size} is over the maximum allowed size of ${maxSize}`,
       );
     }
   }
