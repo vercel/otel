@@ -20,7 +20,11 @@ Add support for OTel JS SDK 2.X
 - `@opentelemetry/instrumentation`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 - `@opentelemetry/sdk-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 
-### 2. Configuration changes from single to array
+### 2. Minimum Node.js version requirement
+
+The minimum supported Node.js has been raised to `^18.19.0 || >=20.6.0`. This means that support for Node.js 14 and 16 has been dropped.
+
+### 3. Configuration changes
 
 **Log Record Processors:**
 ```typescript
