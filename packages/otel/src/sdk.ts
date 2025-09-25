@@ -202,11 +202,11 @@ export class Sdk {
       logs.setGlobalLoggerProvider(loggerProvider);
     }
 
-    if (configuration.metricReader || configuration.views) {
+    if (configuration.metricReaders || configuration.views) {
       const meterProvider = new MeterProvider({
         resource,
         views: configuration.views ?? [],
-        readers: configuration.metricReader ? [configuration.metricReader] : [],
+        readers: configuration.metricReaders ?? [],
       });
       metrics.setGlobalMeterProvider(meterProvider);
       this.meterProvider = meterProvider;

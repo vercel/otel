@@ -20,21 +20,35 @@ Add support for OTel JS SDK 2.X
 - `@opentelemetry/instrumentation`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 - `@opentelemetry/sdk-logs`: `>=0.200.0 <0.300.0` (was `>=0.46.0 <0.200.0`)
 
-### 2. Log Record Processors configuration change
+### 2. Configuration changes from single to array
 
-**Before (v1.x):**
+**Log Record Processors:**
 ```typescript
+// Before (v1.x)
 registerOTel({
    serviceName: 'your-service-name'
    logRecordProcessor: myProcessor // Single processor
 });
-```
 
-**After (v2.x):**
-```typescript
+// After (v2.x)
 registerOTel({
    serviceName: 'your-service-name'
    logRecordProcessors: [myProcessor] // Array of processors
+});
+```
+
+**Metric Readers:**
+```typescript
+// Before (v1.x)
+registerOTel({
+   serviceName: 'your-service-name'
+   metricReader: myReader // Single reader
+});
+
+// After (v2.x)
+registerOTel({
+   serviceName: 'your-service-name'
+   metricReaders: [myReader] // Array of readers
 });
 ```
 

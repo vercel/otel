@@ -143,7 +143,7 @@ export interface Configuration {
   spanLimits?: SpanLimits;
 
   logRecordProcessors?: LogRecordProcessor[];
-  metricReader?: MetricReader;
+  metricReaders?: MetricReader[];
   views?: ViewOptions[];
 }
 
