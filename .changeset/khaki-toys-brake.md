@@ -9,9 +9,10 @@ Add support for OTel JS SDK 2.X
 
 ### 1. OpenTelemetry SDK dependencies updated
 
-**Stable packages** (updated to v2.x):
+**API package** (minimum version bumped):
+- `@opentelemetry/api`: `>=1.9.0 <3.0.0` (was `>=1.7.0 <2.0.0`)
 
-- `@opentelemetry/api`: `>=1.9.0 <2.0.0` (was `>=1.7.0 <2.0.0`)
+**Stable packages** (updated to v2.x):
 - `@opentelemetry/resources`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 - `@opentelemetry/sdk-metrics`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
 - `@opentelemetry/sdk-trace-base`: `>=2.0.0 <3.0.0` (was `>=1.19.0 <2.0.0`)
@@ -24,7 +25,7 @@ Add support for OTel JS SDK 2.X
 
 ### 2. Minimum Node.js version requirement
 
-The minimum supported Node.js has been raised to `^18.19.0 || >=20.6.0`. This means that support for Node.js 14 and 16 has been dropped.
+The minimum supported Node.js has been raised to `^18.19.0 || >=20.6.0` to align with OpenTelemetry JS SDK 2.x requirements. This means that support for Node.js 14 and 16 has been dropped.
 
 ### 3. Configuration changes
 
@@ -66,19 +67,24 @@ For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the 
 
 ### @vercel/otel specific changes:
 
-1. **Update peer dependencies**:
+1. **Update OpenTelemetry dependencies**: Update the OpenTelemetry packages you are using in your project to the compatible versions:
+
+   **API package** (minimum version bumped):
+   ```bash
+   npm install @opentelemetry/api@^1.9.0
+   ```
 
    **Stable packages** (upgrade to v2.x):
-
    ```bash
-   npm install @opentelemetry/api@^1.9.0 @opentelemetry/resources@^2.1.0 @opentelemetry/sdk-trace-base@^2.1.0 @opentelemetry/sdk-metrics@^2.1.0
+   npm install @opentelemetry/resources@^2.1.0 @opentelemetry/sdk-trace-base@^2.1.0 @opentelemetry/sdk-metrics@^2.1.0
    ```
 
    **Experimental packages** (upgrade to v0.2XX):
-
    ```bash
    npm install @opentelemetry/sdk-logs@^0.205.0 @opentelemetry/instrumentation@^0.205.0 @opentelemetry/api-logs@^0.205.0
    ```
+
+   **Note**: Only install the packages you are actually using in your project.
 
 2. **Update configuration**:
 
