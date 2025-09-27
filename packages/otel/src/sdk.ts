@@ -106,7 +106,7 @@ export class Sdk {
     this.contextManager = contextManager;
 
     const serviceName =
-      env.OTEL_SERVICE_NAME || configuration.serviceName || "app";
+      env.OTEL_SERVICE_NAME || configuration.serviceName || "unknown_service:node";
     let resource = new Resource(
       omitUndefinedAttributes({
         [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
