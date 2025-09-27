@@ -29,7 +29,7 @@ export {
  */
 export function registerOTel(
   optionsOrServiceName?: Configuration | string
-): void {
+): Sdk {
   let options: Configuration;
   if (!optionsOrServiceName) {
     options = {};
@@ -40,4 +40,6 @@ export function registerOTel(
   }
   const sdk = new Sdk(options);
   sdk.start();
+
+  return sdk;
 }
