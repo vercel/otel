@@ -34,14 +34,14 @@ The minimum supported Node.js has been raised to `^18.19.0 || >=20.6.0` to align
 ```typescript
 // Before (v1.x)
 registerOTel({
-   serviceName: 'your-service-name'
-   logRecordProcessor: myProcessor // Single processor
+  serviceName: 'your-service-name',
+  logRecordProcessor: myProcessor // Single processor
 });
 
 // After (v2.x)
 registerOTel({
-   serviceName: 'your-service-name'
-   logRecordProcessors: [myProcessor] // Array of processors
+  serviceName: 'your-service-name',
+  logRecordProcessors: [myProcessor] // Array of processors
 });
 ```
 
@@ -50,22 +50,18 @@ registerOTel({
 ```typescript
 // Before (v1.x)
 registerOTel({
-   serviceName: 'your-service-name'
-   metricReader: myReader // Single reader
+  serviceName: 'your-service-name',
+  metricReader: myReader // Single reader
 });
 
 // After (v2.x)
 registerOTel({
-   serviceName: 'your-service-name'
-   metricReaders: [myReader] // Array of readers
+  serviceName: 'your-service-name',
+  metricReaders: [myReader] // Array of readers
 });
 ```
 
 ## Migration Guide
-
-For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the [official OpenTelemetry migration guide](https://github.com/open-telemetry/opentelemetry-js/blob/v2.0.0/doc/upgrade-to-2.x.md).
-
-### @vercel/otel specific changes:
 
 1. **Update OpenTelemetry dependencies**: Update the OpenTelemetry packages you are using in your project to the compatible versions:
 
@@ -92,28 +88,34 @@ For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the 
 
    ```typescript
    // Before
-   {
-     logRecordProcessor: myProcessor;
-   }
+   registerOTel({
+     serviceName: 'your-service-name',
+     logRecordProcessor: myProcessor // Single processor
+   });
 
    // After
-   {
+   registerOTel({
+     serviceName: 'your-service-name',
      logRecordProcessors: [myProcessor];
-   }
+   });
    ```
 
    **Metric Readers** - Change `metricReader` to `metricReaders`:
 
    ```typescript
    // Before
-   {
-     metricReader: myReader;
-   }
+   registerOTel({
+     serviceName: 'your-service-name',
+     metricReader: myReader
+   });
 
    // After
-   {
+   registerOtel({
+     serviceName: 'your-service-name',
      metricReaders: [myReader];
-   }
+   });
    ```
 
 3. **No code changes needed** for basic usage - the SDK interface remains the same for most common use cases.
+
+For complete details on migrating from OpenTelemetry JS SDK 1.x to 2.x, see the [official OpenTelemetry migration guide](https://github.com/open-telemetry/opentelemetry-js/blob/v2.0.0/doc/upgrade-to-2.x.md).
