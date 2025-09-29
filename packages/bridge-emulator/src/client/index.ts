@@ -58,7 +58,7 @@ class BridgeEmulatorServer implements Bridge {
   async connect(): Promise<void> {
     const handler = async (
       req: IncomingMessage,
-      res: ServerResponse
+      res: ServerResponse,
     ): Promise<void> => {
       let json: BridgeEmulatorRequest;
       if ((req.headers["content-type"] ?? "").includes("multipart/form-data")) {
@@ -77,7 +77,7 @@ class BridgeEmulatorServer implements Bridge {
                   .map(([key, value]) => [
                     key.slice(5),
                     Array.isArray(value) ? value[0] : value,
-                  ])
+                  ]),
               ),
             } as unknown as BridgeEmulatorRequest);
           });
@@ -94,7 +94,7 @@ class BridgeEmulatorServer implements Bridge {
           req.on("error", reject);
         });
         json = JSON.parse(
-          body.toString("utf-8") || "{}"
+          body.toString("utf-8") || "{}",
         ) as BridgeEmulatorRequest;
       }
 
@@ -130,7 +130,7 @@ class BridgeEmulatorServer implements Bridge {
         }
         const fetchReq = new Request(
           `http://${req.headers.host || ""}${req.url || ""}`,
-          { headers: fetchHeaders }
+          { headers: fetchHeaders },
         );
         this.fetches.push(fetchReq);
         res.writeHead(200, "OK", { "X-Server": "bridge" });

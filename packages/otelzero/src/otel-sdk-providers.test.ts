@@ -57,7 +57,7 @@ describe("via otel SDK", () => {
       const value: number = trace(
         "test",
         { attributes: { foo: "bar" } },
-        () => 42
+        () => 42,
       );
       expect(value).toBe(42);
 
@@ -88,7 +88,7 @@ describe("via otel SDK", () => {
           },
           () => {
             return rootTraceContext(() => trace("test2", () => 42));
-          }
+          },
         );
       });
       expect(value).toBe(42);
@@ -97,7 +97,7 @@ describe("via otel SDK", () => {
       expect(spans).toHaveLength(2);
       const sp = spans[0]!;
       expect(sp.name).toBe("test2");
-      expect(sp.parentSpanId).toBeUndefined();
+      expect(sp.parentSpanContext).toBeUndefined();
     });
 
     it("a root span with propagation", async () => {
@@ -108,12 +108,12 @@ describe("via otel SDK", () => {
             {
               attributes: { foo: "bar" },
             },
-            () => 42
+            () => 42,
           );
         },
         {
           traceparent: `00-ee75cd9e534ff5e9ed78b4a0c706f0f2-0f6a325411bdc432-01`,
-        }
+        },
       );
       expect(value).toBe(42);
 
@@ -121,7 +121,7 @@ describe("via otel SDK", () => {
       expect(spans).toHaveLength(1);
       const sp = spans[0]!;
       expect(sp.spanContext().traceId).toBe("ee75cd9e534ff5e9ed78b4a0c706f0f2");
-      expect(sp.parentSpanId).toBe("0f6a325411bdc432");
+      expect(sp.parentSpanContext?.spanId).toBe("0f6a325411bdc432");
       expect(sp.spanContext().spanId).not.toBe("0f6a325411bdc432");
       expect(sp.name).toBe("test");
       expect(sp.attributes.foo).toBe("bar");

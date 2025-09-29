@@ -9,7 +9,7 @@ import { getVercelRequestContext } from "./api";
 /** @internal */
 export function getVercelRequestContextAttributes(
   context: VercelRequestContext | undefined = getVercelRequestContext(),
-  attributesFromHeaders?: AttributesFromHeaders
+  attributesFromHeaders?: AttributesFromHeaders,
 ): Attributes | undefined {
   if (!context) {
     return undefined;
@@ -40,7 +40,7 @@ const getter: TextMapGetter<VercelRequestContextHeaders> = {
   },
   get(
     carrier: VercelRequestContextHeaders,
-    key: string
+    key: string,
   ): string | string[] | undefined {
     return carrier[key.toLocaleLowerCase()];
   },
@@ -48,7 +48,7 @@ const getter: TextMapGetter<VercelRequestContextHeaders> = {
 
 function resolveAttributesFromHeaders(
   attributesFromHeaders: AttributesFromHeaders,
-  headers: VercelRequestContextHeaders
+  headers: VercelRequestContextHeaders,
 ): Attributes | undefined {
   if (typeof attributesFromHeaders === "function") {
     return attributesFromHeaders(headers, getter);

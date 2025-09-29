@@ -29,7 +29,7 @@ interface DescribeOptions {
 export function describe(
   name: string,
   opts: DescribeOptions,
-  fn: (props: () => DescribeProps) => void
+  fn: (props: () => DescribeProps) => void,
 ): ReturnType<typeof viDescribe> {
   return viDescribe(name, () => {
     let port: number;
@@ -63,7 +63,7 @@ export function describe(
       childProcess = await execStart(
         "pnpm",
         ["--filter", "sample", prodTest ? "start" : "dev", "--port", `${port}`],
-        stdio
+        stdio,
       );
       await new Promise<void>((resolve) => {
         const schedule = (): void => {
@@ -71,7 +71,7 @@ export function describe(
             void (async (): Promise<void> => {
               const resp = await Promise.race([
                 fetch(`http://127.0.0.1:${port}/vercel.svg`).catch(
-                  () => undefined
+                  () => undefined,
                 ),
                 new Promise<undefined>((r) => {
                   setTimeout(() => r(undefined), 100);
@@ -133,7 +133,7 @@ export function describe(
 async function execStart(
   command: string,
   args: string[],
-  stdio: DescribeProps["stdio"]
+  stdio: DescribeProps["stdio"],
 ): Promise<ChildProcess> {
   const child = spawn(command, args, {
     stdio: "pipe",
@@ -155,7 +155,7 @@ async function execStart(
   return new Promise((resolve, reject) => {
     child.on("error", (reason) => {
       reject(
-        new Error(`${command} failed: ${reason.message}`, { cause: reason })
+        new Error(`${command} failed: ${reason.message}`, { cause: reason }),
       );
     });
     child.on("spawn", () => {
@@ -166,9 +166,9 @@ async function execStart(
         reject(
           new Error(
             `${command} failed with code ${String(code)}; signal: ${String(
-              signal
-            )}`
-          )
+              signal,
+            )}`,
+          ),
         );
       } else {
         reject(new Error(`${command} exited unexpectedly with code 0`));

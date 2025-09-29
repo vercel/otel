@@ -36,7 +36,7 @@ const logStatus = (eslintResults, files) => {
     const percentage = eslintResults.length / files.length;
     const progress = Math.round(50 * percentage);
     const progressBar = `${"█".repeat(progress)}${"░".repeat(
-      Math.round(50 - progress)
+      Math.round(50 - progress),
     )} ${(percentage * 100).toFixed(2)}%`;
     update = `${progressBar}\n\n(${count})`;
   }
@@ -72,9 +72,9 @@ if (isMainThread) {
     stderr.write(
       chalk.bold.red(
         `✖ The following files can't be processed by ESLint: ${listFormatter.format(
-          badFiles
-        )}.`
-      )
+          badFiles,
+        )}.`,
+      ),
     );
     log();
     process.exit(1);
@@ -85,7 +85,7 @@ if (isMainThread) {
     ? dirsAndGlobs.map((dirOrGlob) =>
         extensions.some((ext) => dirOrGlob.endsWith(`.${ext}`))
           ? dirOrGlob
-          : `${dirOrGlob}/${defaultGlob}`
+          : `${dirOrGlob}/${defaultGlob}`,
       )
     : [defaultGlob];
 
@@ -93,10 +93,10 @@ if (isMainThread) {
     `Running ESLint ${isFix ? "(with `--fix`) " : ""}on ${
       dirsAndGlobs.length
         ? listFormatter.format(
-            dirsAndGlobs.map((dirOrGlob) => chalk.yellow(dirOrGlob))
+            dirsAndGlobs.map((dirOrGlob) => chalk.yellow(dirOrGlob)),
           )
         : chalk.yellow("all files")
-    }.`
+    }.`,
   );
   log();
 
@@ -123,7 +123,7 @@ if (isMainThread) {
       new Worker(workerFilename, {
         workerData: { files: filesChunk, fix: isFix },
         env: SHARE_ENV,
-      })
+      }),
     );
   }
 
@@ -138,7 +138,7 @@ if (isMainThread) {
       "error",
       /** @param {Error} error */ (error) => {
         throw error;
-      }
+      },
     );
 
     worker.on("exit", async () => {
@@ -173,7 +173,7 @@ if (isMainThread) {
         if (!isCi) {
           logStatus(eslintResults, files);
         }
-      }
+      },
     );
   }
 } else {

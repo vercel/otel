@@ -30,7 +30,7 @@ describe("W3CTraceContextPropagator", () => {
             "00-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01",
           ],
         ]),
-        GETTER
+        GETTER,
       );
       expect(traceApi.getSpanContext(context)).toEqual({
         isRemote: true,
@@ -49,7 +49,7 @@ describe("W3CTraceContextPropagator", () => {
             ["00-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01"],
           ],
         ]),
-        GETTER
+        GETTER,
       );
       expect(traceApi.getSpanContext(context)).toEqual({
         isRemote: true,
@@ -69,7 +69,7 @@ describe("W3CTraceContextPropagator", () => {
           ],
           ["tracestate", "foo=11,bar=12"],
         ]),
-        GETTER
+        GETTER,
       );
       expect(traceApi.getSpanContext(context)).toContain({
         isRemote: true,
@@ -78,10 +78,10 @@ describe("W3CTraceContextPropagator", () => {
         traceFlags: 1,
       });
       expect(traceApi.getSpanContext(context)?.traceState?.get("foo")).toBe(
-        "11"
+        "11",
       );
       expect(traceApi.getSpanContext(context)?.traceState?.get("bar")).toBe(
-        "12"
+        "12",
       );
     });
 
@@ -90,7 +90,7 @@ describe("W3CTraceContextPropagator", () => {
         const context = propagator.extract(
           baseContext,
           new Map([["traceparent", "00-bad-bad4e819c34d2cdb-01"]]),
-          GETTER
+          GETTER,
         );
         expect(traceApi.getSpanContext(context)).toBeUndefined();
       });
@@ -101,7 +101,7 @@ describe("W3CTraceContextPropagator", () => {
           new Map([
             ["traceparent", "00-6d2eac29c9283ece795b4fbaa2d57225-bad-01"],
           ]),
-          GETTER
+          GETTER,
         );
         expect(traceApi.getSpanContext(context)).toBeUndefined();
       });
@@ -115,7 +115,7 @@ describe("W3CTraceContextPropagator", () => {
               "bad-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01",
             ],
           ]),
-          GETTER
+          GETTER,
         );
         expect(traceApi.getSpanContext(context)).toBeUndefined();
       });
@@ -129,7 +129,7 @@ describe("W3CTraceContextPropagator", () => {
               "00-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01-unknown",
             ],
           ]),
-          GETTER
+          GETTER,
         );
         expect(traceApi.getSpanContext(context)).toBeUndefined();
       });
@@ -146,7 +146,7 @@ describe("W3CTraceContextPropagator", () => {
       });
       propagator.inject(context, carrier, SETTER);
       expect(carrier.get("traceparent")).toBe(
-        "00-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01"
+        "00-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01",
       );
       expect(carrier.get("tracestate")).toBeUndefined();
     });
@@ -161,7 +161,7 @@ describe("W3CTraceContextPropagator", () => {
       });
       propagator.inject(context, carrier, SETTER);
       expect(carrier.get("traceparent")).toBe(
-        "00-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01"
+        "00-6d2eac29c9283ece795b4fbaa2d57225-bad4e819c34d2cdb-01",
       );
       expect(carrier.get("tracestate")).toEqual("foo=11,bar=12");
     });

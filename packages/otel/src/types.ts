@@ -4,11 +4,8 @@ import type {
   TextMapGetter,
   Attributes,
 } from "@opentelemetry/api";
-import type { InstrumentationOption } from "@opentelemetry/instrumentation";
-import type {
-  DetectorSync,
-  ResourceAttributes,
-} from "@opentelemetry/resources";
+import type { Instrumentation } from "@opentelemetry/instrumentation";
+import type { ResourceDetector } from "@opentelemetry/resources";
 import type { LogRecordProcessor } from "@opentelemetry/sdk-logs";
 import type {
   IdGenerator,
@@ -17,7 +14,7 @@ import type {
   SpanLimits,
   SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import type { MetricReader, View } from "@opentelemetry/sdk-metrics";
+import type { MetricReader, ViewOptions } from "@opentelemetry/sdk-metrics";
 import type { FetchInstrumentationConfig } from "./instrumentations/fetch";
 
 export type PropagatorOrName =
@@ -41,10 +38,7 @@ export type SpanProcessorOrName = SpanProcessor | "auto";
 
 export type SpanExporterOrName = SpanExporter | "auto";
 
-export type InstrumentationOptionOrName =
-  | InstrumentationOption
-  | "fetch"
-  | "auto";
+export type InstrumentationOptionOrName = Instrumentation | "fetch" | "auto";
 
 export interface InstrumentationConfiguration {
   fetch?: FetchInstrumentationConfig;
@@ -77,7 +71,7 @@ export interface Configuration {
    *
    * Any additional attributes will be merged with the default attributes.
    */
-  attributes?: ResourceAttributes;
+  attributes?: Attributes;
 
   /**
    * This configuration is used to compute root span's attributes based on the request's headers.
@@ -89,7 +83,7 @@ export interface Configuration {
    */
   attributesFromHeaders?: AttributesFromHeaders;
 
-  resourceDetectors?: DetectorSync[];
+  resourceDetectors?: ResourceDetector[];
   autoDetectResources?: boolean;
 
   /**
@@ -148,14 +142,14 @@ export interface Configuration {
 
   spanLimits?: SpanLimits;
 
-  logRecordProcessor?: LogRecordProcessor;
-  metricReader?: MetricReader;
-  views?: View[];
+  logRecordProcessors?: LogRecordProcessor[];
+  metricReaders?: MetricReader[];
+  views?: ViewOptions[];
 }
 
 export type AttributesFromHeaderFunc = <Carrier = unknown>(
   headers: Carrier,
-  getter: TextMapGetter<Carrier>
+  getter: TextMapGetter<Carrier>,
 ) => Attributes | undefined;
 
 export type AttributesFromHeaders =

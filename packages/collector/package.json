@@ -16,12 +16,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@opentelemetry/otlp-transformer": "^0.46.0",
-    "@opentelemetry/semantic-conventions": "^1.19.0"
+    "@opentelemetry/otlp-transformer": "^0.205.0"
   },
   "devDependencies": {
+    "@types/node": "^20",
     "eslint-config": "workspace:*",
-    "typescript-config": "workspace:*",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-config": "workspace:*"
   }
 }

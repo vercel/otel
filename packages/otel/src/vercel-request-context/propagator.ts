@@ -25,7 +25,7 @@ export class VercelRuntimePropagator implements TextMapPropagator {
 
     diag.debug(
       "@vercel/otel: Extracted root SpanContext from Vercel request context.",
-      rootSpanContext
+      rootSpanContext,
     );
     return tracing.setSpanContext(context, {
       ...rootSpanContext,

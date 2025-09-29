@@ -26,7 +26,7 @@ export type SpanCallback<T> = (span: Span) => T;
 export function rootTraceContext<T, Carrier = unknown>(
   fn: () => T,
   carrier?: Carrier,
-  getter?: CarrierGetter<Carrier>
+  getter?: CarrierGetter<Carrier>,
 ): T {
   return rootTraceContextImpl(fn, carrier, getter);
 }
@@ -34,7 +34,7 @@ export function rootTraceContext<T, Carrier = unknown>(
 export function injectTraceContext<Carrier>(
   span: Span | undefined | null,
   carrier: Carrier,
-  setter?: CarrierSetter<Carrier>
+  setter?: CarrierSetter<Carrier>,
 ): void {
   injectTraceContextImpl(span, carrier, setter);
 }
@@ -44,13 +44,13 @@ export function trace<T>(name: string, fn: SpanCallback<T>): T;
 export function trace<T>(
   name: string,
   opts: SpanOptions,
-  fn: SpanCallback<T>
+  fn: SpanCallback<T>,
 ): T;
 
 export function trace<T>(
   name: string,
   optsOrFn: SpanOptions | SpanCallback<T>,
-  maybeFn?: SpanCallback<T>
+  maybeFn?: SpanCallback<T>,
 ): T {
   const opts = typeof optsOrFn === "function" ? NO_OPTS : optsOrFn;
   const fn = typeof optsOrFn === "function" ? optsOrFn : maybeFn!;
@@ -59,19 +59,19 @@ export function trace<T>(
 
 export function wrapTrace<F extends (...args: any[]) => any>(
   name: string,
-  fn: F
+  fn: F,
 ): F;
 
 export function wrapTrace<F extends (...args: any[]) => any>(
   name: string,
   opts: SpanOptions,
-  fn: F
+  fn: F,
 ): F;
 
 export function wrapTrace<F extends (...args: any[]) => any>(
   name: string,
   optsOrFn: SpanOptions | F,
-  maybeFn?: F
+  maybeFn?: F,
 ): F {
   const opts = typeof optsOrFn === "function" ? NO_OPTS : optsOrFn;
   const fn = typeof optsOrFn === "function" ? optsOrFn : maybeFn!;
@@ -82,7 +82,7 @@ export function wrapTrace<F extends (...args: any[]) => any>(
 export function startSpan(
   name: string,
   opts?: SpanOptions,
-  parent?: Span
+  parent?: Span,
 ): Span {
   const otelTraceProvider = getOtelTraceProvider();
   const otelContextManager = getOtelContextManager();
@@ -139,6 +139,12 @@ const NO_SPAN: Span = {
   addEvent(): Span {
     return this;
   },
+  addLink(): Span {
+    return this;
+  },
+  addLinks(): Span {
+    return this;
+  },
   setStatus(): Span {
     return this;
   },
@@ -178,7 +184,7 @@ const defaultTextSetter: TextMapSetter<unknown> = {
 function rootTraceContextImpl<T, Carrier = unknown>(
   fn: () => T,
   carrier: Carrier | undefined,
-  getter: CarrierGetter<Carrier> | undefined
+  getter: CarrierGetter<Carrier> | undefined,
 ): T {
   const otelPropagator = getOtelPropagator();
   const otelContextManager = getOtelContextManager();
@@ -189,7 +195,7 @@ function rootTraceContextImpl<T, Carrier = unknown>(
       context = otelPropagator.extract(
         context,
         carrier,
-        getter ?? defaultTextGetter
+        getter ?? defaultTextGetter,
       );
     }
     return otelContextManager.with(context, fn);
@@ -200,7 +206,7 @@ function rootTraceContextImpl<T, Carrier = unknown>(
 function injectTraceContextImpl<Carrier>(
   span: Span | undefined | null,
   carrier: Carrier,
-  setter?: CarrierSetter<Carrier>
+  setter?: CarrierSetter<Carrier>,
 ): void {
   const otelPropagator = getOtelPropagator();
   const otelContextManager = getOtelContextManager();
@@ -239,7 +245,7 @@ function traceImpl<T>(name: string, opts: SpanOptions, fn: SpanCallback<T>): T {
         (e) => {
           endSpan(span, e);
           throw e;
-        }
+        },
       ) as T;
     } catch (e) {
       endSpan(span, e);

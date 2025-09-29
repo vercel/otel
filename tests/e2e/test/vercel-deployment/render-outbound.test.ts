@@ -3,6 +3,7 @@ import { SpanKind, SpanStatusCode } from "@opentelemetry/api";
 import type { ITrace } from "collector";
 import { describe } from "../../lib/with-bridge";
 import { expectTrace } from "../../lib/expect-trace";
+import { normalizeId } from "../../lib/normalize-id";
 
 describe("vercel deployment: outbound with fetch", {}, (props) => {
   it("should create a span for fetch", async () => {
@@ -10,8 +11,8 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}`
+        `http://localhost:${bridge.port}`,
+      )}`,
     );
 
     await expectTrace(collector, {
@@ -79,7 +80,9 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
     expect(fetch.headers.get("traceparent")).toEqual(
-      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
+      `00-${normalizeId(fetchSpan.traceId)}-${normalizeId(
+        fetchSpan.spanId,
+      )}-01`,
     );
   });
 
@@ -88,8 +91,8 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz/edge?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}`
+        `http://localhost:${bridge.port}`,
+      )}`,
     );
 
     await expectTrace(collector, {
@@ -157,7 +160,9 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
     expect(fetch.headers.get("traceparent")).toEqual(
-      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
+      `00-${normalizeId(fetchSpan.traceId)}-${normalizeId(
+        fetchSpan.spanId,
+      )}-01`,
     );
   });
 
@@ -166,8 +171,8 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}?no-propagation=1`
-      )}`
+        `http://localhost:${bridge.port}?no-propagation=1`,
+      )}`,
     );
 
     await expectTrace(collector, {
@@ -226,8 +231,8 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port + 1}`
-      )}`
+        `http://localhost:${bridge.port + 1}`,
+      )}`,
     );
 
     await expectTrace(collector, {
@@ -281,8 +286,8 @@ describe("vercel deployment: outbound with fetch", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}`
-      )}&status=500`
+        `http://localhost:${bridge.port}`,
+      )}&status=500`,
     );
 
     await expectTrace(collector, {
@@ -337,8 +342,9 @@ describe("vercel deployment: outbound with http", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}?fetchType=http`
-      )}`, {}
+        `http://localhost:${bridge.port}?fetchType=http`,
+      )}`,
+      {},
     );
 
     await expectTrace(collector, {
@@ -402,7 +408,9 @@ describe("vercel deployment: outbound with http", {}, (props) => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const fetch = fetches[0]!;
     expect(fetch.headers.get("traceparent")).toEqual(
-      `00-${fetchSpan.traceId}-${fetchSpan.spanId}-01`
+      `00-${normalizeId(fetchSpan.traceId)}-${normalizeId(
+        fetchSpan.spanId,
+      )}-01`,
     );
   });
 
@@ -411,8 +419,8 @@ describe("vercel deployment: outbound with http", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}?no-propagation=1&fetchType=http`
-      )}`
+        `http://localhost:${bridge.port}?no-propagation=1&fetchType=http`,
+      )}`,
     );
 
     await expectTrace(collector, {
@@ -468,8 +476,8 @@ describe("vercel deployment: outbound with http", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port + 1}?fetchType=http`
-      )}`
+        `http://localhost:${bridge.port + 1}?fetchType=http`,
+      )}`,
     );
 
     await expectTrace(collector, {
@@ -505,7 +513,9 @@ describe("vercel deployment: outbound with http", {}, (props) => {
                       name: "exception",
                       attributes: {
                         "exception.type": "ECONNREFUSED",
-                        "exception.message": `connect ECONNREFUSED ::1:${bridge.port + 1}`,
+                        "exception.message": `connect ECONNREFUSED ::1:${
+                          bridge.port + 1
+                        }`,
                       },
                     },
                   ],
@@ -523,8 +533,8 @@ describe("vercel deployment: outbound with http", {}, (props) => {
 
     await bridge.fetch(
       `/slugs/baz?dataUrl=${encodeURIComponent(
-        `http://localhost:${bridge.port}?fetchType=http`
-      )}&status=500`
+        `http://localhost:${bridge.port}?fetchType=http`,
+      )}&status=500`,
     );
 
     await expectTrace(collector, {
@@ -583,8 +593,8 @@ describe(
 
       await bridge.fetch(
         `/slugs/baz?dataUrl=${encodeURIComponent(
-          `http://localhost:${bridge.port}`
-        )}`
+          `http://localhost:${bridge.port}`,
+        )}`,
       );
 
       await expectTrace(collector, {
@@ -639,8 +649,8 @@ describe(
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const fetch = fetches[0]!;
       expect(fetch.headers.get("traceparent")).toMatch(
-        /00-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-01/
+        /00-[0-9a-fA-F]{32}-[0-9a-fA-F]{16}-01/,
       );
     });
-  }
+  },
 );

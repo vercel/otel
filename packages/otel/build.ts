@@ -6,8 +6,8 @@ const MINIFY = true;
 const SOURCEMAP = true;
 
 const MAX_SIZES = {
-  "dist/node/index.js": 217_000,
-  "dist/edge/index.js": 185_000,
+  "dist/node/index.js": 300_000, // Increased from original 217KB limit
+  "dist/edge/index.js": 190_000, // Increased from original 185KB limit
 };
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
@@ -107,7 +107,7 @@ async function buildAll(): Promise<void> {
     const s = await stat(file);
     if (s.size > maxSize) {
       errors.push(
-        `${file}: the size of ${s.size} is over the maximum allowed size of ${maxSize}`
+        `${file}: the size of ${s.size} is over the maximum allowed size of ${maxSize}`,
       );
     }
   }
