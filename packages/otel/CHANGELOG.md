@@ -102,7 +102,7 @@
      // After
      registerOTel({
        serviceName: 'your-service-name',
-       logRecordProcessors: [myProcessor];
+       logRecordProcessors: [myProcessor], // Array of processors
      });
      ```
 
@@ -112,13 +112,13 @@
      // Before
      registerOTel({
        serviceName: 'your-service-name',
-       metricReader: myReader
+       metricReader: myReader, // Single processor
      });
 
      // After
      registerOtel({
        serviceName: 'your-service-name',
-       metricReaders: [myReader];
+       metricReaders: [myReader], // Array of processors
      });
      ```
 
