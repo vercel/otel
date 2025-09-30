@@ -135,6 +135,7 @@ export class Sdk {
         "vercel.deployment_id": process.env.VERCEL_DEPLOYMENT_ID || undefined,
         [SemanticResourceAttributes.SERVICE_VERSION]:
           process.env.VERCEL_DEPLOYMENT_ID,
+        "vercel.project_id": process.env.VERCEL_PROJECT_ID || undefined,
 
         ...configuration.attributes,
       })
