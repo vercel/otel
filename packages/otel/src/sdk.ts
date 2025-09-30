@@ -128,15 +128,21 @@ export class Sdk {
           process.env.VERCEL_URL ||
           process.env.NEXT_PUBLIC_VERCEL_URL ||
           undefined,
+        // @deprecated This attribute will be removed in the next major release, please use 'vercel.branchHost' instead
         "vercel.branch_host":
           process.env.VERCEL_BRANCH_URL ||
           process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
           undefined,
+        "vercel.branchHost":
+          process.env.VERCEL_BRANCH_URL ||
+          process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
+          undefined,
+        // @deprecated This attribute will be removed in the next major release, please use 'vercel.deploymentId' instead
         "vercel.deployment_id": process.env.VERCEL_DEPLOYMENT_ID || undefined,
+        "vercel.deploymentId": process.env.VERCEL_DEPLOYMENT_ID || undefined,
         [SemanticResourceAttributes.SERVICE_VERSION]:
           process.env.VERCEL_DEPLOYMENT_ID,
-        "vercel.project_id": process.env.VERCEL_PROJECT_ID || undefined,
-
+        "vercel.projectId": process.env.VERCEL_PROJECT_ID || undefined,
         ...configuration.attributes,
       })
     );
