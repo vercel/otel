@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.13.1
+
+### Patch Changes
+
+- [#171](https://github.com/vercel/otel/pull/171) [`2b353dd`](https://github.com/vercel/otel/commit/2b353dd798c8e8d8aef4a33da75e3b50ffb13d05) Thanks [@kakadiadarpan](https://github.com/kakadiadarpan)! - add project id to resource attributes
+
 ## 1.13.0
 
 ### Minor Changes
