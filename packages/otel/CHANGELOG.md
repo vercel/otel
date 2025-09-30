@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 2.0.1
+
+### Patch Changes
+
+- [#170](https://github.com/vercel/otel/pull/170) [`9a695ad`](https://github.com/vercel/otel/commit/9a695ad2edb76c43de8faa4d1e03c0944e21e6f8) Thanks [@kakadiadarpan](https://github.com/kakadiadarpan)! - add project id to resource attributes
+
 ## 2.0.0
 
 ### Major Changes
@@ -95,13 +101,13 @@
      ```typescript
      // Before
      registerOTel({
-       serviceName: 'your-service-name',
-       logRecordProcessor: myProcessor // Single processor
+       serviceName: "your-service-name",
+       logRecordProcessor: myProcessor, // Single processor
      });
 
      // After
      registerOTel({
-       serviceName: 'your-service-name',
+       serviceName: "your-service-name",
        logRecordProcessors: [myProcessor], // Array of processors
      });
      ```
@@ -111,13 +117,13 @@
      ```typescript
      // Before
      registerOTel({
-       serviceName: 'your-service-name',
+       serviceName: "your-service-name",
        metricReader: myReader, // Single processor
      });
 
      // After
      registerOtel({
-       serviceName: 'your-service-name',
+       serviceName: "your-service-name",
        metricReaders: [myReader], // Array of processors
      });
      ```
