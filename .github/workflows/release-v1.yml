@@ -1,4 +1,4 @@
-name: Release
+name: Release v1
 
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -6,16 +6,15 @@ env:
 
 on:
   workflow_dispatch:
-  # TODO: enable auto-release
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - v1.x
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
-    name: Release
+    name: Release v1
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,7 +31,7 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      - name: Create Release Pull Request or Publish to npm
+      - name: Create Release Pull Request or Publish to npm (v1)
         id: changesets
         uses: changesets/action@v1
         with:
@@ -41,3 +40,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+          TAG: v1
