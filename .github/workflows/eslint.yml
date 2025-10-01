@@ -2,9 +2,9 @@ name: Eslint
 
 on:
   push:
-    branches: [main]
+    branches: [main, v1.x]
   pull_request:
-    branches: [main]
+    branches: [main, v1.x]
 
 jobs:
   test:
