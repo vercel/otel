@@ -69,6 +69,7 @@ export class BridgeEmulatorContextReader implements TextMapPropagator {
       "x-otel-test-id": testId,
       "x-otel-test-url": url,
       "x-otel-test-bridge-port": bridgePort,
+      "x-otel-test-trace-drains": traceDrainsCommaDelimited,
       ...headers
     } = allHeaders;
     if (testId && bridgePort) {
@@ -109,7 +110,22 @@ export class BridgeEmulatorContextReader implements TextMapPropagator {
           reportSpans: (data): void => {
             // eslint-disable-next-line no-console
             console.log("[BridgeEmulatorServer] reportSpans", data);
+            void fetch(`http://127.0.0.1:${bridgePort}`, {
+              method: "POST",
+              body: JSON.stringify({
+                cmd: "reportSpans",
+                testId,
+                runtime: process.env.NEXT_RUNTIME,
+                data: data ?? {},
+              }),
+              headers: { "content-type": "application/json" },
+              // @ts-expect-error - internal Next request.
+              next: { internal: true },
+            });
           },
+          ...(traceDrainsCommaDelimited
+            ? { traceDrains: traceDrainsCommaDelimited.split(",") }
+            : undefined),
         },
       };
     }

@@ -7,7 +7,7 @@ const SOURCEMAP = true;
 
 const MAX_SIZES = {
   "dist/node/index.js": 300_000, // Increased from original 217KB limit
-  "dist/edge/index.js": 190_000, // Increased from original 185KB limit
+  "dist/edge/index.js": 190_100, // Increased from original 185KB limit
 };
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
