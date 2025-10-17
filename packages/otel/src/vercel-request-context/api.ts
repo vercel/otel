@@ -15,6 +15,7 @@ export interface VercelRequestContext {
   telemetry?: {
     reportSpans: (data: unknown) => void;
     rootSpanContext?: SpanContext;
+    traceDrains?: string[];
   };
   [key: symbol]: unknown;
 }

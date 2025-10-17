@@ -57,6 +57,7 @@ import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propag
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 import { getStringFromEnv, getStringListFromEnv } from "./utils/env-parser";
+import { FilterWhenDrainedSpanProcessor } from "./processor/filter-when-drained-span-processor";
 
 interface Env {
   OTEL_SDK_DISABLED?: string;
@@ -474,7 +475,11 @@ function parseSpanProcessor(
                 ? new OTLPHttpProtoTraceExporter(config)
                 : new OTLPHttpJsonTraceExporter(config);
 
-            processors.push(new BatchSpanProcessor(exporter));
+            processors.push(
+              new FilterWhenDrainedSpanProcessor(
+                new BatchSpanProcessor(exporter),
+              ),
+            );
           }
 
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
@@ -484,7 +489,11 @@ function parseSpanProcessor(
             env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
             env.OTEL_EXPORTER_OTLP_ENDPOINT
           ) {
-            processors.push(new BatchSpanProcessor(parseTraceExporter(env)));
+            processors.push(
+              new FilterWhenDrainedSpanProcessor(
+                new BatchSpanProcessor(parseTraceExporter(env)),
+              ),
+            );
           }
 
           return processors;
