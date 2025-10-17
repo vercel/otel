@@ -4,6 +4,7 @@ import formidable from "formidable";
 export interface Bridge {
   port: number;
   fetches: Request[];
+  reportedSpans: object[];
   fetch: (input: string, init?: RequestInit) => Promise<Response>;
   reset: () => void;
   close: () => void;
@@ -11,6 +12,7 @@ export interface Bridge {
 
 interface BridgeOptions {
   serverPort: number;
+  traceDrains?: string[];
 }
 
 export async function start(opts: BridgeOptions): Promise<Bridge> {
@@ -34,6 +36,13 @@ interface StatusRequest {
   data: { status: string; [key: string]: unknown };
 }
 
+interface ReportSpansRequest {
+  cmd: "reportSpans";
+  testId: string;
+  runtime?: string;
+  data: object;
+}
+
 interface UnknownRequest {
   cmd: "unknown";
 }
@@ -42,17 +51,21 @@ type BridgeEmulatorRequest =
   | UnknownRequest
   | AckRequest
   | EchoRequest
-  | StatusRequest;
+  | StatusRequest
+  | ReportSpansRequest;
 
 class BridgeEmulatorServer implements Bridge {
   public port = -1;
   private serverPort: number;
   private server: Server | undefined;
   private waitingAck = new Map<string, Promise<unknown>>();
+  private traceDrains: string[] | undefined;
   public fetches: Request[] = [];
+  public reportedSpans: object[] = [];
 
-  constructor({ serverPort }: BridgeOptions) {
+  constructor({ serverPort, traceDrains }: BridgeOptions) {
     this.serverPort = serverPort;
+    this.traceDrains = traceDrains;
   }
 
   async connect(): Promise<void> {
@@ -144,6 +157,12 @@ class BridgeEmulatorServer implements Bridge {
         res.end();
         return;
       }
+      if (json.cmd === "reportSpans") {
+        res.writeHead(204, "OK", { "X-Server": "bridge" });
+        res.end();
+        this.reportedSpans.push(json.data);
+        return;
+      }
 
       res.writeHead(400, "Bad request", { "X-Server": "bridge" });
       res.end();
@@ -204,6 +223,9 @@ class BridgeEmulatorServer implements Bridge {
           "x-otel-test-id": testId,
           "x-otel-test-url": input,
           "x-otel-test-bridge-port": String(this.port),
+          ...(this.traceDrains
+            ? { "x-otel-test-trace-drains": this.traceDrains.join(",") }
+            : undefined),
         },
       });
       const resClone = res.clone();

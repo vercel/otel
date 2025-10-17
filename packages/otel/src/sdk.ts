@@ -57,6 +57,7 @@ import { FetchInstrumentation } from "./instrumentations/fetch";
 import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propagator";
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
+import { FilterWhenDrainedSpanProcessor } from "./processor/filter-when-drained-span-processor";
 
 type Env = ReturnType<typeof parseEnvironment>;
 
@@ -138,7 +139,7 @@ export class Sdk {
         "vercel.project_id": process.env.VERCEL_PROJECT_ID || undefined,
 
         ...configuration.attributes,
-      })
+      }),
     );
     const resourceDetectors = configuration.resourceDetectors ?? [
       envDetectorSync,
@@ -154,17 +155,17 @@ export class Sdk {
     const propagators = parsePropagators(
       configuration.propagators,
       configuration,
-      env
+      env,
     );
     const traceSampler = parseSampler(configuration.traceSampler, env);
     const spanProcessors = parseSpanProcessor(
       configuration.spanProcessors,
       configuration,
-      env
+      env,
     );
     if (spanProcessors.length === 0) {
       diag.warn(
-        "@vercel/otel: No span processors configured. No spans will be exported."
+        "@vercel/otel: No span processors configured. No spans will be exported.",
       );
     }
     const spanLimits = configuration.spanLimits;
@@ -177,8 +178,8 @@ export class Sdk {
     tracerProvider.addSpanProcessor(
       new CompositeSpanProcessor(
         spanProcessors,
-        configuration.attributesFromHeaders
-      )
+        configuration.attributesFromHeaders,
+      ),
     );
     tracerProvider.register({
       contextManager,
@@ -207,7 +208,7 @@ export class Sdk {
 
     const instrumentations = parseInstrumentations(
       configuration.instrumentations,
-      configuration.instrumentationConfig
+      configuration.instrumentationConfig,
     );
     this.disableInstrumentations = registerInstrumentations({
       instrumentations,
@@ -232,7 +233,7 @@ export class Sdk {
     diag.info(
       "@vercel/otel: shutting down",
       promises.length,
-      process.env.NEXT_RUNTIME
+      process.env.NEXT_RUNTIME,
     );
 
     await Promise.all(promises);
@@ -254,21 +255,21 @@ function getEnv(): Env {
 
 function parseInstrumentations(
   arg: InstrumentationOptionOrName[] | undefined,
-  instrumentationConfig: InstrumentationConfiguration | undefined
+  instrumentationConfig: InstrumentationConfiguration | undefined,
 ): InstrumentationOption[] {
   return (arg ?? ["auto"])
     .map((instrumentationOrName) => {
       if (instrumentationOrName === "auto") {
         diag.debug(
           "@vercel/otel: Configure instrumentations: fetch",
-          instrumentationConfig?.fetch
+          instrumentationConfig?.fetch,
         );
         return [new FetchInstrumentation(instrumentationConfig?.fetch)];
       }
       if (instrumentationOrName === "fetch") {
         diag.debug(
           "@vercel/otel: Configure instrumentations: fetch",
-          instrumentationConfig?.fetch
+          instrumentationConfig?.fetch,
         );
         return new FetchInstrumentation(instrumentationConfig?.fetch);
       }
@@ -280,7 +281,7 @@ function parseInstrumentations(
 function parsePropagators(
   arg: PropagatorOrName[] | undefined,
   configuration: Configuration,
-  env: Env
+  env: Env,
 ): TextMapPropagator[] {
   const envPropagators =
     process.env.OTEL_PROPAGATORS &&
@@ -311,7 +312,7 @@ function parsePropagators(
         diag.debug(
           `@vercel/otel: Configure propagators: ${autoList
             .map((i) => i.name)
-            .join(", ")}`
+            .join(", ")}`,
         );
         return autoList.map((i) => i.propagator);
       }
@@ -370,8 +371,8 @@ function parseSampler(arg: SampleOrName | undefined, env: Env): Sampler {
     default:
       diag.error(
         `@vercel/otel: OTEL_TRACES_SAMPLER value "${String(
-          env.OTEL_TRACES_SAMPLER
-        )} invalid, defaulting to ${FALLBACK_OTEL_TRACES_SAMPLER}".`
+          env.OTEL_TRACES_SAMPLER,
+        )} invalid, defaulting to ${FALLBACK_OTEL_TRACES_SAMPLER}".`,
       );
       return new AlwaysOnSampler();
   }
@@ -383,27 +384,27 @@ function getSamplerProbabilityFromEnv(env: Env): number {
     env.OTEL_TRACES_SAMPLER_ARG === ""
   ) {
     diag.error(
-      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`
+      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG is blank, defaulting to ${DEFAULT_RATIO}.`,
     );
     return DEFAULT_RATIO;
   }
 
   diag.debug(
     "@vercel/otel: Configure sampler probability: ",
-    env.OTEL_TRACES_SAMPLER_ARG
+    env.OTEL_TRACES_SAMPLER_ARG,
   );
   const probability = Number(env.OTEL_TRACES_SAMPLER_ARG);
 
   if (isNaN(probability)) {
     diag.error(
-      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is invalid, defaulting to ${DEFAULT_RATIO}.`
+      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is invalid, defaulting to ${DEFAULT_RATIO}.`,
     );
     return DEFAULT_RATIO;
   }
 
   if (probability < 0 || probability > 1) {
     diag.error(
-      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`
+      `@vercel/otel: OTEL_TRACES_SAMPLER_ARG=${env.OTEL_TRACES_SAMPLER_ARG} was given, but it is out of range ([0..1]), defaulting to ${DEFAULT_RATIO}.`,
     );
     return DEFAULT_RATIO;
   }
@@ -414,7 +415,7 @@ function getSamplerProbabilityFromEnv(env: Env): number {
 function parseSpanProcessor(
   arg: SpanProcessorOrName[] | undefined,
   configuration: Configuration,
-  env: Env
+  env: Env,
 ): SpanProcessor[] {
   return [
     ...(arg ?? ["auto"])
@@ -434,7 +435,7 @@ function parseSpanProcessor(
             diag.debug(
               "@vercel/otel: Configure vercel otel collector on port: ",
               port,
-              protocol
+              protocol,
             );
             const config = {
               url: `http://localhost:${port}/v1/traces`,
@@ -445,7 +446,11 @@ function parseSpanProcessor(
                 ? new OTLPHttpProtoTraceExporter(config)
                 : new OTLPHttpJsonTraceExporter(config);
 
-            processors.push(new BatchSpanProcessor(exporter));
+            processors.push(
+              new FilterWhenDrainedSpanProcessor(
+                new BatchSpanProcessor(exporter),
+              ),
+            );
           }
 
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
@@ -455,7 +460,11 @@ function parseSpanProcessor(
             env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
             env.OTEL_EXPORTER_OTLP_ENDPOINT
           ) {
-            processors.push(new BatchSpanProcessor(parseTraceExporter(env)));
+            processors.push(
+              new FilterWhenDrainedSpanProcessor(
+                new BatchSpanProcessor(parseTraceExporter(env)),
+              ),
+            );
           }
 
           return processors;
@@ -482,14 +491,14 @@ function parseTraceExporter(env: Env): SpanExporter {
   const headers = {
     ...baggageUtils.parseKeyPairsIntoRecord(env.OTEL_EXPORTER_OTLP_HEADERS),
     ...baggageUtils.parseKeyPairsIntoRecord(
-      env.OTEL_EXPORTER_OTLP_TRACES_HEADERS
+      env.OTEL_EXPORTER_OTLP_TRACES_HEADERS,
     ),
   };
   diag.debug(
     "@vercel/otel: Configure trace exporter: ",
     protocol,
     url,
-    `headers: ${Object.keys(headers).join(",") || "<none>"}`
+    `headers: ${Object.keys(headers).join(",") || "<none>"}`,
   );
   switch (protocol) {
     case "http/json":
@@ -499,7 +508,7 @@ function parseTraceExporter(env: Env): SpanExporter {
     default:
       // "grpc" protocol is not supported in Edge.
       diag.warn(
-        `@vercel/otel: Unsupported OTLP traces protocol: ${protocol}. Using http/protobuf.`
+        `@vercel/otel: Unsupported OTLP traces protocol: ${protocol}. Using http/protobuf.`,
       );
       return new OTLPHttpProtoTraceExporter();
   }

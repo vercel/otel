@@ -24,6 +24,7 @@ export interface DescribeProps {
 interface DescribeOptions {
   env?: Record<string, string>;
   collector?: OtelCollectorOptions;
+  bridge?: { traceDrains?: string[] };
 }
 
 export function describe(
@@ -42,7 +43,7 @@ export function describe(
     beforeAll(async () => {
       port = 30000 + Math.floor(Math.random() * 10000);
       collector = await startCollector(opts.collector);
-      bridge = await startBridge({ serverPort: port });
+      bridge = await startBridge({ ...opts.bridge, serverPort: port });
       if (!process.env.OTEL_LOG_LEVEL) {
         process.env.OTEL_LOG_LEVEL = "info";
       }
