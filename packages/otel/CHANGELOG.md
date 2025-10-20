@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 2.1.0
+
+### Minor Changes
+
+- [#181](https://github.com/vercel/otel/pull/181) [`14f773c`](https://github.com/vercel/otel/commit/14f773c2666fcfe418e9a1a0d4205d08c8f23fd1) Thanks [@dvoytenko](https://github.com/dvoytenko)! - Ignore auto-configuration based on the OTEL*EXPORTER_OTLP* env vars when trace drains are used. This avoids duplicate trace export.
+
 ## 2.0.1
 
 ### Patch Changes
