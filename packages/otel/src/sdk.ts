@@ -128,20 +128,12 @@ export class Sdk {
         // Vercel.
         // https://vercel.com/docs/projects/environment-variables/system-environment-variables
         // Vercel Env set as top level attribute for simplicity. One of 'production', 'preview' or 'development'.
-        env: process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
+        env: process.env.VERCEL_ENV,
         "vercel.region": process.env.VERCEL_REGION,
         "vercel.runtime": runtime,
-        "vercel.sha":
-          process.env.VERCEL_GIT_COMMIT_SHA ||
-          process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
-        "vercel.host":
-          process.env.VERCEL_URL ||
-          process.env.NEXT_PUBLIC_VERCEL_URL ||
-          undefined,
-        "vercel.branch_host":
-          process.env.VERCEL_BRANCH_URL ||
-          process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
-          undefined,
+        "vercel.sha": process.env.VERCEL_GIT_COMMIT_SHA,
+        "vercel.host": process.env.VERCEL_URL || undefined,
+        "vercel.branch_host": process.env.VERCEL_BRANCH_URL || undefined,
         "vercel.deployment_id": process.env.VERCEL_DEPLOYMENT_ID || undefined,
         [SemanticResourceAttributes.SERVICE_VERSION]:
           process.env.VERCEL_DEPLOYMENT_ID,
