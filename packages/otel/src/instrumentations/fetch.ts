@@ -169,12 +169,8 @@ export class FetchInstrumentation implements Instrumentation {
   }
 
   private shouldPropagate(url: URL, init?: InternalRequestInit): boolean {
-    const host =
-      process.env.VERCEL_URL || process.env.NEXT_PUBLIC_VERCEL_URL || null;
-    const branchHost =
-      process.env.VERCEL_BRANCH_URL ||
-      process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
-      null;
+    const host = process.env.VERCEL_URL || null;
+    const branchHost = process.env.VERCEL_BRANCH_URL || null;
     const propagateContextUrls = this.config.propagateContextUrls ?? [];
     const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
     if (init?.opentelemetry?.propagateContext) {
