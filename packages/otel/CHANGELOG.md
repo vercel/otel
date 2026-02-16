@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 2.1.1
+
+### Patch Changes
+
+- [#190](https://github.com/vercel/otel/pull/190) [`41d4511`](https://github.com/vercel/otel/commit/41d45110fa6e040941a7a783cf3163e2cd75a372) Thanks [@mischnic](https://github.com/mischnic)! - fix: don't inline system env vars
+
 ## 2.1.0
 
 ### Minor Changes
