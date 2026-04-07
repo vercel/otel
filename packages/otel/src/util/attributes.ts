@@ -8,7 +8,6 @@ import {
   SERVICE_VERSION,
   VCS_REF_HEAD_NAME,
   VCS_REF_HEAD_REVISION,
-  VCS_REF_TYPE,
   VCS_REPOSITORY_NAME,
   VCS_REPOSITORY_REF_REVISION,
 } from "../semantic-resource-attributes";
@@ -52,7 +51,6 @@ export function getDefaultResourceAttributes({
     "vercel.runtime": runtime,
     [VCS_REF_HEAD_NAME]: gitRef,
     [VCS_REF_HEAD_REVISION]: gitRevision,
-    [VCS_REF_TYPE]: gitRef ? "branch" : undefined,
     [VCS_REPOSITORY_NAME]: repositoryName,
     [VCS_REPOSITORY_REF_REVISION]: gitRevision,
     "vercel.sha": gitRevision,

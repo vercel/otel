@@ -17,7 +17,6 @@ export const CLOUD_PROVIDER = "cloud.provider";
 export const PROCESS_RUNTIME_NAME = "process.runtime.name";
 export const VCS_REF_HEAD_NAME = "vcs.ref.head.name";
 export const VCS_REF_HEAD_REVISION = "vcs.ref.head.revision";
-export const VCS_REF_TYPE = "vcs.ref.type";
 export const VCS_REPOSITORY_NAME = "vcs.repository.name";
 export const VCS_REPOSITORY_REF_REVISION = "vcs.repository.ref.revision";
 /** @deprecated Use VCS_REPOSITORY_REF_REVISION instead. */
