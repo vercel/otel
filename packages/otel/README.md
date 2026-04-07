@@ -47,7 +47,7 @@ Registers the OpenTelemetry SDK with the specified service name and the default 
 Registers the OpenTelemetry SDK with the specified configuration. Configuration options include:
 
 - `serviceName`: The name of your service, used as the app name in many OpenTelemetry backends.
-- `attributes`: The resource attributes. By default, `@vercel/otel` configures relevant Vercel attributes based on [the environment](https://vercel.com/docs/projects/environment-variables/system-environment-variables), such as `env`, `vercel.runtime`, `vercel.host`, etc.
+- `attributes`: The resource attributes. By default, `@vercel/otel` configures standard OpenTelemetry resource attributes such as `deployment.environment.name`, `cloud.region`, `process.runtime.name` when the runtime is known, `vcs.ref.*`, `vcs.repository.name`, and `deployment.id`, while keeping legacy Vercel attributes like `env` and `vercel.*` for compatibility.
 - `instrumentations`: A set of instrumentations. By default, `@vercel/otel` configures "fetch" instrumentation.
 - `instrumentationConfig`: Customize configuration for predefined instrumentations:
   - `fetch`: Customize configuration of the predefined "fetch" instrumentation:
