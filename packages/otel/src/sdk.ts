@@ -40,11 +40,10 @@ import {
   W3CBaggagePropagator,
   baggageUtils,
 } from "@opentelemetry/core";
-import * as SemanticResourceAttributes from "./semantic-resource-attributes";
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
 import { OTLPHttpJsonTraceExporter } from "./exporters/exporter-trace-otlp-http-fetch";
 import { OTLPHttpProtoTraceExporter } from "./exporters/exporter-trace-otlp-proto-fetch";
-import { omitUndefinedAttributes } from "./util/attributes";
+import { getDefaultResourceAttributes } from "./util/attributes";
 import type {
   Configuration,
   InstrumentationConfiguration,
@@ -109,36 +108,10 @@ export class Sdk {
     const serviceName =
       env.OTEL_SERVICE_NAME || configuration.serviceName || "app";
     let resource = new Resource(
-      omitUndefinedAttributes({
-        [SemanticResourceAttributes.SERVICE_NAME]: serviceName,
-
-        // Node.
-        "node.ci": process.env.CI ? true : undefined,
-        "node.env": process.env.NODE_ENV,
-
-        // Vercel.
-        // https://vercel.com/docs/projects/environment-variables/system-environment-variables
-        // Vercel Env set as top level attribute for simplicity. One of 'production', 'preview' or 'development'.
-        env: process.env.VERCEL_ENV || process.env.NEXT_PUBLIC_VERCEL_ENV,
-        "vercel.region": process.env.VERCEL_REGION,
-        "vercel.runtime": runtime,
-        "vercel.sha":
-          process.env.VERCEL_GIT_COMMIT_SHA ||
-          process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
-        "vercel.host":
-          process.env.VERCEL_URL ||
-          process.env.NEXT_PUBLIC_VERCEL_URL ||
-          undefined,
-        "vercel.branch_host":
-          process.env.VERCEL_BRANCH_URL ||
-          process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL ||
-          undefined,
-        "vercel.deployment_id": process.env.VERCEL_DEPLOYMENT_ID || undefined,
-        [SemanticResourceAttributes.SERVICE_VERSION]:
-          process.env.VERCEL_DEPLOYMENT_ID,
-        "vercel.project_id": process.env.VERCEL_PROJECT_ID || undefined,
-
-        ...configuration.attributes,
+      getDefaultResourceAttributes({
+        attributes: configuration.attributes,
+        runtime,
+        serviceName,
       }),
     );
     const resourceDetectors = configuration.resourceDetectors ?? [
