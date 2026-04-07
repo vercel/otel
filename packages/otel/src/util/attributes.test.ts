@@ -8,7 +8,6 @@ import {
   SERVICE_VERSION,
   VCS_REF_HEAD_NAME,
   VCS_REF_HEAD_REVISION,
-  VCS_REF_TYPE,
   VCS_REPOSITORY_NAME,
   VCS_REPOSITORY_REF_REVISION,
 } from "../semantic-resource-attributes";
@@ -45,7 +44,6 @@ describe("getDefaultResourceAttributes", () => {
       [SERVICE_VERSION]: "dpl_123",
       [VCS_REF_HEAD_NAME]: "feature/refactor",
       [VCS_REF_HEAD_REVISION]: "abc123",
-      [VCS_REF_TYPE]: "branch",
       [VCS_REPOSITORY_NAME]: "otel",
       [VCS_REPOSITORY_REF_REVISION]: "abc123",
       env: "preview",
