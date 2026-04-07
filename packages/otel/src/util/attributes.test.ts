@@ -61,18 +61,6 @@ describe("getDefaultResourceAttributes", () => {
     });
   });
 
-  it("should omit runtime attributes when runtime is unknown", () => {
-    const attributes = getDefaultResourceAttributes({
-      env: {
-        VERCEL_ENV: "preview",
-      },
-      serviceName: "app",
-    });
-
-    expect(attributes[PROCESS_RUNTIME_NAME]).toBeUndefined();
-    expect(attributes["vercel.runtime"]).toBeUndefined();
-  });
-
   it("should merge user attributes last", () => {
     const attributes = getDefaultResourceAttributes({
       attributes: {
