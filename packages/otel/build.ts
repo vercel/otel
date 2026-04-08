@@ -6,8 +6,8 @@ const MINIFY = true;
 const SOURCEMAP = true;
 
 const MAX_SIZES = {
-  "dist/node/index.js": 217_000,
-  "dist/edge/index.js": 185_000,
+  "dist/node/index.js": 218_000,
+  "dist/edge/index.js": 186_000,
 };
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
