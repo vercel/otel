@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 2.1.2
+
+### Patch Changes
+
+- [#193](https://github.com/vercel/otel/pull/193) [`937e29a`](https://github.com/vercel/otel/commit/937e29aa4ee0bbdbc446162cee64cef902cff74b) Thanks [@kakadiadarpan](https://github.com/kakadiadarpan)! - Add standard OpenTelemetry resource attributes for VCS.
+
 ## 2.1.1
 
 ### Patch Changes
