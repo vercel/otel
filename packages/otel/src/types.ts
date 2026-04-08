@@ -66,7 +66,6 @@ export interface Configuration {
    * - `process.runtime.name` - the runtime when the SDK can determine it, such as "nodejs" or "edge".
    * - `vcs.ref.head.name` - the Vercel Git ref when available.
    * - `vcs.ref.head.revision` - the Vercel Git SHA.
-   * - `vcs.ref.type` - `branch` when the Vercel Git ref is available.
    * - `vcs.repository.name` - the Vercel repository slug when available.
    * - `deployment.id` - the Vercel deployment ID.
    * - `service.version` - the Vercel deployment ID.
