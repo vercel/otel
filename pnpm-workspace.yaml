@@ -3,10 +3,8 @@ packages:
   - 'packages/*'
   - 'tests/*'
 
-minimumReleaseAge: 2880 # 2 days. Company-wide standard
+minimumReleaseAge: 2880 # 2 days
 
 minimumReleaseAgeExclude:
   - '@turbo/*'
   - 'turbo'
-  - '@vercel/*'
-  - '@workflow/*'
