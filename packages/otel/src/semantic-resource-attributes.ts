@@ -9,6 +9,7 @@ export const HTTP_RESPONSE_CONTENT_LENGTH_UNCOMPRESSED =
 export const NET_PEER_PORT = "net.peer.port";
 export const NET_PEER_NAME = "net.peer.name";
 export const CLOUD_REGION = "cloud.region";
+export const CLOUD_AVAILABILITY_ZONE = "cloud.availability_zone";
 /** @deprecated Use DEPLOYMENT_ENVIRONMENT_NAME instead. */
 export const DEPLOYMENT_ENVIRONMENT = "deployment.environment";
 export const DEPLOYMENT_ENVIRONMENT_NAME = "deployment.environment.name";
