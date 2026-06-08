@@ -62,6 +62,7 @@ export interface Configuration {
    * - `service.name` - the service name.
    * - `node.env` - the value of `NODE_ENV` environment variable.
    * - `deployment.environment.name` - the Vercel deployment environment.
+   * - `cloud.provider` - "vercel".
    * - `cloud.region` - the Vercel deployment region.
    * - `process.runtime.name` - the runtime when the SDK can determine it, such as "nodejs" or "edge".
    * - `vcs.ref.head.name` - the Vercel Git ref when available.
