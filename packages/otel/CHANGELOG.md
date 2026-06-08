@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 2.1.3
+
+### Patch Changes
+
+- [#198](https://github.com/vercel/otel/pull/198) [`9b6512e`](https://github.com/vercel/otel/commit/9b6512e4b8606b0f5f8312671075ecc0724e1190) Thanks [@swarnava](https://github.com/swarnava)! - Add OpenTelemetry semantic convention resource attributes for Vercel defaults. `cloud.provider` is now set to `vercel`, and `cloud.region` continues to be emitted from `VERCEL_REGION`.
+
 ## 2.1.2
 
 ### Patch Changes
