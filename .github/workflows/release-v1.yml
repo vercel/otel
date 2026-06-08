@@ -37,6 +37,7 @@ jobs:
         with:
           publish: pnpm release
           version: pnpm version-packages
+          commitMode: "github-api" # allows release commits and tags to be signed using $GITHUB_TOKEN
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
