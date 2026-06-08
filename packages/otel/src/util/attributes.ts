@@ -1,5 +1,6 @@
 import type { Attributes } from "@opentelemetry/api";
 import {
+  CLOUD_PROVIDER,
   CLOUD_REGION,
   DEPLOYMENT_ENVIRONMENT_NAME,
   DEPLOYMENT_ID,
@@ -45,6 +46,7 @@ export function getDefaultResourceAttributes({
     "node.env": env.NODE_ENV,
     [DEPLOYMENT_ENVIRONMENT_NAME]: deploymentEnvironment,
     env: deploymentEnvironment,
+    [CLOUD_PROVIDER]: "vercel",
     [CLOUD_REGION]: region,
     "vercel.region": region,
     [PROCESS_RUNTIME_NAME]: runtime,

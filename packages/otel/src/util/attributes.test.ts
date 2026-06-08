@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CLOUD_PROVIDER,
   CLOUD_REGION,
   DEPLOYMENT_ENVIRONMENT_NAME,
   DEPLOYMENT_ID,
@@ -36,6 +37,7 @@ describe("getDefaultResourceAttributes", () => {
     });
 
     expect(attributes).toEqual({
+      [CLOUD_PROVIDER]: "vercel",
       [CLOUD_REGION]: "fra1",
       [DEPLOYMENT_ENVIRONMENT_NAME]: "preview",
       [DEPLOYMENT_ID]: "dpl_123",
