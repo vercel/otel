@@ -6,31 +6,42 @@ env:
 
 on:
   workflow_dispatch:
-  # TODO: enable auto-release
-  # push:
-  #   branches:
-  #     - main
+    inputs:
+      release:
+        description: Release type
+        required: true
+        type: choice
+        default: stable
+        options:
+          - stable
+          - snapshot
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
   release:
     name: Release
+    if: github.event.inputs.release == 'stable'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version-file: ".node-version"
           cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
@@ -40,5 +51,45 @@ jobs:
           version: pnpm version-packages
           commitMode: "github-api" # allows release commits and tags to be signed using $GITHUB_TOKEN
         env:
+          NPM_CONFIG_PROVENANCE: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+          TAG: ${{ github.ref_name == 'v1.x' && 'otel-sdk-1' || '' }}
+
+  release-snapshot:
+    name: Release Snapshot
+    if: github.event.inputs.release == 'snapshot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=${GITHUB_SHA::8}" >> "$GITHUB_ENV"
+
+      - name: Version Packages
+        run: pnpm changeset version --snapshot ${SHORT_SHA}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: pnpm --filter @vercel/otel build
+
+      - name: Publish Snapshot Release
+        run: pnpm changeset publish --no-git-tag --tag snapshot
+        env:
+          NPM_CONFIG_PROVENANCE: "true"
