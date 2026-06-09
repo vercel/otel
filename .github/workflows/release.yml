@@ -29,18 +29,19 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version-file: ".node-version"
           cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
@@ -50,6 +51,7 @@ jobs:
           version: pnpm version-packages
           commitMode: "github-api" # allows release commits and tags to be signed using $GITHUB_TOKEN
         env:
+          NPM_CONFIG_PROVENANCE: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name == 'v1.x' && 'otel-sdk-1' || '' }}
 
@@ -62,28 +64,32 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version-file: ".node-version"
           cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install Dependencies
-        run: pnpm install
-
-      - name: Build
-        run: pnpm --filter @vercel/otel build
+        run: pnpm install --frozen-lockfile
 
       - name: Add SHORT_SHA env property with commit short sha
         run: echo "SHORT_SHA=${GITHUB_SHA::8}" >> "$GITHUB_ENV"
 
-      - name: Create Snapshot Release
-        run: |
-          pnpm changeset version --snapshot ${SHORT_SHA}
-          pnpm changeset publish --no-git-tag --tag snapshot
+      - name: Version Packages
+        run: pnpm changeset version --snapshot ${SHORT_SHA}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: pnpm --filter @vercel/otel build
+
+      - name: Publish Snapshot Release
+        run: pnpm changeset publish --no-git-tag --tag snapshot
+        env:
+          NPM_CONFIG_PROVENANCE: "true"
