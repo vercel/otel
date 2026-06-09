@@ -6,6 +6,18 @@ env:
 
 on:
   workflow_dispatch:
+    inputs:
+      release:
+        description: Release type
+        required: true
+        type: choice
+        default: stable
+        options:
+          - stable
+          - snapshot
+  push:
+    branches:
+      - v1.x
   # TODO: enable auto-release
   # push:
   #   branches:
@@ -16,7 +28,12 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     name: Release
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.release == 'stable'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -41,4 +58,39 @@ jobs:
           commitMode: "github-api" # allows release commits and tags to be signed using $GITHUB_TOKEN
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+          TAG: ${{ github.ref_name == 'v1.x' && 'otel-sdk-1' || '' }}
+
+  release-snapshot:
+    name: Release Snapshot
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.release == 'snapshot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm --filter @vercel/otel build
+
+      - name: Add SHORT_SHA env property with commit short sha
+        run: echo "SHORT_SHA=${GITHUB_SHA::8}" >> "$GITHUB_ENV"
+
+      - name: Create Snapshot Release
+        run: |
+          pnpm changeset version --snapshot ${SHORT_SHA}
+          pnpm changeset publish --no-git-tag --tag snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
