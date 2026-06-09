@@ -15,13 +15,6 @@ on:
         options:
           - stable
           - snapshot
-  push:
-    branches:
-      - v1.x
-  # TODO: enable auto-release
-  # push:
-  #   branches:
-  #     - main
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
