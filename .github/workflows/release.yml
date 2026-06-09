@@ -21,7 +21,7 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 jobs:
   release:
     name: Release
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.release == 'stable'
+    if: github.event.inputs.release == 'stable'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -55,7 +55,7 @@ jobs:
 
   release-snapshot:
     name: Release Snapshot
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.release == 'snapshot'
+    if: github.event.inputs.release == 'snapshot'
     runs-on: ubuntu-latest
     permissions:
       contents: read
