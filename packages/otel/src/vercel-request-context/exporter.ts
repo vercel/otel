@@ -1,8 +1,8 @@
 import { diag } from "@opentelemetry/api";
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import { ExportResultCode, type ExportResult } from "@opentelemetry/core";
-import { JsonTraceSerializer } from "@opentelemetry/otlp-transformer/build/src/trace/json/trace";
 import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
+import { serializeTraceServiceRequestJson } from "../exporters/trace-service-request";
 import { getVercelRequestContext } from "./api";
 
 export class VercelRuntimeSpanExporter implements SpanExporter {
@@ -18,11 +18,8 @@ export class VercelRuntimeSpanExporter implements SpanExporter {
     }
 
     try {
-      const serializedData = JsonTraceSerializer.serializeRequest(spans);
+      const serializedData = serializeTraceServiceRequestJson(spans);
 
-      if (!serializedData) {
-        throw new Error("Failed to serialize spans");
-      }
       // Convert back to object format for the Vercel telemetry API
       const data = JSON.parse(
         new TextDecoder().decode(serializedData),
