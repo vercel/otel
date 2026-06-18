@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 1.14.2
+
+### Patch Changes
+
+- [#205](https://github.com/vercel/otel/pull/205) [`99a36fc`](https://github.com/vercel/otel/commit/99a36fc4221fb48d7e6ceba6ed0b038dfe1d802b) Thanks [@kakadiadarpan](https://github.com/kakadiadarpan)! - Avoid local OTLP exports for drained Vercel traces when request context is lost before span end.
+
 ## 1.14.1
 
 ### Patch Changes
