@@ -36,10 +36,12 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".node-version"
+          node-version: 22.14.0
           cache: "pnpm"
           registry-url: "https://registry.npmjs.org"
 
@@ -56,7 +58,7 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: otel-sdk-1
+          TAG: ${{ github.ref_name == 'v1.x' && 'otel-sdk-1' || '' }}
 
   release-snapshot:
     name: Release Snapshot
@@ -71,10 +73,12 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 11.8.0
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".node-version"
+          node-version: 22.14.0
           cache: "pnpm"
           registry-url: "https://registry.npmjs.org"
 
