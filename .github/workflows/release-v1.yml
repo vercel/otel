@@ -16,20 +16,25 @@ jobs:
   release:
     name: Release v1
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version-file: ".node-version"
           cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Create Release Pull Request or Publish to npm (v1)
         id: changesets
@@ -37,7 +42,8 @@ jobs:
         with:
           publish: pnpm release
           version: pnpm version-packages
+          commitMode: "github-api"
         env:
+          NPM_CONFIG_PROVENANCE: "true"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
           TAG: otel-sdk-1
