@@ -150,6 +150,14 @@ export interface Configuration {
    */
   traceExporter?: SpanExporterOrName;
 
+  /**
+   * Export a snapshot when a span starts, then export the completed span again when it ends.
+   * This lets compatible backends receive long-running spans before completion.
+   * The Vercel runtime exporter still receives only completed spans.
+   * By default, spans are exported only after they end.
+   */
+  experimentalPartialSpans?: boolean;
+
   spanLimits?: SpanLimits;
 
   logRecordProcessors?: LogRecordProcessor[];
