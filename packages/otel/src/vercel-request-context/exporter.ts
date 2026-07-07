@@ -8,6 +8,7 @@ import {
 import { JsonTraceSerializer } from "@opentelemetry/otlp-transformer/build/src/trace/json/trace";
 import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
 import { getVercelRequestContext, type VercelRequestContext } from "./api";
+import { getRequestContext } from "./context-registry";
 
 export class VercelRuntimeSpanExporter implements SpanExporter {
   private pendingSpans: ReadableSpan[] = [];
@@ -19,12 +20,13 @@ export class VercelRuntimeSpanExporter implements SpanExporter {
     spans: ReadableSpan[],
     resultCallback: (result: ExportResult) => void,
   ): void {
-    const context = getVercelRequestContext();
+    const ambient = getVercelRequestContext();
 
-    if (!context?.telemetry) {
-      // No ambient context (e.g. a bare-setTimeout timer flush). Shipping via a
-      // context captured earlier is unreliable (the runtime may ack but never
-      // land the spans), so retain and let the next in-context flush re-ship.
+    if (!ambient?.telemetry) {
+      // No ambient context (e.g. a bare-setTimeout timer flush). Reporting from
+      // outside a request is unreliable even through a captured context (the
+      // runtime may ack but never land the spans), so retain and let the next
+      // in-context flush ship.
       diag.debug(
         "@vercel/otel: no telemetry context found; retaining spans for the next in-context flush",
       );
@@ -33,28 +35,29 @@ export class VercelRuntimeSpanExporter implements SpanExporter {
       return;
     }
 
-    // Ship previously-retained spans separately so a failing retained batch
-    // neither fails the incoming batch nor gets lost.
-    if (this.pendingSpans.length > 0) {
-      const pending = this.pendingSpans;
-      this.pendingSpans = [];
+    // Route each trace's spans through its owning request context (captured at
+    // root onStart). Concurrent invocations on one instance share this exporter,
+    // and the runtime drops spans reported through a foreign invocation's
+    // channel. Failed groups are retained for the next flush, never lost.
+    const batch =
+      this.pendingSpans.length > 0 ? [...this.pendingSpans, ...spans] : spans;
+    this.pendingSpans = [];
+    const ambientTelemetry = ambient.telemetry;
+    const remaining: ReadableSpan[] = [];
+    groupByTraceId(batch).forEach((group, traceId) => {
+      const telemetry =
+        getRequestContext(traceId)?.telemetry ?? ambientTelemetry;
       try {
-        reportSpans(context.telemetry, pending);
+        reportSpans(telemetry, group);
       } catch (e) {
-        this.retain(pending);
-        diag.warn("@vercel/otel: failed to re-ship retained spans:", e);
+        diag.warn("@vercel/otel: reportSpans failed; retaining spans:", e);
+        remaining.push(...group);
       }
+    });
+    if (remaining.length > 0) {
+      this.retain(remaining);
     }
-
-    try {
-      reportSpans(context.telemetry, spans);
-      resultCallback({ code: ExportResultCode.SUCCESS, error: undefined });
-    } catch (e) {
-      resultCallback({
-        code: ExportResultCode.FAILED,
-        error: e instanceof Error ? e : new Error(String(e)),
-      });
-    }
+    resultCallback({ code: ExportResultCode.SUCCESS, error: undefined });
   }
 
   private retain(spans: ReadableSpan[]): void {
@@ -91,4 +94,18 @@ function reportSpans(
     new TextDecoder().decode(serializedData),
   ) as IExportTraceServiceRequest;
   telemetry.reportSpans(data);
+}
+
+function groupByTraceId(spans: ReadableSpan[]): Map<string, ReadableSpan[]> {
+  const byTrace = new Map<string, ReadableSpan[]>();
+  for (const span of spans) {
+    const { traceId } = span.spanContext();
+    const group = byTrace.get(traceId);
+    if (group) {
+      group.push(span);
+    } else {
+      byTrace.set(traceId, [span]);
+    }
+  }
+  return byTrace;
 }

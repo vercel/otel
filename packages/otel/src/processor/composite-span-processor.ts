@@ -8,6 +8,10 @@ import type {
 import { getNumberFromEnv } from "@opentelemetry/core";
 import { getVercelRequestContext } from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
+import {
+  deleteRequestContext,
+  setRequestContext,
+} from "../vercel-request-context/context-registry";
 import { isSampled } from "../util/sampled";
 import type { AttributesFromHeaders } from "../types";
 
@@ -68,6 +72,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
       // Flush the streams to avoid data loss.
       if (vrc) {
+        setRequestContext(traceId, vrc);
         vrc.waitUntil(async () => {
           if (this.rootSpanIds.has(traceId)) {
             // Not root has not completed yet, so no point in flushing.
@@ -89,7 +94,10 @@ export class CompositeSpanProcessor implements SpanProcessor {
               clearTimeout(timer);
             }
           }
-          return this.forceFlush();
+          await this.forceFlush();
+          // The invocation is over; the channel can no longer accept spans and
+          // the entry would leak if the root span never ended.
+          deleteRequestContext(traceId);
         });
       }
     }

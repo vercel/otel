@@ -6,8 +6,10 @@ import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import type { VercelRequestContext } from "./api";
 import { VercelRuntimeSpanExporter } from "./exporter";
+import { deleteRequestContext, setRequestContext } from "./context-registry";
 
 const TRACE_ID = "ee75cd9e534ff5e9ed78b4a0c706f0f2";
+const OTHER_TRACE_ID = "aa75cd9e534ff5e9ed78b4a0c706f0f2";
 const VRC_SYMBOL = Symbol.for("@vercel/request-context");
 
 type GlobalWithReader = Record<symbol, unknown>;
@@ -71,6 +73,8 @@ function countSpans(reportSpans: ReturnType<typeof vi.fn>, call = 0): number {
 describe("VercelRuntimeSpanExporter", () => {
   afterEach(() => {
     installContext(undefined);
+    deleteRequestContext(TRACE_ID);
+    deleteRequestContext(OTHER_TRACE_ID);
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
@@ -91,10 +95,8 @@ describe("VercelRuntimeSpanExporter", () => {
     const secondResult = vi.fn();
     exporter.export([createSpan("0000000000000002")], secondResult);
 
-    // Retained spans ship in their own batch, ahead of the incoming batch.
-    expect(reportSpans).toHaveBeenCalledTimes(2);
-    expect(countSpans(reportSpans, 0)).toBe(1);
-    expect(countSpans(reportSpans, 1)).toBe(1);
+    expect(reportSpans).toHaveBeenCalledTimes(1);
+    expect(countSpans(reportSpans)).toBe(2);
   });
 
   it("drops oldest spans and warns once the retained buffer is full", () => {
@@ -119,11 +121,34 @@ describe("VercelRuntimeSpanExporter", () => {
     expect(countSpans(reportSpans)).toBe(2);
   });
 
-  it("re-retains pending spans when re-shipping them fails, without failing the incoming batch", () => {
+  it("routes each trace's spans through its owning request context", () => {
     const exporter = new VercelRuntimeSpanExporter();
+    const { ctx: owner, reportSpans: ownerReport } = makeContext();
+    setRequestContext(TRACE_ID, owner);
 
-    installContext(undefined);
-    exporter.export([createSpan("0000000000000001")], vi.fn());
+    const { ctx: ambient, reportSpans: ambientReport } = makeContext();
+    installContext(ambient);
+    const result = vi.fn();
+    exporter.export(
+      [
+        createSpan("0000000000000001", TRACE_ID),
+        createSpan("0000000000000002", OTHER_TRACE_ID),
+      ],
+      result,
+    );
+
+    expect(result).toHaveBeenCalledWith({
+      code: ExportResultCode.SUCCESS,
+      error: undefined,
+    });
+    expect(ownerReport).toHaveBeenCalledTimes(1);
+    expect(countSpans(ownerReport)).toBe(1);
+    expect(ambientReport).toHaveBeenCalledTimes(1);
+    expect(countSpans(ambientReport)).toBe(1);
+  });
+
+  it("re-retains a failed group without losing it or failing the export", () => {
+    const exporter = new VercelRuntimeSpanExporter();
 
     const { ctx, reportSpans } = makeContext();
     reportSpans.mockImplementationOnce(() => {
@@ -131,19 +156,17 @@ describe("VercelRuntimeSpanExporter", () => {
     });
     installContext(ctx);
     const result = vi.fn();
-    exporter.export([createSpan("0000000000000002")], result);
+    exporter.export([createSpan("0000000000000001")], result);
 
     expect(result).toHaveBeenCalledWith({
       code: ExportResultCode.SUCCESS,
       error: undefined,
     });
-    expect(reportSpans).toHaveBeenCalledTimes(2);
-    expect(countSpans(reportSpans, 1)).toBe(1);
+    expect(reportSpans).toHaveBeenCalledTimes(1);
 
-    // The failed pending span ships on the next flush.
-    exporter.export([createSpan("0000000000000003")], vi.fn());
-    expect(reportSpans).toHaveBeenCalledTimes(4);
-    expect(countSpans(reportSpans, 2)).toBe(1);
-    expect(countSpans(reportSpans, 3)).toBe(1);
+    // The failed span ships together with the next batch.
+    exporter.export([createSpan("0000000000000002")], vi.fn());
+    expect(reportSpans).toHaveBeenCalledTimes(2);
+    expect(countSpans(reportSpans, 1)).toBe(2);
   });
 });
