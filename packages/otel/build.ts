@@ -6,8 +6,8 @@ const MINIFY = true;
 const SOURCEMAP = true;
 
 const MAX_SIZES = {
-  "dist/node/index.js": 300_000, // Increased from original 217KB limit
-  "dist/edge/index.js": 191_000, // Increased from original 185KB limit
+  "dist/node/index.js": 305_000, // Increased from 300KB for the span-attribution fix (main was within ~2KB of the limit)
+  "dist/edge/index.js": 193_000, // Increased from 191KB for the span-attribution fix (main was within ~100 bytes of the limit)
 };
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
