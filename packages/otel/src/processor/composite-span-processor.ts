@@ -72,11 +72,10 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
       if (vrc) {
         // Capture the request context that owns this trace. The exporter
-        // accumulates this trace's spans (mid-run flushes only drain the
-        // BatchSpanProcessor's queue, they don't report) and ships them in a
-        // single report when the trace is finalized below: the runtime only
-        // reliably persists one report per invocation, and only through the
-        // invocation's own telemetry channel.
+        // streams this trace's spans as single-trace payloads through this
+        // context's telemetry channel on every flush (the runtime only
+        // reliably persists payloads composed of one active trace), and the
+        // finalize below ships whatever is left when the request ends.
         registerVercelRequestContextForTrace(traceId, vrc);
 
         // Flush the streams to avoid data loss.
@@ -164,13 +163,13 @@ export class CompositeSpanProcessor implements SpanProcessor {
         pending();
       }
     } else if (sampled && getVercelRequestContext()) {
-      // Periodic drain, Vercel-only. Long-running invocations produce more
-      // spans than the BatchSpanProcessor's queue holds (it silently drops
-      // past maxQueueSize), so drain it regularly into the exporter's
-      // per-trace buffers. Draining doesn't report anything: the trace's
-      // spans ship in a single report at finalizeTrace. Off-Vercel this is
-      // skipped and the stock timer behaves as before. The root span's final
-      // flush is handled by the waitUntil registered in onStart.
+      // Periodic in-context drain, Vercel-only. Long-running invocations
+      // produce more spans than the BatchSpanProcessor's queue holds (it
+      // silently drops past maxQueueSize), so drain it regularly into the
+      // exporter, which streams each trace's spans out as single-trace
+      // payloads. Off-Vercel this is skipped and the stock timer behaves as
+      // before. The root span's final flush is handled by the waitUntil
+      // registered in onStart.
       this.maybeFlush();
     }
   }

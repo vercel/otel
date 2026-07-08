@@ -37,25 +37,26 @@ export function getVercelRequestContext(): VercelRequestContext | undefined {
 }
 
 /**
- * Registry of request contexts keyed by trace id, so span exports can be
- * attributed to the request that OWNS each span instead of whichever request
- * happens to be ambient at flush time.
+ * Registry of request contexts keyed by trace id, so span exports can reach
+ * the telemetry channel of the request that OWNS each span even when the
+ * flush runs outside any request context.
  *
  * Why this exists: the BatchSpanProcessor's queue is shared by every request
  * running on the function instance, and its scheduled flush runs in a bare
- * `setTimeout` OUTSIDE any request's AsyncLocalStorage. The runtime only
- * reliably persists spans reported through their own invocation's
- * `telemetry.reportSpans` channel, and only ONE report per invocation is
- * dependable (mid-run reports have been observed not to land). Long-running
- * invocations, e.g. Vercel Workflows, used to lose every span that was
- * flushed mid-run: their traces looked blank except for the last few seconds.
+ * `setTimeout` OUTSIDE any request's AsyncLocalStorage, where the ambient
+ * context resolves to nothing (the exporter used to silently drop those
+ * batches). The runtime also only reliably persists payloads composed of a
+ * SINGLE trace belonging to an active request; mixed-queue payloads used to
+ * be dropped whole or misfiled depending on which span sat first in the
+ * batch. Long-running invocations, e.g. Vercel Workflows, used to lose every
+ * span flushed mid-run: their traces looked blank except for the last few
+ * seconds.
  *
  * The context is captured per trace while inside the owning request (root
- * span `onStart`), spans for registered traces are accumulated by the
- * exporter, and the trace's whole buffer is shipped in a single report by
- * `finalizeTrace` (invoked from the request's `waitUntil`, after the final
- * flush). A hard cap bounds the registry against traces whose root span
- * never ends.
+ * span `onStart`); the exporter streams each trace's spans as single-trace
+ * payloads through it, and `finalizeTrace` (invoked from the request's
+ * `waitUntil`, after the final flush) ships whatever is left. A hard cap
+ * bounds the registry against traces whose root span never ends.
  */
 const traceContextRegistry = new Map<string, VercelRequestContext>();
 
@@ -104,10 +105,10 @@ export function getVercelRequestContextForTrace(
 }
 
 /**
- * @internal Ship a trace's accumulated spans (via the registered finalizers)
- * and drop its captured context. Called from the owning request's
- * `waitUntil` after the final flush, so the single report this produces is
- * sent while the invocation is still able to deliver telemetry.
+ * @internal Ship a trace's remaining buffered spans (via the registered
+ * finalizers) and drop its captured context. Called from the owning
+ * request's `waitUntil` after the final flush, so the last payload is sent
+ * while the invocation is still able to deliver telemetry.
  */
 export function finalizeTrace(traceId: string): void {
   try {

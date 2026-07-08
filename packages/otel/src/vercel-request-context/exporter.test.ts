@@ -60,19 +60,35 @@ function installAmbient(ctx: VercelRequestContext | undefined): void {
   (globalThis as GlobalWithReader)[VRC_SYMBOL] = { get: () => ctx };
 }
 
-function shippedSpanIds(
+function shippedTraceIds(
   reportSpans: ReturnType<typeof vi.fn>,
   call = 0,
 ): string[] {
   const data = reportSpans.mock.calls[call]?.[0] as IExportTraceServiceRequest;
   return (data.resourceSpans ?? []).flatMap((rs) =>
     rs.scopeSpans.flatMap((ss) =>
-      (ss.spans ?? []).map((s) => String(s.spanId)),
+      (ss.spans ?? []).map((s) => String(s.traceId)),
     ),
   );
 }
 
-describe("VercelRuntimeSpanExporter", () => {
+function shippedSpanCount(
+  reportSpans: ReturnType<typeof vi.fn>,
+  call = 0,
+): number {
+  return shippedTraceIds(reportSpans, call).length;
+}
+
+function makeStreamingExporter(): VercelRuntimeSpanExporter {
+  process.env.VERCEL_OTEL_STREAM_SPANS = "1";
+  try {
+    return new VercelRuntimeSpanExporter();
+  } finally {
+    delete process.env.VERCEL_OTEL_STREAM_SPANS;
+  }
+}
+
+describe("VercelRuntimeSpanExporter (streaming mode, VERCEL_OTEL_STREAM_SPANS=1)", () => {
   afterEach(() => {
     installAmbient(undefined);
     // Clear any registrations left behind by a test.
@@ -81,42 +97,37 @@ describe("VercelRuntimeSpanExporter", () => {
     vi.restoreAllMocks();
   });
 
-  it("accumulates spans of a registered trace and ships them once, through the owning context, at finalizeTrace", () => {
+  it("streams a registered trace's spans on every flush, as single-trace payloads", () => {
     const owner = makeContext();
-    const ambient = makeContext();
     registerVercelRequestContextForTrace(TRACE_A, owner.ctx);
-    installAmbient(ambient.ctx);
+    installAmbient(undefined);
 
-    const exporter = new VercelRuntimeSpanExporter();
+    const exporter = makeStreamingExporter();
     const result = vi.fn();
-    // Two mid-run flushes: nothing must be reported yet.
     exporter.export([createSpan("0000000000000001", TRACE_A)], result);
     exporter.export([createSpan("0000000000000002", TRACE_A)], result);
+
     expect(result).toHaveBeenCalledWith({
       code: ExportResultCode.SUCCESS,
       error: undefined,
     });
-    expect(owner.reportSpans).toHaveBeenCalledTimes(0);
-    expect(ambient.reportSpans).toHaveBeenCalledTimes(0);
+    // Two mid-run flushes -> two reports, each shipped immediately.
+    expect(owner.reportSpans).toHaveBeenCalledTimes(2);
+    expect(shippedSpanCount(owner.reportSpans, 0)).toBe(1);
+    expect(shippedSpanCount(owner.reportSpans, 1)).toBe(1);
 
-    // Finalize: exactly ONE report, through the owner, with all spans.
+    // Finalize with an empty buffer reports nothing further.
     finalizeTrace(TRACE_A);
-    expect(owner.reportSpans).toHaveBeenCalledTimes(1);
-    expect(ambient.reportSpans).toHaveBeenCalledTimes(0);
-    expect(shippedSpanIds(owner.reportSpans)).toHaveLength(2);
-
-    // Finalizing again reports nothing further.
-    finalizeTrace(TRACE_A);
-    expect(owner.reportSpans).toHaveBeenCalledTimes(1);
+    expect(owner.reportSpans).toHaveBeenCalledTimes(2);
   });
 
-  it("keeps concurrent traces separate: each finalize ships only its own spans", () => {
+  it("never mixes traces into one payload: each trace ships separately to its own context", () => {
     const ownerA = makeContext();
     const ownerB = makeContext();
     registerVercelRequestContextForTrace(TRACE_A, ownerA.ctx);
     registerVercelRequestContextForTrace(TRACE_B, ownerB.ctx);
 
-    const exporter = new VercelRuntimeSpanExporter();
+    const exporter = makeStreamingExporter();
     exporter.export(
       [
         createSpan("0000000000000001", TRACE_A),
@@ -126,29 +137,39 @@ describe("VercelRuntimeSpanExporter", () => {
       vi.fn(),
     );
 
-    finalizeTrace(TRACE_A);
     expect(ownerA.reportSpans).toHaveBeenCalledTimes(1);
-    expect(shippedSpanIds(ownerA.reportSpans)).toHaveLength(2);
-    expect(ownerB.reportSpans).toHaveBeenCalledTimes(0);
-
-    finalizeTrace(TRACE_B);
     expect(ownerB.reportSpans).toHaveBeenCalledTimes(1);
-    expect(shippedSpanIds(ownerB.reportSpans)).toHaveLength(1);
+    expect(new Set(shippedTraceIds(ownerA.reportSpans))).toEqual(
+      new Set([TRACE_A]),
+    );
+    expect(shippedSpanCount(ownerA.reportSpans)).toBe(2);
+    expect(new Set(shippedTraceIds(ownerB.reportSpans))).toEqual(
+      new Set([TRACE_B]),
+    );
+    expect(shippedSpanCount(ownerB.reportSpans)).toBe(1);
   });
 
-  it("ships spans of untracked traces immediately through the ambient context", () => {
+  it("ships untracked traces through the ambient context, still one payload per trace", () => {
     const ambient = makeContext();
     installAmbient(ambient.ctx);
 
-    const exporter = new VercelRuntimeSpanExporter();
-    exporter.export([createSpan("0000000000000001", TRACE_B)], vi.fn());
+    const exporter = makeStreamingExporter();
+    exporter.export(
+      [
+        createSpan("0000000000000001", TRACE_A),
+        createSpan("0000000000000002", TRACE_B),
+      ],
+      vi.fn(),
+    );
 
-    expect(ambient.reportSpans).toHaveBeenCalledTimes(1);
-    expect(shippedSpanIds(ambient.reportSpans)).toHaveLength(1);
+    // Two payloads (one per trace), never a mixed one.
+    expect(ambient.reportSpans).toHaveBeenCalledTimes(2);
+    expect(new Set(shippedTraceIds(ambient.reportSpans, 0)).size).toBe(1);
+    expect(new Set(shippedTraceIds(ambient.reportSpans, 1)).size).toBe(1);
   });
 
-  it("retains unattributable spans and re-attempts them on a later flush", () => {
-    const exporter = new VercelRuntimeSpanExporter();
+  it("buffers spans with no reachable channel and ships them on a later flush", () => {
+    const exporter = makeStreamingExporter();
 
     installAmbient(undefined);
     const firstResult = vi.fn();
@@ -162,29 +183,84 @@ describe("VercelRuntimeSpanExporter", () => {
     installAmbient(ctx);
     exporter.export([createSpan("0000000000000002", TRACE_B)], vi.fn());
 
-    // Retained + incoming ship together via the now-available ambient context.
+    // Buffered + incoming ship together (same trace, one payload).
     expect(reportSpans).toHaveBeenCalledTimes(1);
-    expect(shippedSpanIds(reportSpans)).toHaveLength(2);
+    expect(shippedSpanCount(reportSpans)).toBe(2);
   });
 
-  it("retains a finalized trace's spans when its context fails, without losing them", () => {
-    const failing = makeContext();
-    failing.reportSpans.mockImplementation(() => {
+  it("ships leftovers at finalizeTrace through the owning context", () => {
+    const exporter = makeStreamingExporter();
+
+    // No channel at flush time: spans stay buffered.
+    installAmbient(undefined);
+    exporter.export([createSpan("0000000000000001", TRACE_A)], vi.fn());
+
+    // The trace's request registers + finalizes (waitUntil path).
+    const owner = makeContext();
+    registerVercelRequestContextForTrace(TRACE_A, owner.ctx);
+    finalizeTrace(TRACE_A);
+
+    expect(owner.reportSpans).toHaveBeenCalledTimes(1);
+    expect(shippedSpanCount(owner.reportSpans)).toBe(1);
+  });
+
+  it("retains a trace's spans when its channel throws and retries on the next flush", () => {
+    const owner = makeContext();
+    owner.reportSpans.mockImplementationOnce(() => {
       throw new Error("boom");
     });
-    registerVercelRequestContextForTrace(TRACE_A, failing.ctx);
+    registerVercelRequestContextForTrace(TRACE_A, owner.ctx);
+
+    const exporter = makeStreamingExporter();
+    const result = vi.fn();
+    exporter.export([createSpan("0000000000000001", TRACE_A)], result);
+    expect(result).toHaveBeenCalledWith({
+      code: ExportResultCode.SUCCESS,
+      error: undefined,
+    });
+    expect(owner.reportSpans).toHaveBeenCalledTimes(1);
+
+    // Next flush retries the retained span together with the new one.
+    exporter.export([createSpan("0000000000000002", TRACE_A)], vi.fn());
+    expect(owner.reportSpans).toHaveBeenCalledTimes(2);
+    expect(shippedSpanCount(owner.reportSpans, 1)).toBe(2);
+  });
+});
+
+describe("VercelRuntimeSpanExporter (default accumulate mode)", () => {
+  afterEach(() => {
     installAmbient(undefined);
+    finalizeTrace(TRACE_A);
+    finalizeTrace(TRACE_B);
+    vi.restoreAllMocks();
+  });
+
+  it("accumulates a registered trace's spans and ships them once at finalizeTrace", () => {
+    const owner = makeContext();
+    const ambient = makeContext();
+    registerVercelRequestContextForTrace(TRACE_A, owner.ctx);
+    installAmbient(ambient.ctx);
 
     const exporter = new VercelRuntimeSpanExporter();
     exporter.export([createSpan("0000000000000001", TRACE_A)], vi.fn());
-    finalizeTrace(TRACE_A);
-    expect(failing.reportSpans).toHaveBeenCalledTimes(1);
+    exporter.export([createSpan("0000000000000002", TRACE_A)], vi.fn());
+    // Nothing ships mid-run in accumulate mode.
+    expect(owner.reportSpans).toHaveBeenCalledTimes(0);
+    expect(ambient.reportSpans).toHaveBeenCalledTimes(0);
 
-    // The retained spans ship on the next flush that has a working context.
-    const healthy = makeContext();
-    installAmbient(healthy.ctx);
-    exporter.export([], vi.fn());
-    expect(healthy.reportSpans).toHaveBeenCalledTimes(1);
-    expect(shippedSpanIds(healthy.reportSpans)).toHaveLength(1);
+    finalizeTrace(TRACE_A);
+    expect(owner.reportSpans).toHaveBeenCalledTimes(1);
+    expect(shippedSpanCount(owner.reportSpans)).toBe(2);
+  });
+
+  it("still ships untracked traces immediately via the ambient context", () => {
+    const ambient = makeContext();
+    installAmbient(ambient.ctx);
+
+    const exporter = new VercelRuntimeSpanExporter();
+    exporter.export([createSpan("0000000000000001", TRACE_B)], vi.fn());
+
+    expect(ambient.reportSpans).toHaveBeenCalledTimes(1);
+    expect(shippedSpanCount(ambient.reportSpans)).toBe(1);
   });
 });
