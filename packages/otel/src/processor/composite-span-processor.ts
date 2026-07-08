@@ -5,7 +5,12 @@ import type {
   ReadableSpan,
   SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import { getVercelRequestContext } from "../vercel-request-context/api";
+import { getNumberFromEnv } from "@opentelemetry/core";
+import {
+  finalizeTrace,
+  getVercelRequestContext,
+  registerVercelRequestContextForTrace,
+} from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
 import { isSampled } from "../util/sampled";
 import type { AttributesFromHeaders } from "../types";
@@ -17,6 +22,13 @@ export class CompositeSpanProcessor implements SpanProcessor {
     { rootSpanId: string; open: Span[] }
   >();
   private readonly waitSpanEnd = new Map<string, () => void>();
+
+  private readonly flushBatchSize =
+    getNumberFromEnv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE") ?? 512;
+  private readonly flushDelayMs =
+    getNumberFromEnv("OTEL_BSP_SCHEDULE_DELAY") ?? 5000;
+  private spansSinceFlush = 0;
+  private lastFlushMs = 0;
 
   constructor(
     private processors: SpanProcessor[],
@@ -58,8 +70,16 @@ export class CompositeSpanProcessor implements SpanProcessor {
         span.setAttributes(vercelRequestContextAttrs);
       }
 
-      // Flush the streams to avoid data loss.
       if (vrc) {
+        // Capture the request context that owns this trace. The exporter
+        // accumulates this trace's spans (mid-run flushes only drain the
+        // BatchSpanProcessor's queue, they don't report) and ships them in a
+        // single report when the trace is finalized below: the runtime only
+        // reliably persists one report per invocation, and only through the
+        // invocation's own telemetry channel.
+        registerVercelRequestContextForTrace(traceId, vrc);
+
+        // Flush the streams to avoid data loss.
         vrc.waitUntil(async () => {
           if (this.rootSpanIds.has(traceId)) {
             // Not root has not completed yet, so no point in flushing.
@@ -81,7 +101,15 @@ export class CompositeSpanProcessor implements SpanProcessor {
               clearTimeout(timer);
             }
           }
-          return this.forceFlush();
+          try {
+            // Drain the processors so every one of this trace's remaining
+            // spans reaches the exporter's per-trace buffer...
+            return await this.forceFlush();
+          } finally {
+            // ...then ship the buffer in one report and drop the captured
+            // context.
+            finalizeTrace(traceId);
+          }
         });
       }
     }
@@ -135,6 +163,33 @@ export class CompositeSpanProcessor implements SpanProcessor {
         this.waitSpanEnd.delete(traceId);
         pending();
       }
+    } else if (sampled && getVercelRequestContext()) {
+      // Periodic drain, Vercel-only. Long-running invocations produce more
+      // spans than the BatchSpanProcessor's queue holds (it silently drops
+      // past maxQueueSize), so drain it regularly into the exporter's
+      // per-trace buffers. Draining doesn't report anything: the trace's
+      // spans ship in a single report at finalizeTrace. Off-Vercel this is
+      // skipped and the stock timer behaves as before. The root span's final
+      // flush is handled by the waitUntil registered in onStart.
+      this.maybeFlush();
+    }
+  }
+
+  private maybeFlush(): void {
+    this.spansSinceFlush += 1;
+    const now = Date.now();
+    if (this.lastFlushMs === 0) {
+      this.lastFlushMs = now;
+    }
+    if (
+      this.spansSinceFlush >= this.flushBatchSize ||
+      now - this.lastFlushMs >= this.flushDelayMs
+    ) {
+      this.spansSinceFlush = 0;
+      this.lastFlushMs = now;
+      void this.forceFlush().catch((e) => {
+        diag.error("@vercel/otel: periodic flush failed:", e);
+      });
     }
   }
 }
