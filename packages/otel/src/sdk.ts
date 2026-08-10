@@ -55,6 +55,7 @@ import { FetchInstrumentation } from "./instrumentations/fetch";
 import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propagator";
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
+import { VercelRuntimeContextManager } from "./vercel-request-context/context-manager";
 import { getStringFromEnv, getStringListFromEnv } from "./utils/env-parser";
 import { FilterWhenDrainedSpanProcessor } from "./processor/filter-when-drained-span-processor";
 
@@ -112,7 +113,10 @@ export class Sdk {
 
     const idGenerator = configuration.idGenerator ?? new RandomIdGenerator();
 
-    this.contextManager = setupContextManager(configuration.contextManager);
+    this.contextManager = setupContextManager(
+      configuration.contextManager,
+      runtime,
+    );
 
     const serviceName =
       env.OTEL_SERVICE_NAME || configuration.serviceName || "app";
@@ -541,18 +545,24 @@ function isNotNull<T>(x: T | null | undefined): x is T {
 
 function setupContextManager(
   contextManager: ContextManager | undefined,
+  runtime: string,
 ): ContextManager {
+  let configuredContextManager = contextManager;
   // undefined means 'register default'
-  if (contextManager === undefined) {
+  if (configuredContextManager === undefined) {
     diag.debug("@vercel/otel: Configure context manager: default");
-    const defaultContextManager = new AsyncLocalStorageContextManager();
-    defaultContextManager.enable();
-    context.setGlobalContextManager(defaultContextManager);
-    return defaultContextManager;
+    configuredContextManager = new AsyncLocalStorageContextManager();
+  } else {
+    diag.debug("@vercel/otel: Configure context manager: from configuration");
   }
 
-  diag.debug("@vercel/otel: Configure context manager: from configuration");
-  contextManager.enable();
-  context.setGlobalContextManager(contextManager);
-  return contextManager;
+  if (runtime === "nodejs") {
+    configuredContextManager = new VercelRuntimeContextManager(
+      configuredContextManager,
+    );
+  }
+
+  configuredContextManager.enable();
+  context.setGlobalContextManager(configuredContextManager);
+  return configuredContextManager;
 }
