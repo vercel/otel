@@ -1,0 +1,28 @@
+{
+  "name": "astro-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview",
+    "type-check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/vercel": "11.0.8",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/api-logs": "0.221.0",
+    "@opentelemetry/instrumentation": "0.221.0",
+    "@opentelemetry/resources": "2.10.0",
+    "@opentelemetry/sdk-logs": "0.221.0",
+    "@opentelemetry/sdk-metrics": "2.10.0",
+    "@opentelemetry/sdk-trace-base": "2.10.0",
+    "@vercel/otel": "workspace:^",
+    "astro": "7.2.7"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "6.0.3"
+  }
+}
