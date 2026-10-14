@@ -1,5 +1,5 @@
 import type { Attributes, Context } from "@opentelemetry/api";
-import { diag, SpanKind } from "@opentelemetry/api";
+import { diag, SpanKind, trace } from "@opentelemetry/api";
 import type {
   Span,
   ReadableSpan,
@@ -10,12 +10,22 @@ import { getVercelRequestContextAttributes } from "../vercel-request-context/att
 import { isSampled } from "../util/sampled";
 import type { AttributesFromHeaders } from "../types";
 
+/**
+ * The first span a request starts in this process, and the spans opened under
+ * it. Concurrent requests can continue the same trace, so this is tracked per
+ * request, not per trace.
+ */
+interface LocalRoot {
+  rootSpanId: string;
+  open: Span[];
+  ended: boolean;
+}
+
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
-  private readonly rootSpanIds = new Map<
-    string,
-    { rootSpanId: string; open: Span[] }
-  >();
+  // Maps each span to its request's local root; entries are collected with
+  // their spans.
+  private readonly localRoots = new WeakMap<object, LocalRoot>();
   private readonly waitSpanEnd = new Map<string, () => void>();
 
   constructor(
@@ -40,13 +50,21 @@ export class CompositeSpanProcessor implements SpanProcessor {
   }
 
   onStart(span: Span, parentContext: Context): void {
-    const { traceId, spanId, traceFlags } = span.spanContext();
-    const isRoot =
-      !span.parentSpanContext?.spanId || !this.rootSpanIds.has(traceId);
-    if (isRoot) {
-      this.rootSpanIds.set(traceId, { rootSpanId: spanId, open: [] });
-    } else {
-      this.rootSpanIds.get(traceId)?.open.push(span);
+    const { spanId, traceFlags } = span.spanContext();
+    // A span joins its local parent's request; a span with a remote or no
+    // parent starts a new one.
+    const parentSpan =
+      span.parentSpanContext && !span.parentSpanContext.isRemote
+        ? trace.getSpan(parentContext)
+        : undefined;
+    const parentRoot = parentSpan && this.localRoots.get(parentSpan);
+    const isRoot = !parentRoot || parentRoot.ended;
+    const localRoot = isRoot
+      ? { rootSpanId: spanId, open: [], ended: false }
+      : parentRoot;
+    this.localRoots.set(span, localRoot);
+    if (!isRoot) {
+      localRoot.open.push(span);
     }
     if (isRoot && isSampled(traceFlags)) {
       const vrc = getVercelRequestContext();
@@ -61,18 +79,18 @@ export class CompositeSpanProcessor implements SpanProcessor {
       // Flush the streams to avoid data loss.
       if (vrc) {
         vrc.waitUntil(async () => {
-          if (this.rootSpanIds.has(traceId)) {
+          if (!localRoot.ended) {
             // Not root has not completed yet, so no point in flushing.
             // Need to wait for onEnd.
             const promise = new Promise<void>((resolve) => {
-              this.waitSpanEnd.set(traceId, resolve);
+              this.waitSpanEnd.set(spanId, resolve);
             });
             let timer: NodeJS.Timeout | undefined;
             await Promise.race([
               promise,
               new Promise((resolve) => {
                 timer = setTimeout(() => {
-                  this.waitSpanEnd.delete(traceId);
+                  this.waitSpanEnd.delete(spanId);
                   resolve(undefined);
                 }, 50);
               }),
@@ -92,9 +110,9 @@ export class CompositeSpanProcessor implements SpanProcessor {
   }
 
   onEnd(span: ReadableSpan): void {
-    const { traceId, spanId, traceFlags } = span.spanContext();
+    const { spanId, traceFlags } = span.spanContext();
     const sampled = isSampled(traceFlags);
-    const rootObj = this.rootSpanIds.get(traceId);
+    const rootObj = this.localRoots.get(span);
     const isRoot = rootObj?.rootSpanId === spanId;
 
     if (sampled) {
@@ -105,9 +123,11 @@ export class CompositeSpanProcessor implements SpanProcessor {
     }
 
     if (isRoot) {
-      this.rootSpanIds.delete(traceId);
-      if (rootObj.open.length > 0) {
-        for (const openSpan of rootObj.open) {
+      rootObj.ended = true;
+      const open = rootObj.open;
+      rootObj.open = [];
+      if (open.length > 0) {
+        for (const openSpan of open) {
           if (!openSpan.ended && openSpan.spanContext().spanId !== spanId) {
             try {
               openSpan.end();
@@ -130,9 +150,9 @@ export class CompositeSpanProcessor implements SpanProcessor {
     }
 
     if (isRoot) {
-      const pending = this.waitSpanEnd.get(traceId);
+      const pending = this.waitSpanEnd.get(spanId);
       if (pending) {
-        this.waitSpanEnd.delete(traceId);
+        this.waitSpanEnd.delete(spanId);
         pending();
       }
     }
