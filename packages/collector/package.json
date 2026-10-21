@@ -16,8 +16,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@opentelemetry/otlp-transformer": "^0.205.0"
+    "protobufjs": "^7.5.4"
   },
+  "files": [
+    "src",
+    "proto"
+  ],
   "devDependencies": {
     "@types/node": "^20",
     "eslint-config": "workspace:*",

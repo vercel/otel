@@ -13,7 +13,7 @@ import type {
   SpanExporter,
   SpanLimits,
   SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import type { MetricReader, ViewOptions } from "@opentelemetry/sdk-metrics";
 import type { FetchInstrumentationConfig } from "./instrumentations/fetch";
 

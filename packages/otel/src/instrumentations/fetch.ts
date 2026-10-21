@@ -352,10 +352,15 @@ export class FetchInstrumentation implements Instrumentation {
         }
 
         if (attributesFromRequestHeaders) {
+          // @types/node 22 adds a raw string-list form. Array.isArray does not
+          // narrow it out of the union, so the cast follows the runtime check.
+          const requestHeaders = Array.isArray(options.headers)
+            ? {}
+            : ((options.headers ?? {}) as OutgoingHttpHeaders);
           headersToAttributes(
             span,
             attributesFromRequestHeaders,
-            options.headers || {},
+            requestHeaders,
             HTTP_HEADERS_GETTER,
           );
         }

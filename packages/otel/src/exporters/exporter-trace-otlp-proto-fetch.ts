@@ -1,10 +1,7 @@
-import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
-import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
-import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal";
+import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace";
 import type { ExportResult } from "@opentelemetry/core";
-import { encodeTraceServiceRequest } from "./proto";
-import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
-import { getDefaultUrl } from "./trace-config";
+import { ProtobufTraceSerializer } from "@opentelemetry/otlp-transformer";
+import { OTLPFetchExporter } from "./otlp-exporter-base";
 import type { OTLPExporterConfig } from "./config";
 
 /**
@@ -12,10 +9,15 @@ import type { OTLPExporterConfig } from "./config";
  */
 export class OTLPHttpProtoTraceExporter implements SpanExporter {
   /** @internal */
-  private readonly impl: Impl;
+  private readonly impl: OTLPFetchExporter;
 
   constructor(config: OTLPExporterConfig = {}) {
-    this.impl = new Impl(config);
+    this.impl = new OTLPFetchExporter(config, {
+      contentType: "application/x-protobuf",
+      headers: { accept: "application/x-protobuf" },
+      serialize: (spans: ReadableSpan[]): Uint8Array | undefined =>
+        ProtobufTraceSerializer.serializeRequest(spans),
+    });
   }
 
   export(
@@ -31,32 +33,5 @@ export class OTLPHttpProtoTraceExporter implements SpanExporter {
 
   forceFlush(): Promise<void> {
     return this.impl.forceFlush();
-  }
-}
-
-/** @internal */
-class Impl extends OTLPExporterEdgeBase<
-  ReadableSpan,
-  IExportTraceServiceRequest
-> {
-  convert(spans: ReadableSpan[]): IExportTraceServiceRequest {
-    return createExportTraceServiceRequest(spans);
-  }
-
-  override toMessage(serviceRequest: IExportTraceServiceRequest): {
-    body: string | Uint8Array | Blob;
-    contentType: string;
-    headers?: Record<string, string> | undefined;
-  } {
-    const body = encodeTraceServiceRequest(serviceRequest);
-    return {
-      body,
-      contentType: "application/x-protobuf",
-      headers: { accept: "application/x-protobuf" },
-    };
-  }
-
-  getDefaultUrl(config: OTLPExporterConfig): string {
-    return getDefaultUrl(config);
   }
 }

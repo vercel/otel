@@ -12,6 +12,7 @@ import type {
   ObservableUpDownCounter as OtelObservableUpDownCounter,
   UpDownCounter as OtelUpDownCounter,
   Gauge as OtelGauge,
+  MetricAttributes,
 } from "@opentelemetry/api";
 import type { Attributes } from "../attribute";
 
@@ -57,7 +58,7 @@ class MeterImpl implements OtelMeter {
     private options: OtelMeterOptions | undefined,
   ) {}
 
-  createHistogram<AttributesTypes extends Attributes = Attributes>(
+  createHistogram<AttributesTypes extends MetricAttributes = MetricAttributes>(
     name: string,
     options?: OtelMetricOptions | undefined,
   ): OtelHistogram<AttributesTypes> {
@@ -68,7 +69,7 @@ class MeterImpl implements OtelMeter {
     ) as OtelHistogram<AttributesTypes>;
   }
 
-  createCounter<AttributesTypes extends Attributes = Attributes>(
+  createCounter<AttributesTypes extends MetricAttributes = MetricAttributes>(
     name: string,
     options?: OtelMetricOptions | undefined,
   ): OtelCounter<AttributesTypes> {
@@ -79,7 +80,7 @@ class MeterImpl implements OtelMeter {
     ) as OtelCounter<AttributesTypes>;
   }
 
-  createUpDownCounter<AttributesTypes extends Attributes = Attributes>(
+  createUpDownCounter<AttributesTypes extends MetricAttributes = MetricAttributes>(
     name: string,
     options?: OtelMetricOptions | undefined,
   ): OtelUpDownCounter<AttributesTypes> {
@@ -90,21 +91,21 @@ class MeterImpl implements OtelMeter {
     ) as OtelUpDownCounter<AttributesTypes>;
   }
 
-  createGauge<AttributesTypes extends Attributes = Attributes>(
+  createGauge<AttributesTypes extends MetricAttributes = MetricAttributes>(
     _name: string,
     _options?: OtelMetricOptions | undefined,
   ): OtelGauge<AttributesTypes> {
     throw new Error("Method not implemented.");
   }
 
-  createObservableGauge<AttributesTypes extends Attributes = Attributes>(
+  createObservableGauge<AttributesTypes extends MetricAttributes = MetricAttributes>(
     _name: string,
     _options?: OtelMetricOptions | undefined,
   ): OtelObservableGauge<AttributesTypes> {
     throw new Error("Method not implemented.");
   }
 
-  createObservableCounter<AttributesTypes extends Attributes = Attributes>(
+  createObservableCounter<AttributesTypes extends MetricAttributes = MetricAttributes>(
     _name: string,
     _options?: OtelMetricOptions | undefined,
   ): OtelObservableCounter<AttributesTypes> {
@@ -112,7 +113,7 @@ class MeterImpl implements OtelMeter {
   }
 
   createObservableUpDownCounter<
-    AttributesTypes extends Attributes = Attributes,
+    AttributesTypes extends MetricAttributes = MetricAttributes,
   >(
     _name: string,
     _options?: OtelMetricOptions | undefined,
@@ -120,7 +121,7 @@ class MeterImpl implements OtelMeter {
     throw new Error("Method not implemented.");
   }
 
-  addBatchObservableCallback<AttributesTypes extends Attributes = Attributes>(
+  addBatchObservableCallback<AttributesTypes extends MetricAttributes = MetricAttributes>(
     _callback: OtelBatchObservableCallback<AttributesTypes>,
     _observables: OtelObservable<AttributesTypes>[],
   ): void {
@@ -128,7 +129,7 @@ class MeterImpl implements OtelMeter {
   }
 
   removeBatchObservableCallback<
-    AttributesTypes extends Attributes = Attributes,
+    AttributesTypes extends MetricAttributes = MetricAttributes,
   >(
     _callback: OtelBatchObservableCallback<AttributesTypes>,
     _observables: OtelObservable<AttributesTypes>[],

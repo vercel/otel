@@ -4,7 +4,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { metrics as metricsApi } from "@opentelemetry/api";
-import type { ReadableSpan } from "@opentelemetry/sdk-trace-base";
+import type { ReadableSpan } from "@opentelemetry/sdk-trace";
 import { MeterRecorder } from "./test-util/meter-recorder";
 import {
   getActiveSpan,

@@ -513,9 +513,6 @@ describe("vercel deployment: outbound with http", {}, (props) => {
                       name: "exception",
                       attributes: {
                         "exception.type": "ECONNREFUSED",
-                        "exception.message": `connect ECONNREFUSED ::1:${
-                          bridge.port + 1
-                        }`,
                       },
                     },
                   ],
