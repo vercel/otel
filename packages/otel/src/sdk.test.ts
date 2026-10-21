@@ -13,7 +13,11 @@ import {
   type LogRecordExporter,
   type ReadableLogRecord,
 } from "@opentelemetry/sdk-logs";
-import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace";
+import type {
+  ReadableSpan,
+  SpanExporter,
+  SpanProcessor,
+} from "@opentelemetry/sdk-trace";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Sdk } from "./sdk";
 
@@ -158,6 +162,24 @@ describe("Sdk env configuration", () => {
     expect(second.spans[0]?.attributes.first).toBe("a");
     expect(second.spans[0]?.attributes.second).toBeUndefined();
     expect(second.spans[0]?.droppedAttributesCount).toBe(1);
+  });
+
+  it("lets a configured processor's onEnding change attributes before export", async () => {
+    const redactor: SpanProcessor = {
+      onStart: () => undefined,
+      onEnding(span) {
+        span.setAttribute("secret", "[redacted]");
+      },
+      onEnd: () => undefined,
+      forceFlush: () => Promise.resolve(),
+      shutdown: () => Promise.resolve(),
+    };
+    const { spans } = start({ spanProcessors: [redactor] });
+    const span = trace.getTracer("test").startSpan("op");
+    span.setAttribute("secret", "hunter2");
+    span.end();
+    await stop();
+    expect(spans[0]?.attributes.secret).toBe("[redacted]");
   });
 
   it("exports within OTEL_BSP_SCHEDULE_DELAY without an explicit flush", async () => {

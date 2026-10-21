@@ -91,6 +91,12 @@ export class CompositeSpanProcessor implements SpanProcessor {
     }
   }
 
+  onEnding(span: Span): void {
+    for (const spanProcessor of this.processors) {
+      spanProcessor.onEnding?.(span);
+    }
+  }
+
   onEnd(span: ReadableSpan): void {
     const { traceId, spanId, traceFlags } = span.spanContext();
     const sampled = isSampled(traceFlags);
