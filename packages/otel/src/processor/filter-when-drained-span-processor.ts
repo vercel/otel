@@ -34,6 +34,13 @@ export class FilterWhenDrainedSpanProcessor implements SpanProcessor {
     this.processor.onStart(span, parentContext);
   }
 
+  onEnding(span: Span): void {
+    if (isDraining()) {
+      return;
+    }
+    this.processor.onEnding?.(span);
+  }
+
   onEnd(span: ReadableSpan): void {
     if (isDraining()) {
       return;
