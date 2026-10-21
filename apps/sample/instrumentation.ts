@@ -10,7 +10,11 @@ export function register() {
     serviceName: "sample-app",
     instrumentationConfig: {
       fetch: {
-        ignoreUrls: [/^https:\/\/telemetry.nextjs.org/],
+        ignoreUrls: [
+          /^https:\/\/telemetry.nextjs.org/,
+          /^https:\/\/fonts\.googleapis\.com/,
+          /^https:\/\/fonts\.gstatic\.com/,
+        ],
         propagateContextUrls: [/^http:\/\/localhost:\d+/],
         dontPropagateContextUrls: [/no-propagation\=1/],
         attributesFromRequestHeaders: {
