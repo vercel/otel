@@ -3,7 +3,7 @@ import type {
   Span,
   ReadableSpan,
   SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { diag } from "@opentelemetry/api";
 import { isDraining } from "../vercel-request-context/is-draining";
 

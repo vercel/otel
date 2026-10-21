@@ -2,19 +2,21 @@ import type { ContextManager, TextMapPropagator } from "@opentelemetry/api";
 import type { Instrumentation } from "@opentelemetry/instrumentation";
 import type { ResourceDetectionConfig } from "@opentelemetry/resources";
 import type {
+  BatchSpanProcessorOptions,
   Sampler,
   SpanExporter,
+  SpanLimits,
   SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import {
   AlwaysOffSampler,
   AlwaysOnSampler,
   ParentBasedSampler,
   TraceIdRatioBasedSampler,
-  BasicTracerProvider,
+  TracerProvider,
   BatchSpanProcessor,
   RandomIdGenerator,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import {
   metrics,
   diag,
@@ -23,15 +25,15 @@ import {
   trace,
   propagation,
   context,
+  logs,
 } from "@opentelemetry/api";
-import { logs } from "@opentelemetry/api-logs";
 import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import {
   detectResources,
   envDetector,
   resourceFromAttributes,
 } from "@opentelemetry/resources";
-import { LoggerProvider } from "@opentelemetry/sdk-logs";
+import { LoggerProvider, type LogRecordLimits } from "@opentelemetry/sdk-logs";
 import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import {
@@ -55,7 +57,11 @@ import { FetchInstrumentation } from "./instrumentations/fetch";
 import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propagator";
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
-import { getStringFromEnv, getStringListFromEnv } from "./utils/env-parser";
+import {
+  getNumberFromEnv,
+  getStringFromEnv,
+  getStringListFromEnv,
+} from "./utils/env-parser";
 import { FilterWhenDrainedSpanProcessor } from "./processor/filter-when-drained-span-processor";
 
 interface Env {
@@ -70,6 +76,15 @@ interface Env {
   OTEL_EXPORTER_OTLP_TRACES_HEADERS?: string;
   OTEL_EXPORTER_OTLP_TRACES_PROTOCOL?: string;
   OTEL_EXPORTER_OTLP_PROTOCOL?: string;
+  spanLimits: SpanLimits;
+  logRecordLimits: LogRecordLimits;
+  batchSpanProcessor: Pick<
+    BatchSpanProcessorOptions,
+    | "maxExportBatchSize"
+    | "maxQueueSize"
+    | "scheduledDelayMillis"
+    | "exportTimeoutMillis"
+  >;
 }
 
 const logLevelMap: Record<string, DiagLogLevel> = {
@@ -84,7 +99,7 @@ const logLevelMap: Record<string, DiagLogLevel> = {
 
 export class Sdk {
   private contextManager: ContextManager | undefined;
-  private tracerProvider: BasicTracerProvider | undefined;
+  private tracerProvider: TracerProvider | undefined;
   private loggerProvider: LoggerProvider | undefined;
   private meterProvider: MeterProvider | undefined;
   private disableInstrumentations: (() => void) | undefined;
@@ -92,12 +107,6 @@ export class Sdk {
   public constructor(private configuration: Configuration = {}) {}
 
   public start(): void {
-    const env = getEnv();
-    const configuration = this.configuration;
-    const runtime = process.env.NEXT_RUNTIME || "nodejs";
-
-    const disabled = Boolean(env.OTEL_SDK_DISABLED);
-
     // Default is INFO, use environment without defaults to check
     // if the user originally set the environment variable.
     if (process.env.OTEL_LOG_LEVEL) {
@@ -105,6 +114,12 @@ export class Sdk {
         logLevel: logLevelMap[process.env.OTEL_LOG_LEVEL.toUpperCase()],
       });
     }
+
+    const env = getEnv();
+    const configuration = this.configuration;
+    const runtime = process.env.NEXT_RUNTIME || "nodejs";
+
+    const disabled = Boolean(env.OTEL_SDK_DISABLED);
 
     if (disabled) {
       return;
@@ -150,8 +165,8 @@ export class Sdk {
         "@vercel/otel: No span processors configured. No spans will be exported.",
       );
     }
-    const spanLimits = configuration.spanLimits;
-    const tracerProvider = new BasicTracerProvider({
+    const spanLimits = mergeDefined(env.spanLimits, configuration.spanLimits);
+    const tracerProvider = new TracerProvider({
       resource,
       idGenerator,
       sampler: traceSampler,
@@ -170,6 +185,7 @@ export class Sdk {
     if (configuration.logRecordProcessors) {
       const loggerProvider = new LoggerProvider({
         resource,
+        logRecordLimits: env.logRecordLimits,
         processors: configuration.logRecordProcessors,
       });
 
@@ -252,7 +268,47 @@ function getEnv(): Env {
     OTEL_EXPORTER_OTLP_TRACES_HEADERS: getStringFromEnv(
       "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
     ),
+    spanLimits: {
+      attributeValueLengthLimit:
+        getNumberFromEnv("OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT") ??
+        getNumberFromEnv("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT"),
+      attributeCountLimit:
+        getNumberFromEnv("OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT") ??
+        getNumberFromEnv("OTEL_ATTRIBUTE_COUNT_LIMIT"),
+      linkCountLimit: getNumberFromEnv("OTEL_SPAN_LINK_COUNT_LIMIT"),
+      eventCountLimit: getNumberFromEnv("OTEL_SPAN_EVENT_COUNT_LIMIT"),
+      attributePerEventCountLimit: getNumberFromEnv(
+        "OTEL_SPAN_ATTRIBUTE_PER_EVENT_COUNT_LIMIT",
+      ),
+      attributePerLinkCountLimit: getNumberFromEnv(
+        "OTEL_SPAN_ATTRIBUTE_PER_LINK_COUNT_LIMIT",
+      ),
+    },
+    logRecordLimits: {
+      attributeValueLengthLimit:
+        getNumberFromEnv("OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT") ??
+        getNumberFromEnv("OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT"),
+      attributeCountLimit:
+        getNumberFromEnv("OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT") ??
+        getNumberFromEnv("OTEL_ATTRIBUTE_COUNT_LIMIT"),
+    },
+    batchSpanProcessor: {
+      maxExportBatchSize: getNumberFromEnv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE"),
+      maxQueueSize: getNumberFromEnv("OTEL_BSP_MAX_QUEUE_SIZE"),
+      scheduledDelayMillis: getNumberFromEnv("OTEL_BSP_SCHEDULE_DELAY"),
+      exportTimeoutMillis: getNumberFromEnv("OTEL_BSP_EXPORT_TIMEOUT"),
+    },
   };
+}
+
+function mergeDefined<T extends object>(base: T, override: T | undefined): T {
+  const merged = { ...base };
+  for (const [key, value] of Object.entries(override ?? {})) {
+    if (value !== undefined) {
+      (merged as Record<string, unknown>)[key] = value;
+    }
+  }
+  return merged;
 }
 
 function parseInstrumentations(
@@ -424,7 +480,10 @@ function parseSpanProcessor(
       .flatMap((spanProcessorOrName) => {
         if (spanProcessorOrName === "auto") {
           const processors: SpanProcessor[] = [
-            new BatchSpanProcessor(new VercelRuntimeSpanExporter()),
+            new BatchSpanProcessor({
+              ...env.batchSpanProcessor,
+              exporter: new VercelRuntimeSpanExporter(),
+            }),
           ];
 
           if (process.env.VERCEL_OTEL_ENDPOINTS) {
@@ -450,7 +509,7 @@ function parseSpanProcessor(
 
             processors.push(
               new FilterWhenDrainedSpanProcessor(
-                new BatchSpanProcessor(exporter),
+                new BatchSpanProcessor({ ...env.batchSpanProcessor, exporter }),
               ),
             );
           }
@@ -464,7 +523,10 @@ function parseSpanProcessor(
           ) {
             processors.push(
               new FilterWhenDrainedSpanProcessor(
-                new BatchSpanProcessor(parseTraceExporter(env)),
+                new BatchSpanProcessor({
+                  ...env.batchSpanProcessor,
+                  exporter: parseTraceExporter(env),
+                }),
               ),
             );
           }
@@ -475,7 +537,12 @@ function parseSpanProcessor(
       })
       .filter(isNotNull),
     ...(configuration.traceExporter && configuration.traceExporter !== "auto"
-      ? [new BatchSpanProcessor(configuration.traceExporter)]
+      ? [
+          new BatchSpanProcessor({
+            ...env.batchSpanProcessor,
+            exporter: configuration.traceExporter,
+          }),
+        ]
       : []),
   ];
 }
