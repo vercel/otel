@@ -3,7 +3,7 @@ import { start as startBridgeEmulator } from "bridge-emulator/server";
 import {
   SimpleSpanProcessor,
   ConsoleSpanExporter,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 
 export function register() {
   let config: Configuration = {
@@ -49,7 +49,7 @@ export function register() {
     config = {
       ...config,
       spanProcessors: [
-        new SimpleSpanProcessor(new ConsoleSpanExporter()),
+        new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
         ...(config.spanProcessors ?? []),
       ],
     };

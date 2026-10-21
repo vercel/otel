@@ -1,7 +1,5 @@
 import { registerOTel, OTLPHttpJsonTraceExporter, OTLPHttpProtoTraceExporter } from "@vercel/otel";
-import {
-  BatchSpanProcessor
-} from "@opentelemetry/sdk-trace-base";
+import { BatchSpanProcessor } from "@opentelemetry/sdk-trace";
 
 export function register() {
 
@@ -11,12 +9,12 @@ export function register() {
       // Exports to Vercel OTEL collector
       'auto',
       // Exports to Axiom
-      new BatchSpanProcessor(new OTLPHttpJsonTraceExporter({ url: 'https://api.axiom.co/v1/traces', headers: {
+      new BatchSpanProcessor({ exporter: new OTLPHttpJsonTraceExporter({ url: 'https://api.axiom.co/v1/traces', headers: {
         'Authorization': `Bearer ${process.env.AXIOM_API_TOKEN}`, // Replace $API_TOKEN with your actual API token
         'X-Axiom-Dataset': process.env.AXIOM_DATASET // Replace $DATASET with your dataset
-      } })),
+      } }) }),
       // Exports to Checkly
-      new BatchSpanProcessor(new OTLPHttpProtoTraceExporter({ url: "https://otel.eu-west-1.checklyhq.com", headers: { 'authorization': process.env.CHECKLY_API_TOKEN } })),
+      new BatchSpanProcessor({ exporter: new OTLPHttpProtoTraceExporter({ url: "https://otel.eu-west-1.checklyhq.com", headers: { 'authorization': process.env.CHECKLY_API_TOKEN } }) }),
     ],
     instrumentationConfig: {
       fetch: {

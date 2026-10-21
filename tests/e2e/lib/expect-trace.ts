@@ -167,7 +167,7 @@ const eStatusToStatus = (
 
 const eAttrValueToAttrValue = (
   value: ITrace["spans"][number]["attributes"][number]["value"],
-): AttributeValue | null => {
+): AttributeValue => {
   if (value.stringValue !== undefined) {
     return value.stringValue;
   }
@@ -183,7 +183,7 @@ const eAttrValueToAttrValue = (
   if (value.arrayValue !== undefined) {
     return value.arrayValue.values
       .map(eAttrValueToAttrValue)
-      .filter((x) => x !== null) as AttributeValue;
+      .filter((x) => x !== null);
   }
   return null;
 };

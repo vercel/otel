@@ -19,7 +19,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=22.15.0"
   },
   "scripts": {
     "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types",
@@ -35,10 +35,10 @@
     "unit-test-watch": "vitest"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-node": "^0.205.0",
-    "@opentelemetry/sdk-trace-base": "^2.1.0",
-    "@types/node": "18.15.11",
+    "@opentelemetry/api": "^1.10.0",
+    "@opentelemetry/sdk-node": "^0.300.0",
+    "@opentelemetry/sdk-trace": "^3.0.0",
+    "@types/node": "^22.15.0",
     "esbuild": "^0.19.4",
     "eslint-config": "workspace:*",
     "rimraf": "3.0.2",
