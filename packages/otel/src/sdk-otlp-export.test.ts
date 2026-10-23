@@ -77,10 +77,22 @@ describe("localhost OTLP export", () => {
     expect(calls).toContain("http://localhost:4318/v1/traces");
   });
 
-  it("does not post to localhost when the request context is exporting", async () => {
+  it("still posts to localhost when the request context has no tracing flag", async () => {
     const calls = spyOnFetch();
     setRequestContext({
       reportSpans() {},
+    });
+
+    await exportOneSpan();
+
+    expect(calls).toContain("http://localhost:4318/v1/traces");
+  });
+
+  it("does not post to localhost when Vercel tracing is enabled", async () => {
+    const calls = spyOnFetch();
+    setRequestContext({
+      reportSpans() {},
+      vercelTracing: true,
     });
 
     await exportOneSpan();

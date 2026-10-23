@@ -10,7 +10,7 @@ import { getVercelRequestContext } from "../vercel-request-context/api";
 let reported = false;
 
 function isExportingViaVercel(): boolean {
-  return Boolean(getVercelRequestContext()?.telemetry);
+  return getVercelRequestContext()?.telemetry?.vercelTracing === true;
 }
 
 /** @internal */
@@ -30,7 +30,7 @@ export class FilterWhenDrainedSpanProcessor implements SpanProcessor {
       if (!reported) {
         reported = true;
         diag.debug(
-          "@vercel/otel: skipping automatic exporter because the Vercel request context is exporting spans",
+          "@vercel/otel: skipping automatic exporter because this request is part of a Vercel trace",
         );
       }
       return;

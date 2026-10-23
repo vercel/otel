@@ -16,6 +16,10 @@ export interface VercelRequestContext {
     reportSpans: (data: unknown) => void;
     rootSpanContext?: SpanContext;
     traceDrains?: string[];
+    /**
+     * Set by the Node runtime when this request is part of a Vercel trace.
+     */
+    vercelTracing?: boolean;
   };
   [key: symbol]: unknown;
 }
