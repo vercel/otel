@@ -5,9 +5,13 @@ import type {
   SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import { diag } from "@opentelemetry/api";
-import { isDraining } from "../vercel-request-context/is-draining";
+import { getVercelRequestContext } from "../vercel-request-context/api";
 
 let reported = false;
+
+function isExportingViaVercel(): boolean {
+  return Boolean(getVercelRequestContext()?.telemetry);
+}
 
 /** @internal */
 export class FilterWhenDrainedSpanProcessor implements SpanProcessor {
@@ -22,11 +26,11 @@ export class FilterWhenDrainedSpanProcessor implements SpanProcessor {
   }
 
   onStart(span: Span, parentContext: Context): void {
-    if (isDraining()) {
+    if (isExportingViaVercel()) {
       if (!reported) {
         reported = true;
         diag.debug(
-          "@vercel/otel: skipping automatic exporter due to configured trace drains",
+          "@vercel/otel: skipping automatic exporter because the Vercel request context is exporting spans",
         );
       }
       return;
@@ -35,7 +39,7 @@ export class FilterWhenDrainedSpanProcessor implements SpanProcessor {
   }
 
   onEnd(span: ReadableSpan): void {
-    if (isDraining()) {
+    if (isExportingViaVercel()) {
       return;
     }
     this.processor.onEnd(span);

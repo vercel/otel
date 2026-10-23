@@ -455,9 +455,10 @@ function parseSpanProcessor(
             );
           }
 
-          // An omitted traceExporter is not a request for the localhost collector.
-          // OTLP export runs only when an endpoint is configured.
+          // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
           else if (
+            !configuration.traceExporter ||
+            configuration.traceExporter === "auto" ||
             env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
             env.OTEL_EXPORTER_OTLP_ENDPOINT
           ) {
