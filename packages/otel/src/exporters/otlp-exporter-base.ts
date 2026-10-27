@@ -4,8 +4,8 @@ import type { ExportResult } from "@opentelemetry/core";
 import { getStringFromEnv } from "../utils/env-parser";
 import type { OTLPExporterConfig } from "./config";
 
-const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
-const MAX_REQUEST_TIMEOUT_MS = 2 ** 31 - 1;
+const DEFAULT_TIMEOUT_MILLIS = 10_000;
+const MAX_TIMEOUT_MILLIS = 2 ** 31 - 1;
 
 /** @internal */
 export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
@@ -18,15 +18,15 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   /** @internal */
   protected url: string;
   /** @internal */
-  private readonly requestTimeoutMs: number;
+  private readonly timeoutMillis: number;
 
   constructor(config: OTLPExporterConfig = {}) {
     this.url = config.url || this.getDefaultUrl(config);
-    this.requestTimeoutMs =
-      toTimeoutMs(config.requestTimeoutMs) ??
-      toTimeoutMs(getStringFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT")) ??
-      toTimeoutMs(getStringFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT")) ??
-      DEFAULT_REQUEST_TIMEOUT_MS;
+    this.timeoutMillis =
+      toTimeoutMillis(config.timeoutMillis) ??
+      toTimeoutMillis(getStringFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT")) ??
+      toTimeoutMillis(getStringFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT")) ??
+      DEFAULT_TIMEOUT_MILLIS;
     if (config.headers) {
       this._headers = config.headers;
     }
@@ -92,9 +92,9 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     const controller = new AbortController();
     const timer = setTimeout(() => {
       controller.abort(
-        new Error(`Export timed out after ${this.requestTimeoutMs}ms`),
+        new Error(`Export timed out after ${this.timeoutMillis}ms`),
       );
-    }, this.requestTimeoutMs);
+    }, this.timeoutMillis);
 
     const promise = fetch(this.url, {
       method: "POST",
@@ -138,9 +138,11 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
 }
 
 /** Returns `undefined` for values `setTimeout` cannot honor, so the next source is used. */
-function toTimeoutMs(value: number | string | undefined): number | undefined {
+function toTimeoutMillis(
+  value: number | string | undefined,
+): number | undefined {
   const ms = typeof value === "string" ? Number(value) : value;
   return ms !== undefined && Number.isFinite(ms) && ms > 0
-    ? Math.min(ms, MAX_REQUEST_TIMEOUT_MS)
+    ? Math.min(ms, MAX_TIMEOUT_MILLIS)
     : undefined;
 }

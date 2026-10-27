@@ -78,9 +78,9 @@ describe("OTLPExporterEdgeBase", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("aborts requests that exceed requestTimeoutMs", async () => {
+  it("aborts requests that exceed timeoutMillis", async () => {
     stubHangingFetch();
-    const exporter = new TestExporter({ requestTimeoutMs: 1000 });
+    const exporter = new TestExporter({ timeoutMillis: 1000 });
 
     const pending = exportOnce(exporter);
     await vi.advanceTimersByTimeAsync(1000);
@@ -92,23 +92,21 @@ describe("OTLPExporterEdgeBase", () => {
   });
 
   it.each([0, -1, NaN, Infinity])(
-    "falls back to the default timeout when requestTimeoutMs is %s",
-    async (requestTimeoutMs) => {
+    "falls back to the default timeout when timeoutMillis is %s",
+    async (timeoutMillis) => {
       stubHangingFetch();
 
-      const message = await timeoutMessage(
-        new TestExporter({ requestTimeoutMs }),
-      );
+      const message = await timeoutMessage(new TestExporter({ timeoutMillis }));
 
       expect(message).toBe("Export timed out after 10000ms");
     },
   );
 
-  it("clamps requestTimeoutMs to the largest delay setTimeout supports", async () => {
+  it("clamps timeoutMillis to the largest delay setTimeout supports", async () => {
     stubHangingFetch();
 
     const message = await timeoutMessage(
-      new TestExporter({ requestTimeoutMs: 2 ** 31 }),
+      new TestExporter({ timeoutMillis: 2 ** 31 }),
     );
 
     expect(message).toBe(`Export timed out after ${2 ** 31 - 1}ms`);
@@ -134,12 +132,12 @@ describe("OTLPExporterEdgeBase", () => {
     expect(message).toBe("Export timed out after 20ms");
   });
 
-  it("prefers a valid requestTimeoutMs over the environment", async () => {
+  it("prefers a valid timeoutMillis over the environment", async () => {
     stubHangingFetch();
     vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "250");
 
     const message = await timeoutMessage(
-      new TestExporter({ requestTimeoutMs: 40 }),
+      new TestExporter({ timeoutMillis: 40 }),
     );
 
     expect(message).toBe("Export timed out after 40ms");
