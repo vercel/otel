@@ -55,7 +55,7 @@ describe("OTLPExporterEdgeBase", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("aborts requests that exceed timeoutMillis", async () => {
+  it("aborts requests that exceed requestTimeoutMs", async () => {
     vi.useFakeTimers();
     vi.stubGlobal(
       "fetch",
@@ -68,7 +68,7 @@ describe("OTLPExporterEdgeBase", () => {
           }),
       ),
     );
-    const exporter = new TestExporter({ timeoutMillis: 1000 });
+    const exporter = new TestExporter({ requestTimeoutMs: 1000 });
 
     const pending = exportOnce(exporter);
     await vi.advanceTimersByTimeAsync(1000);

@@ -4,7 +4,7 @@ import type { ExportResult } from "@opentelemetry/core";
 import { getStringFromEnv } from "../utils/env-parser";
 import type { OTLPExporterConfig } from "./config";
 
-const DEFAULT_EXPORT_TIMEOUT_MILLIS = 10_000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
 
 /** @internal */
 export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
@@ -17,11 +17,12 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   /** @internal */
   protected url: string;
   /** @internal */
-  private readonly timeoutMillis: number;
+  private readonly requestTimeoutMs: number;
 
   constructor(config: OTLPExporterConfig = {}) {
     this.url = config.url || this.getDefaultUrl(config);
-    this.timeoutMillis = config.timeoutMillis ?? getTimeoutMillisFromEnv();
+    this.requestTimeoutMs =
+      config.requestTimeoutMs ?? getRequestTimeoutMsFromEnv();
     if (config.headers) {
       this._headers = config.headers;
     }
@@ -87,9 +88,9 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     const controller = new AbortController();
     const timer = setTimeout(() => {
       controller.abort(
-        new Error(`Export timed out after ${this.timeoutMillis}ms`),
+        new Error(`Export timed out after ${this.requestTimeoutMs}ms`),
       );
-    }, this.timeoutMillis);
+    }, this.requestTimeoutMs);
 
     const promise = fetch(this.url, {
       method: "POST",
@@ -132,12 +133,12 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   };
 }
 
-function getTimeoutMillisFromEnv(): number {
+function getRequestTimeoutMsFromEnv(): number {
   const raw =
     getStringFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT") ??
     getStringFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT");
   const value = Number(raw);
   return raw !== undefined && Number.isFinite(value) && value > 0
     ? value
-    : DEFAULT_EXPORT_TIMEOUT_MILLIS;
+    : DEFAULT_REQUEST_TIMEOUT_MS;
 }

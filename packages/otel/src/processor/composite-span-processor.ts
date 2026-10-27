@@ -15,7 +15,7 @@ import type { AttributesFromHeaders } from "../types";
  * A flush that outlives the function's max duration would keep the invocation
  * alive until the platform times it out.
  */
-const WAIT_UNTIL_FLUSH_TIMEOUT_MILLIS = 10_000;
+const WAIT_UNTIL_FLUSH_TIMEOUT_MS = 10_000;
 
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
@@ -40,17 +40,17 @@ export class CompositeSpanProcessor implements SpanProcessor {
     ).then(() => undefined);
   }
 
-  private forceFlushWithTimeout(timeoutMillis: number): Promise<void> {
+  private forceFlushWithTimeout(timeoutMs: number): Promise<void> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     return Promise.race([
       this.forceFlush(),
       new Promise<void>((resolve) => {
         timer = setTimeout(() => {
           diag.warn(
-            `@vercel/otel: forceFlush did not complete within ${timeoutMillis}ms, giving up`,
+            `@vercel/otel: forceFlush did not complete within ${timeoutMs}ms, giving up`,
           );
           resolve();
-        }, timeoutMillis);
+        }, timeoutMs);
       }),
     ]).finally(() => {
       clearTimeout(timer);
@@ -105,7 +105,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
               clearTimeout(timer);
             }
           }
-          return this.forceFlushWithTimeout(WAIT_UNTIL_FLUSH_TIMEOUT_MILLIS);
+          return this.forceFlushWithTimeout(WAIT_UNTIL_FLUSH_TIMEOUT_MS);
         });
       }
     }
