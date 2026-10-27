@@ -10,6 +10,13 @@ import { getVercelRequestContextAttributes } from "../vercel-request-context/att
 import { isSampled } from "../util/sampled";
 import type { AttributesFromHeaders } from "../types";
 
+/**
+ * Upper bound for the flush queued in `waitUntil` for each sampled root span.
+ * A flush that outlives the function's max duration would keep the invocation
+ * alive until the platform times it out.
+ */
+const WAIT_UNTIL_FLUSH_TIMEOUT_MILLIS = 10_000;
+
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
   private readonly rootSpanIds = new Map<
@@ -31,6 +38,23 @@ export class CompositeSpanProcessor implements SpanProcessor {
         }),
       ),
     ).then(() => undefined);
+  }
+
+  private forceFlushWithTimeout(timeoutMillis: number): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return Promise.race([
+      this.forceFlush(),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(() => {
+          diag.warn(
+            `@vercel/otel: forceFlush did not complete within ${timeoutMillis}ms, giving up`,
+          );
+          resolve();
+        }, timeoutMillis);
+      }),
+    ]).finally(() => {
+      clearTimeout(timer);
+    });
   }
 
   shutdown(): Promise<void> {
@@ -81,7 +105,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
               clearTimeout(timer);
             }
           }
-          return this.forceFlush();
+          return this.forceFlushWithTimeout(WAIT_UNTIL_FLUSH_TIMEOUT_MILLIS);
         });
       }
     }
