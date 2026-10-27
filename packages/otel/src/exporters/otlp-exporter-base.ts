@@ -23,9 +23,9 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   constructor(config: OTLPExporterConfig = {}) {
     this.url = config.url || this.getDefaultUrl(config);
     this.timeoutMillis =
-      toTimeoutMillis(config.timeoutMillis) ??
-      toTimeoutMillis(getStringFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT")) ??
-      toTimeoutMillis(getStringFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT")) ??
+      toTimeoutMillis(config.timeoutMillis, "timeoutMillis") ??
+      timeoutMillisFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT") ??
+      timeoutMillisFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT") ??
       DEFAULT_TIMEOUT_MILLIS;
     if (config.headers) {
       this._headers = config.headers;
@@ -140,9 +140,19 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
 /** Returns `undefined` for values `setTimeout` cannot honor, so the next source is used. */
 function toTimeoutMillis(
   value: number | string | undefined,
+  source: string,
 ): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
   const ms = typeof value === "string" ? Number(value) : value;
-  return ms !== undefined && Number.isFinite(ms) && ms > 0
-    ? Math.min(ms, MAX_TIMEOUT_MILLIS)
-    : undefined;
+  if (Number.isFinite(ms) && ms > 0) {
+    return Math.min(ms, MAX_TIMEOUT_MILLIS);
+  }
+  diag.warn(`@vercel/otel/otlp: ignoring invalid ${source}: ${String(value)}`);
+  return undefined;
+}
+
+function timeoutMillisFromEnv(key: string): number | undefined {
+  return toTimeoutMillis(getStringFromEnv(key), key);
 }

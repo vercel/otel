@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { diag } from "@opentelemetry/api";
 import type { ExportResult } from "@opentelemetry/core";
 import { ExportResultCode } from "@opentelemetry/core";
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
@@ -49,6 +50,7 @@ describe("OTLPExporterEdgeBase", () => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   it("reports failure when exporting after shutdown", async () => {
@@ -95,10 +97,14 @@ describe("OTLPExporterEdgeBase", () => {
     "falls back to the default timeout when timeoutMillis is %s",
     async (timeoutMillis) => {
       stubHangingFetch();
+      const warn = vi.spyOn(diag, "warn");
 
       const message = await timeoutMessage(new TestExporter({ timeoutMillis }));
 
       expect(message).toBe("Export timed out after 10000ms");
+      expect(warn).toHaveBeenCalledWith(
+        `@vercel/otel/otlp: ignoring invalid timeoutMillis: ${timeoutMillis}`,
+      );
     },
   );
 
@@ -126,10 +132,14 @@ describe("OTLPExporterEdgeBase", () => {
     stubHangingFetch();
     vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "abc");
     vi.stubEnv("OTEL_EXPORTER_OTLP_TIMEOUT", "20");
+    const warn = vi.spyOn(diag, "warn");
 
     const message = await timeoutMessage(new TestExporter());
 
     expect(message).toBe("Export timed out after 20ms");
+    expect(warn).toHaveBeenCalledWith(
+      "@vercel/otel/otlp: ignoring invalid OTEL_EXPORTER_OTLP_TRACES_TIMEOUT: abc",
+    );
   });
 
   it("prefers a valid timeoutMillis over the environment", async () => {
