@@ -2,4 +2,8 @@
 "@vercel/otel": patch
 ---
 
-Bound span export time so it cannot keep a function running until its max duration. OTLP export requests now abort after `timeoutMillis` (default 10s, or `OTEL_EXPORTER_OTLP_TRACES_TIMEOUT` / `OTEL_EXPORTER_OTLP_TIMEOUT`), the flush queued in `waitUntil` gives up after 10s, and `export()` always reports a result, including after shutdown or when serialization fails.
+Limit how long span exports can keep a function running.
+
+- OTLP export requests abort after `timeoutMillis`, 10s by default. `OTEL_EXPORTER_OTLP_TRACES_TIMEOUT` and `OTEL_EXPORTER_OTLP_TIMEOUT` also set it, in milliseconds, so `10` means 10ms.
+- The flush queued in `waitUntil` gives up after 10s.
+- An export that fails before sending reports the failure right away instead of stalling for 30s.
