@@ -5,6 +5,7 @@ import { getStringFromEnv } from "../utils/env-parser";
 import type { OTLPExporterConfig } from "./config";
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 10_000;
+const MAX_REQUEST_TIMEOUT_MS = 2 ** 31 - 1;
 
 /** @internal */
 export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
@@ -22,7 +23,10 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   constructor(config: OTLPExporterConfig = {}) {
     this.url = config.url || this.getDefaultUrl(config);
     this.requestTimeoutMs =
-      config.requestTimeoutMs ?? getRequestTimeoutMsFromEnv();
+      toTimeoutMs(config.requestTimeoutMs) ??
+      toTimeoutMs(getStringFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT")) ??
+      toTimeoutMs(getStringFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT")) ??
+      DEFAULT_REQUEST_TIMEOUT_MS;
     if (config.headers) {
       this._headers = config.headers;
     }
@@ -133,12 +137,10 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   };
 }
 
-function getRequestTimeoutMsFromEnv(): number {
-  const raw =
-    getStringFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT") ??
-    getStringFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT");
-  const value = Number(raw);
-  return raw !== undefined && Number.isFinite(value) && value > 0
-    ? value
-    : DEFAULT_REQUEST_TIMEOUT_MS;
+/** Returns `undefined` for values `setTimeout` cannot honor, so the next source is used. */
+function toTimeoutMs(value: number | string | undefined): number | undefined {
+  const ms = typeof value === "string" ? Number(value) : value;
+  return ms !== undefined && Number.isFinite(ms) && ms > 0
+    ? Math.min(ms, MAX_REQUEST_TIMEOUT_MS)
+    : undefined;
 }

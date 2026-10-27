@@ -21,6 +21,29 @@ function exportOnce(exporter: TestExporter): Promise<ExportResult> {
   });
 }
 
+function stubHangingFetch(): void {
+  vi.useFakeTimers();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => {
+            reject(init.signal?.reason);
+          });
+        }),
+    ),
+  );
+}
+
+async function timeoutMessage(
+  exporter: TestExporter,
+): Promise<string | undefined> {
+  const pending = exportOnce(exporter);
+  await vi.advanceTimersByTimeAsync(2 ** 31);
+  return (await pending).error?.message;
+}
+
 describe("OTLPExporterEdgeBase", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -56,18 +79,7 @@ describe("OTLPExporterEdgeBase", () => {
   });
 
   it("aborts requests that exceed requestTimeoutMs", async () => {
-    vi.useFakeTimers();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        (_url: string, init: RequestInit) =>
-          new Promise((_resolve, reject) => {
-            init.signal?.addEventListener("abort", () => {
-              reject(init.signal?.reason);
-            });
-          }),
-      ),
-    );
+    stubHangingFetch();
     const exporter = new TestExporter({ requestTimeoutMs: 1000 });
 
     const pending = exportOnce(exporter);
@@ -79,24 +91,57 @@ describe("OTLPExporterEdgeBase", () => {
     await expect(exporter.forceFlush()).resolves.toBeUndefined();
   });
 
-  it("reads the timeout from OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", async () => {
-    vi.useFakeTimers();
-    vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "250");
-    const fetchMock = vi.fn(
-      (_url: string, init: RequestInit) =>
-        new Promise((_resolve, reject) => {
-          init.signal?.addEventListener("abort", () => {
-            reject(init.signal?.reason);
-          });
-        }),
+  it.each([0, -1, NaN, Infinity])(
+    "falls back to the default timeout when requestTimeoutMs is %s",
+    async (requestTimeoutMs) => {
+      stubHangingFetch();
+
+      const message = await timeoutMessage(
+        new TestExporter({ requestTimeoutMs }),
+      );
+
+      expect(message).toBe("Export timed out after 10000ms");
+    },
+  );
+
+  it("clamps requestTimeoutMs to the largest delay setTimeout supports", async () => {
+    stubHangingFetch();
+
+    const message = await timeoutMessage(
+      new TestExporter({ requestTimeoutMs: 2 ** 31 }),
     );
-    vi.stubGlobal("fetch", fetchMock);
-    const exporter = new TestExporter();
 
-    const pending = exportOnce(exporter);
-    await vi.advanceTimersByTimeAsync(250);
-    const result = await pending;
+    expect(message).toBe(`Export timed out after ${2 ** 31 - 1}ms`);
+  });
 
-    expect(result.code).toBe(ExportResultCode.FAILED);
+  it("reads the timeout from OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", async () => {
+    stubHangingFetch();
+    vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "250");
+    vi.stubEnv("OTEL_EXPORTER_OTLP_TIMEOUT", "500");
+
+    const message = await timeoutMessage(new TestExporter());
+
+    expect(message).toBe("Export timed out after 250ms");
+  });
+
+  it("falls through an invalid OTEL_EXPORTER_OTLP_TRACES_TIMEOUT to OTEL_EXPORTER_OTLP_TIMEOUT", async () => {
+    stubHangingFetch();
+    vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "abc");
+    vi.stubEnv("OTEL_EXPORTER_OTLP_TIMEOUT", "20");
+
+    const message = await timeoutMessage(new TestExporter());
+
+    expect(message).toBe("Export timed out after 20ms");
+  });
+
+  it("prefers a valid requestTimeoutMs over the environment", async () => {
+    stubHangingFetch();
+    vi.stubEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT", "250");
+
+    const message = await timeoutMessage(
+      new TestExporter({ requestTimeoutMs: 40 }),
+    );
+
+    expect(message).toBe("Export timed out after 40ms");
   });
 });
