@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ROOT_CONTEXT, TraceFlags } from "@opentelemetry/api";
+import { diag, ROOT_CONTEXT, TraceFlags } from "@opentelemetry/api";
 import type {
   ReadableSpan,
   Span,
@@ -53,10 +53,11 @@ describe("CompositeSpanProcessor", () => {
   afterEach(() => {
     vi.useRealTimers();
     Reflect.deleteProperty(globalThis, symbol);
+    vi.restoreAllMocks();
   });
 
-  it("stops waiting for a flush that never settles", async () => {
-    const hangingProcessor: SpanProcessor = {
+  function hangingProcessor(): SpanProcessor {
+    return {
       onStart: vi.fn(),
       onEnd: vi.fn(),
       forceFlush: () =>
@@ -65,23 +66,85 @@ describe("CompositeSpanProcessor", () => {
         }),
       shutdown: () => Promise.resolve(),
     };
-    const processor = new CompositeSpanProcessor([hangingProcessor], undefined);
-    const span = createRootSpan("00000000000000000000000000000001");
+  }
 
+  async function msUntilFlushSettles(
+    processor: CompositeSpanProcessor,
+    traceId: string,
+    limitMs: number,
+  ): Promise<number | undefined> {
+    const span = createRootSpan(traceId);
     processor.onStart(span, ROOT_CONTEXT);
     processor.onEnd(span as unknown as ReadableSpan);
     expect(waitUntilTasks).toHaveLength(1);
 
-    let settled = false;
+    const state = { settled: false };
     void waitUntilTasks[0]?.().then((): void => {
-      settled = true;
+      state.settled = true;
     });
+    for (let ms = 1; ms <= limitMs; ms++) {
+      // eslint-disable-next-line no-await-in-loop -- step the fake clock one ms at a time
+      await vi.advanceTimersByTimeAsync(1);
+      if (state.settled) {
+        return ms;
+      }
+    }
+    return undefined;
+  }
 
-    await vi.advanceTimersByTimeAsync(9_999);
-    expect(settled).toBe(false);
-    await vi.advanceTimersByTimeAsync(1);
-    expect(settled).toBe(true);
+  it("stops waiting for a flush that never settles after 10s by default", async () => {
+    const processor = new CompositeSpanProcessor(
+      [hangingProcessor()],
+      undefined,
+    );
+
+    expect(
+      await msUntilFlushSettles(
+        processor,
+        "00000000000000000000000000000001",
+        11_000,
+      ),
+    ).toBe(10_000);
   });
+
+  it("uses flushTimeoutMillis when set", async () => {
+    const processor = new CompositeSpanProcessor(
+      [hangingProcessor()],
+      undefined,
+      2_000,
+    );
+
+    expect(
+      await msUntilFlushSettles(
+        processor,
+        "00000000000000000000000000000003",
+        3_000,
+      ),
+    ).toBe(2_000);
+  });
+
+  it.each([0, -1, NaN, Infinity])(
+    "falls back to 10s and warns when flushTimeoutMillis is %s",
+    async (flushTimeoutMillis) => {
+      const warn = vi.spyOn(diag, "warn");
+      const processor = new CompositeSpanProcessor(
+        [hangingProcessor()],
+        undefined,
+        flushTimeoutMillis,
+      );
+
+      expect(warn).toHaveBeenCalledWith(
+        `@vercel/otel: ignoring invalid flushTimeoutMillis: ${flushTimeoutMillis}`,
+      );
+      expect(
+        await msUntilFlushSettles(
+          processor,
+          "00000000000000000000000000000004",
+          11_000,
+        ),
+      ).toBe(10_000);
+    },
+  );
 
   it("does not delay a flush that completes", async () => {
     const forceFlush = vi.fn((): Promise<void> => Promise.resolve());

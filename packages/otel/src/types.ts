@@ -93,6 +93,13 @@ export interface Configuration {
    */
   attributesFromHeaders?: AttributesFromHeaders;
 
+  /**
+   * Maximum time in milliseconds that the span flush queued in `waitUntil` after
+   * each request may run before it gives up. Keep it below the function's max
+   * duration. Defaults to 10000. Invalid values fall back to the default.
+   */
+  flushTimeoutMillis?: number;
+
   resourceDetectors?: ResourceDetector[];
   autoDetectResources?: boolean;
 

@@ -160,6 +160,7 @@ export class Sdk {
         new CompositeSpanProcessor(
           spanProcessors,
           configuration.attributesFromHeaders,
+          configuration.flushTimeoutMillis,
         ),
       ],
     });

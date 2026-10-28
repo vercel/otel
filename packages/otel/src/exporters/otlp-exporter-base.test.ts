@@ -103,7 +103,7 @@ describe("OTLPExporterEdgeBase", () => {
 
       expect(message).toBe("Export timed out after 10000ms");
       expect(warn).toHaveBeenCalledWith(
-        `@vercel/otel/otlp: ignoring invalid timeoutMillis: ${timeoutMillis}`,
+        `@vercel/otel: ignoring invalid timeoutMillis: ${timeoutMillis}`,
       );
     },
   );
@@ -138,7 +138,7 @@ describe("OTLPExporterEdgeBase", () => {
 
     expect(message).toBe("Export timed out after 20ms");
     expect(warn).toHaveBeenCalledWith(
-      "@vercel/otel/otlp: ignoring invalid OTEL_EXPORTER_OTLP_TRACES_TIMEOUT: abc",
+      "@vercel/otel: ignoring invalid OTEL_EXPORTER_OTLP_TRACES_TIMEOUT: abc",
     );
   });
 

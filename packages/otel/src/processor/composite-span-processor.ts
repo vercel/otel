@@ -9,13 +9,9 @@ import { getVercelRequestContext } from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
 import { isSampled } from "../util/sampled";
 import type { AttributesFromHeaders } from "../types";
+import { toTimeoutMillis } from "../util/timeout";
 
-/**
- * Upper bound for the flush queued in `waitUntil` for each sampled root span.
- * A flush that outlives the function's max duration would keep the invocation
- * alive until the platform times it out.
- */
-const WAIT_UNTIL_FLUSH_TIMEOUT_MILLIS = 10_000;
+const DEFAULT_FLUSH_TIMEOUT_MILLIS = 10_000;
 
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
@@ -25,10 +21,17 @@ export class CompositeSpanProcessor implements SpanProcessor {
   >();
   private readonly waitSpanEnd = new Map<string, () => void>();
 
+  private readonly flushTimeoutMillis: number;
+
   constructor(
     private processors: SpanProcessor[],
     private attributesFromHeaders: AttributesFromHeaders | undefined,
-  ) {}
+    flushTimeoutMillis?: number,
+  ) {
+    this.flushTimeoutMillis =
+      toTimeoutMillis(flushTimeoutMillis, "flushTimeoutMillis") ??
+      DEFAULT_FLUSH_TIMEOUT_MILLIS;
+  }
 
   forceFlush(): Promise<void> {
     return Promise.all(
@@ -105,7 +108,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
               clearTimeout(timer);
             }
           }
-          return this.forceFlushWithTimeout(WAIT_UNTIL_FLUSH_TIMEOUT_MILLIS);
+          return this.forceFlushWithTimeout(this.flushTimeoutMillis);
         });
       }
     }

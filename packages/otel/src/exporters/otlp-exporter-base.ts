@@ -2,10 +2,10 @@ import type { OTLPExporterError } from "@opentelemetry/otlp-exporter-base";
 import { diag } from "@opentelemetry/api";
 import type { ExportResult } from "@opentelemetry/core";
 import { getStringFromEnv } from "../utils/env-parser";
+import { toTimeoutMillis } from "../util/timeout";
 import type { OTLPExporterConfig } from "./config";
 
 const DEFAULT_TIMEOUT_MILLIS = 10_000;
-const MAX_TIMEOUT_MILLIS = 2 ** 31 - 1;
 
 /** @internal */
 export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
@@ -135,22 +135,6 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     contentType: string;
     headers?: Record<string, string>;
   };
-}
-
-/** Returns `undefined` for values `setTimeout` cannot honor, so the next source is used. */
-function toTimeoutMillis(
-  value: number | string | undefined,
-  source: string,
-): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-  const ms = typeof value === "string" ? Number(value) : value;
-  if (Number.isFinite(ms) && ms > 0) {
-    return Math.min(ms, MAX_TIMEOUT_MILLIS);
-  }
-  diag.warn(`@vercel/otel/otlp: ignoring invalid ${source}: ${String(value)}`);
-  return undefined;
 }
 
 function timeoutMillisFromEnv(key: string): number | undefined {
