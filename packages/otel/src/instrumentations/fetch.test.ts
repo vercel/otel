@@ -61,8 +61,8 @@ describe("FetchInstrumentation http", () => {
   });
 
   it("records one span when get calls the exported request", async () => {
-    // Mirrors the Vercel runtime, which wraps `request` and defines `get` as a
-    // call to the exported `request`.
+    // Mirrors code that patches `http` before instrumentation runs. It wraps
+    // `request` and defines `get` as a call to the exported `request`.
     const httpModule = { ...http };
     const nativeRequest = httpModule.request;
     let requests = 0;

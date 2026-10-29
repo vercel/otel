@@ -446,9 +446,9 @@ export class FetchInstrumentation implements Instrumentation {
 
     const instrumentedRequest = instrumentRequest(originalRequest);
     httpModule.request = instrumentedRequest;
-    // Build `get` from the instrumented `request`, like Node does. The Vercel
-    // runtime's `get` calls the exported `request`, so wrapping the original
-    // `get` too would record two spans per call.
+    // Build `get` from the instrumented `request`, like Node does. If the
+    // original `get` calls the exported `request`, wrapping it too would record
+    // two spans per call.
     httpModule.get = (
       ...args: Parameters<typeof instrumentedRequest>
     ): http.ClientRequest => {
