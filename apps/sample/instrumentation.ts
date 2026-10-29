@@ -3,14 +3,18 @@ import { start as startBridgeEmulator } from "bridge-emulator/server";
 import {
   SimpleSpanProcessor,
   ConsoleSpanExporter,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 
 export function register() {
   let config: Configuration = {
     serviceName: "sample-app",
     instrumentationConfig: {
       fetch: {
-        ignoreUrls: [/^https:\/\/telemetry.nextjs.org/],
+        ignoreUrls: [
+          /^https:\/\/telemetry.nextjs.org/,
+          /^https:\/\/fonts\.googleapis\.com/,
+          /^https:\/\/fonts\.gstatic\.com/,
+        ],
         propagateContextUrls: [/^http:\/\/localhost:\d+/],
         dontPropagateContextUrls: [/no-propagation\=1/],
         attributesFromRequestHeaders: {
@@ -49,7 +53,7 @@ export function register() {
     config = {
       ...config,
       spanProcessors: [
-        new SimpleSpanProcessor(new ConsoleSpanExporter()),
+        new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
         ...(config.spanProcessors ?? []),
       ],
     };

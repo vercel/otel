@@ -4,16 +4,16 @@
  */
 
 import type {
-  Fixed64,
+  ExportTraceServiceRequest,
   Resource,
-} from "@opentelemetry/otlp-transformer/build/src/common/internal-types";
-import type {
-  IResourceSpans,
-  ISpan,
-} from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
+  ResourceSpans,
+  Span,
+  UnixNano,
+} from "./otlp-types";
+import { decodeTraceRequest } from "./otlp-proto";
 import type { IHandler } from "./server";
 
-type ISpanWithService = ISpan & { serviceName: string };
+type ISpanWithService = Span & { serviceName: string };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention -- For consistency with the OTLP types.
 export interface ITrace {
@@ -52,7 +52,7 @@ export function resetStore(): void {
   store.traces = [];
 }
 
-export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
+export function processResourceSpans(resourceSpans: ResourceSpans[]): void {
   for (const resourceSpan of resourceSpans) {
     const { resource } = resourceSpan;
     if (!resource) {
@@ -79,8 +79,7 @@ export function processResourceSpans(resourceSpans: IResourceSpans[]): void {
         if (!isValidSpan(span)) {
           continue;
         }
-        const { traceId: traceIdRaw, parentSpanId, name, attributes } = span;
-        const traceId = normalizeId(traceIdRaw);
+        const { traceId, parentSpanId, name, attributes } = span;
         let trace = store.traces.find((t) => t.traceId === traceId);
         if (!trace) {
           trace = {
@@ -232,11 +231,6 @@ function createCollectorTraceHandler(): IHandler {
         res.end();
         return;
       }
-      if (req.headers["content-type"] !== "application/json") {
-        res.statusCode = 400;
-        res.end();
-        return;
-      }
 
       const body = await new Promise<Buffer>((resolve, reject) => {
         const acc: Buffer[] = [];
@@ -249,11 +243,13 @@ function createCollectorTraceHandler(): IHandler {
         req.on("error", reject);
       });
 
-      const json = JSON.parse(body.toString("utf-8")) as {
-        resourceSpans?: IResourceSpans[];
-      };
-      const resourceSpans = json.resourceSpans ?? [];
-      processResourceSpans(resourceSpans);
+      const request = parseTraceRequest(req.headers["content-type"], body);
+      if (!request) {
+        res.statusCode = 415;
+        res.end();
+        return;
+      }
+      processResourceSpans(request.resourceSpans ?? []);
       res.statusCode = 202;
       res.end();
     }
@@ -284,7 +280,7 @@ function createCollectorGetTraceHandler(): IHandler {
   };
 }
 
-function isValidSpan(span: ISpan): boolean {
+function isValidSpan(span: Span): boolean {
   const { attributes } = span;
   const hasBubble = attributes.some(
     ({ key, value }) => key === "next.bubble" && value.boolValue === true,
@@ -298,35 +294,31 @@ function isValidSpan(span: ISpan): boolean {
   return true;
 }
 
-/**
- * Defines High-Resolution Time.
- *
- * The first number, HrTime[0], is UNIX Epoch time in seconds since 00:00:00 UTC on 1 January 1970.
- * The second number, HrTime[1], represents the partial second elapsed since Unix Epoch time represented by first number in nanoseconds.
- * For example, 2021-01-01T12:30:10.150Z in UNIX Epoch time in milliseconds is represented as 1609504210150.
- * The first number is calculated by converting and truncating the Epoch time in milliseconds to seconds:
- * HrTime[0] = Math.trunc(1609504210150 / 1000) = 1609504210.
- * The second number is calculated by converting the digits after the decimal point of the subtraction, (1609504210150 / 1000) - HrTime[0], to nanoseconds:
- * HrTime[1] = Number((1609504210.150 - HrTime[0]).toFixed(9)) * 1e9 = 150000000.
- * This is represented in HrTime format as [1609504210, 150000000].
- */
-function unixNanoToMillis(unixNano: Fixed64): number {
-  if (typeof unixNano === "string") {
-    return new Date(unixNano).getTime();
-  }
+function unixNanoToMillis(unixNano: UnixNano | undefined): number {
   if (typeof unixNano === "number") {
     return unixNano;
   }
-  if (typeof unixNano === "object") {
-    const { low: seconds, high: nanos } = unixNano;
-    return seconds * 1000 + nanos / 1e6;
+  if (unixNano === undefined) {
+    return 0;
   }
-  return unixNano / 1e6;
+  if (/^\d+$/.test(unixNano)) {
+    return Number(BigInt(unixNano) / 1_000_000n);
+  }
+  const parsed = Date.parse(unixNano);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function normalizeId(id: string | Uint8Array): string {
-  if (typeof id === "string") {
-    return id;
+function parseTraceRequest(
+  contentType: string | string[] | undefined,
+  body: Buffer,
+): ExportTraceServiceRequest | undefined {
+  const type = Array.isArray(contentType) ? contentType[0] : contentType;
+  switch (type) {
+    case "application/json":
+      return JSON.parse(body.toString("utf-8")) as ExportTraceServiceRequest;
+    case "application/x-protobuf":
+      return decodeTraceRequest(body);
+    default:
+      return undefined;
   }
-  return Buffer.from(id).toString("hex");
 }

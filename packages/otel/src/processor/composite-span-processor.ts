@@ -4,7 +4,7 @@ import type {
   Span,
   ReadableSpan,
   SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { getVercelRequestContext } from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
 import { isSampled } from "../util/sampled";
@@ -88,6 +88,12 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
     for (const spanProcessor of this.processors) {
       spanProcessor.onStart(span, parentContext);
+    }
+  }
+
+  onEnding(span: Span): void {
+    for (const spanProcessor of this.processors) {
+      spanProcessor.onEnding?.(span);
     }
   }
 

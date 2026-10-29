@@ -1,85 +1,49 @@
-import type { OTLPExporterError } from "@opentelemetry/otlp-exporter-base";
 import { diag } from "@opentelemetry/api";
 import type { ExportResult } from "@opentelemetry/core";
+import type { ReadableSpan } from "@opentelemetry/sdk-trace";
 import type { OTLPExporterConfig } from "./config";
 
+const DEFAULT_COLLECTOR_URL = "http://localhost:4318/v1/traces";
+
 /** @internal */
-export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
-  /** @internal */
-  private _headers: Record<string, unknown> | undefined;
-  /** @internal */
-  private _shutdownOnce = { isCalled: false };
-  /** @internal */
-  private _sendingPromises: Promise<void>[] = [];
-  /** @internal */
-  protected url: string;
+export interface OtlpEncoding {
+  readonly contentType: string;
+  readonly headers?: Record<string, string>;
+  serialize: (spans: ReadableSpan[]) => Uint8Array | undefined;
+}
 
-  constructor(config: OTLPExporterConfig = {}) {
-    this.url = config.url || this.getDefaultUrl(config);
-    if (config.headers) {
-      this._headers = config.headers;
-    }
-    this.onInit();
-  }
+/** @internal */
+export class OTLPFetchExporter {
+  private readonly url: string;
+  private readonly headers: Record<string, unknown> | undefined;
+  private isShutdown = false;
+  private readonly sending = new Set<Promise<void>>();
 
-  onShutdown(): void {
-    diag.debug("@vercel/otel/otlp: onShutdown");
-  }
-
-  onInit(): void {
-    diag.debug("@vercel/otel/otlp: onInit");
+  constructor(
+    config: OTLPExporterConfig,
+    private readonly encoding: OtlpEncoding,
+  ) {
+    this.url = config.url || DEFAULT_COLLECTOR_URL;
+    this.headers = config.headers;
   }
 
   export(
-    items: ExportItem[],
+    spans: ReadableSpan[],
     resultCallback: (result: ExportResult) => void,
   ): void {
-    if (this._shutdownOnce.isCalled) {
+    if (this.isShutdown) {
       diag.debug(
         "@vercel/otel/otlp: Shutdown already started. Cannot send objects",
       );
       return;
     }
 
-    this.send(
-      items,
-      () => resultCallback({ code: 0 }), // SUCCESS
-      (error: OTLPExporterError) => resultCallback({ code: 1, error }), // FAILED
-    );
-  }
-
-  async forceFlush(): Promise<void> {
-    await Promise.all(this._sendingPromises);
-  }
-
-  async shutdown(): Promise<void> {
-    this._shutdownOnce.isCalled = true;
-    this.onShutdown();
-    await this.forceFlush();
-  }
-
-  send(
-    items: ExportItem[],
-    onSuccess: () => void,
-    onError: (error: OTLPExporterError) => void,
-  ): void {
-    if (this._shutdownOnce.isCalled) {
-      diag.debug(
-        "@vercel/otel/otlp: Shutdown already started. Cannot send objects",
-      );
-      return;
-    }
-
-    const serviceRequest = this.convert(items);
-
-    let body: string | Uint8Array | Blob;
-    let contentType: string;
-    let headers: Record<string, string> | undefined;
-    try {
-      const message = this.toMessage(serviceRequest);
-      ({ body, contentType, headers } = message);
-    } catch (e) {
-      diag.warn("@vercel/otel/otlp: no proto", e);
+    const body = this.encoding.serialize(spans);
+    if (!body) {
+      resultCallback({
+        code: 1,
+        error: new Error("@vercel/otel/otlp: failed to serialize spans"),
+      });
       return;
     }
 
@@ -87,9 +51,9 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
       method: "POST",
       body: body as BodyInit,
       headers: {
-        ...this._headers,
-        ...headers,
-        "Content-Type": contentType,
+        ...this.headers,
+        ...this.encoding.headers,
+        "Content-Type": this.encoding.contentType,
         "User-Agent": "OTel-OTLP-Exporter-JavaScript/0.46.0",
       },
       // @ts-expect-error - this handles a Next.js specific issue
@@ -97,27 +61,28 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     })
       .then((res) => {
         diag.debug("@vercel/otel/otlp: onSuccess", res.status, res.statusText);
-        onSuccess();
-        // Drain the response body.
+        resultCallback({ code: 0 });
         void res.arrayBuffer().catch(() => undefined);
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         diag.error("@vercel/otel/otlp: onError", err);
-        onError(err as OTLPExporterError);
+        resultCallback({
+          code: 1,
+          error: err instanceof Error ? err : new Error(String(err)),
+        });
       })
       .finally(() => {
-        const index = this._sendingPromises.indexOf(promise);
-        this._sendingPromises.splice(index, 1);
+        this.sending.delete(promise);
       });
-
-    this._sendingPromises.push(promise);
+    this.sending.add(promise);
   }
 
-  abstract convert(items: ExportItem[]): ServiceRequest;
-  abstract getDefaultUrl(config: OTLPExporterConfig): string;
-  abstract toMessage(serviceRequest: ServiceRequest): {
-    body: string | Uint8Array | Blob;
-    contentType: string;
-    headers?: Record<string, string>;
-  };
+  async forceFlush(): Promise<void> {
+    await Promise.all(this.sending);
+  }
+
+  async shutdown(): Promise<void> {
+    this.isShutdown = true;
+    await this.forceFlush();
+  }
 }

@@ -6,8 +6,10 @@ const MINIFY = true;
 const SOURCEMAP = true;
 
 const MAX_SIZES = {
-  "dist/node/index.js": 300_000, // Increased from original 217KB limit
-  "dist/edge/index.js": 191_000, // Increased from original 185KB limit
+  // 117851 measured, plus 10% rounded up to 5_000.
+  "dist/node/index.js": 130_000,
+  // 118786 measured, plus 10% rounded up to 5_000.
+  "dist/edge/index.js": 135_000,
 };
 
 type ExternalPluginFactory = (external: string[]) => Plugin;
@@ -31,24 +33,6 @@ const externalCjsToEsmPlugin: ExternalPluginFactory = (external) => ({
   },
 });
 
-// On Edge `eval()` is not allowed. Strip it from the input sources.
-const stripEvalEdge: Plugin = {
-  name: "stripEvalEdge",
-  setup(builder): void {
-    builder.onLoad({ filter: /@protobufjs\/inquire\/index\.js/ }, () => {
-      return {
-        contents: `
-          "use strict";
-          module.exports = inquire;
-          function inquire(moduleName) {
-            return null;
-          }
-        `,
-      };
-    });
-  },
-};
-
 /** Adds support for require, __filename, and __dirname to ESM / Node. */
 const esmNodeSupportBanner = {
   js: `import { fileURLToPath } from 'url';
@@ -65,7 +49,7 @@ const edgeSupportBanner = {
   }`,
 };
 
-const peerDependencies = ["@opentelemetry/api", "@opentelemetry/api-logs"];
+const peerDependencies = ["@opentelemetry/api"];
 
 async function buildAll(): Promise<void> {
   await Promise.all([
@@ -95,7 +79,6 @@ async function buildAll(): Promise<void> {
       external: ["@opentelemetry/api"],
       plugins: [
         externalCjsToEsmPlugin(["async_hooks", "events", ...peerDependencies]),
-        stripEvalEdge,
       ],
     }),
   ]);

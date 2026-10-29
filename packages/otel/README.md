@@ -9,7 +9,7 @@
 ## 📦 Installation
 
 ```sh
-npm install @vercel/otel @opentelemetry/api @opentelemetry/api-logs
+npm install @vercel/otel @opentelemetry/api
 ```
 
 ## 📚 Usage

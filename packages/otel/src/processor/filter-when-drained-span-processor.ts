@@ -3,7 +3,7 @@ import type {
   Span,
   ReadableSpan,
   SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { diag } from "@opentelemetry/api";
 import { isDraining } from "../vercel-request-context/is-draining";
 
@@ -32,6 +32,13 @@ export class FilterWhenDrainedSpanProcessor implements SpanProcessor {
       return;
     }
     this.processor.onStart(span, parentContext);
+  }
+
+  onEnding(span: Span): void {
+    if (isDraining()) {
+      return;
+    }
+    this.processor.onEnding?.(span);
   }
 
   onEnd(span: ReadableSpan): void {
