@@ -1,5 +1,5 @@
 ---
-"@vercel/otel": patch
+"@vercel/otel": minor
 ---
 
 Limit how long span exports can keep a function running.

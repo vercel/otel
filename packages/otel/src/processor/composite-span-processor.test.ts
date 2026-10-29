@@ -68,11 +68,11 @@ describe("CompositeSpanProcessor", () => {
     };
   }
 
-  async function msUntilFlushSettles(
+  async function expectFlushSettlesAt(
     processor: CompositeSpanProcessor,
     traceId: string,
-    limitMs: number,
-  ): Promise<number | undefined> {
+    expectedMs: number,
+  ): Promise<void> {
     const span = createRootSpan(traceId);
     processor.onStart(span, ROOT_CONTEXT);
     processor.onEnd(span as unknown as ReadableSpan);
@@ -82,14 +82,10 @@ describe("CompositeSpanProcessor", () => {
     void waitUntilTasks[0]?.().then((): void => {
       state.settled = true;
     });
-    for (let ms = 1; ms <= limitMs; ms++) {
-      // eslint-disable-next-line no-await-in-loop -- step the fake clock one ms at a time
-      await vi.advanceTimersByTimeAsync(1);
-      if (state.settled) {
-        return ms;
-      }
-    }
-    return undefined;
+    await vi.advanceTimersByTimeAsync(expectedMs - 1);
+    expect(state.settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(state.settled).toBe(true);
   }
 
   it("stops waiting for a flush that never settles after 10s by default", async () => {
@@ -98,13 +94,11 @@ describe("CompositeSpanProcessor", () => {
       undefined,
     );
 
-    expect(
-      await msUntilFlushSettles(
-        processor,
-        "00000000000000000000000000000001",
-        11_000,
-      ),
-    ).toBe(10_000);
+    await expectFlushSettlesAt(
+      processor,
+      "00000000000000000000000000000001",
+      10_000,
+    );
   });
 
   it("uses flushTimeoutMillis when set", async () => {
@@ -114,13 +108,11 @@ describe("CompositeSpanProcessor", () => {
       2_000,
     );
 
-    expect(
-      await msUntilFlushSettles(
-        processor,
-        "00000000000000000000000000000003",
-        3_000,
-      ),
-    ).toBe(2_000);
+    await expectFlushSettlesAt(
+      processor,
+      "00000000000000000000000000000003",
+      2_000,
+    );
   });
 
   it.each([0, -1, NaN, Infinity])(
@@ -136,13 +128,11 @@ describe("CompositeSpanProcessor", () => {
       expect(warn).toHaveBeenCalledWith(
         `@vercel/otel: ignoring invalid flushTimeoutMillis: ${flushTimeoutMillis}`,
       );
-      expect(
-        await msUntilFlushSettles(
-          processor,
-          "00000000000000000000000000000004",
-          11_000,
-        ),
-      ).toBe(10_000);
+      await expectFlushSettlesAt(
+        processor,
+        "00000000000000000000000000000004",
+        10_000,
+      );
     },
   );
 
