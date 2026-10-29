@@ -284,7 +284,6 @@ export class FetchInstrumentation implements Instrumentation {
       this.config;
 
     const originalRequest = httpModule.request;
-    const originalGet = httpModule.get;
 
     const instrumentRequest = (original: typeof httpModule.request) => {
       return (
@@ -445,8 +444,18 @@ export class FetchInstrumentation implements Instrumentation {
       };
     };
 
-    httpModule.request = instrumentRequest(originalRequest);
-    httpModule.get = instrumentRequest(originalGet);
+    const instrumentedRequest = instrumentRequest(originalRequest);
+    httpModule.request = instrumentedRequest;
+    // Build `get` from the instrumented `request`, like Node does. The Vercel
+    // runtime's `get` calls the exported `request`, so wrapping the original
+    // `get` too would record two spans per call.
+    httpModule.get = (
+      ...args: Parameters<typeof instrumentedRequest>
+    ): http.ClientRequest => {
+      const req = instrumentedRequest(...args);
+      req.end();
+      return req;
+    };
   }
 
   instrumentFetch(): void {
