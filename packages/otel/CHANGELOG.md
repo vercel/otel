@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 2.1.4
+
+### Patch Changes
+
+- [#226](https://github.com/vercel/otel/pull/226) [`ab95b9d`](https://github.com/vercel/otel/commit/ab95b9dd1ed7766c5754ca3866914b5a00e931e9) Thanks [@kakadiadarpan](https://github.com/kakadiadarpan)! - Fix duplicate spans for `http.get` and `https.get`. If code that ran before `registerOTel` replaced `get` with a function that calls the exported `request`, each call recorded two spans for one request.
+
 ## 2.1.3
 
 ### Patch Changes
