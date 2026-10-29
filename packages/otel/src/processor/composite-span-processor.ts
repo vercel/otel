@@ -5,8 +5,13 @@ import type {
   ReadableSpan,
   SpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
+import { getNumberFromEnv } from "@opentelemetry/core";
 import { getVercelRequestContext } from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
+import {
+  deleteRequestContext,
+  setRequestContext,
+} from "../vercel-request-context/context-registry";
 import { isSampled } from "../util/sampled";
 import type { AttributesFromHeaders } from "../types";
 
@@ -17,6 +22,13 @@ export class CompositeSpanProcessor implements SpanProcessor {
     { rootSpanId: string; open: Span[] }
   >();
   private readonly waitSpanEnd = new Map<string, () => void>();
+
+  private readonly flushBatchSize =
+    getNumberFromEnv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE") ?? 512;
+  private readonly flushDelayMs =
+    getNumberFromEnv("OTEL_BSP_SCHEDULE_DELAY") ?? 5000;
+  private spansSinceFlush = 0;
+  private lastFlushMs = 0;
 
   constructor(
     private processors: SpanProcessor[],
@@ -60,6 +72,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
 
       // Flush the streams to avoid data loss.
       if (vrc) {
+        setRequestContext(traceId, vrc);
         vrc.waitUntil(async () => {
           if (this.rootSpanIds.has(traceId)) {
             // Not root has not completed yet, so no point in flushing.
@@ -81,7 +94,10 @@ export class CompositeSpanProcessor implements SpanProcessor {
               clearTimeout(timer);
             }
           }
-          return this.forceFlush();
+          await this.forceFlush();
+          // The invocation is over; the channel can no longer accept spans and
+          // the entry would leak if the root span never ended.
+          deleteRequestContext(traceId);
         });
       }
     }
@@ -135,6 +151,32 @@ export class CompositeSpanProcessor implements SpanProcessor {
         this.waitSpanEnd.delete(traceId);
         pending();
       }
+    } else if (sampled && getVercelRequestContext()) {
+      // Periodic in-context flush, Vercel-only. onEnd runs inside the request's
+      // async context, so this flush (unlike the BatchSpanProcessor's bare-setTimeout
+      // timer) can resolve the Vercel request context and actually export. Off-Vercel
+      // there is no request context to lose, so we skip and let the stock
+      // BatchSpanProcessor timer flush as before (no behavior change). The root span's
+      // flush is already handled by the waitUntil in onStart.
+      this.maybeFlush();
+    }
+  }
+
+  private maybeFlush(): void {
+    this.spansSinceFlush += 1;
+    const now = Date.now();
+    if (this.lastFlushMs === 0) {
+      this.lastFlushMs = now;
+    }
+    if (
+      this.spansSinceFlush >= this.flushBatchSize ||
+      now - this.lastFlushMs >= this.flushDelayMs
+    ) {
+      this.spansSinceFlush = 0;
+      this.lastFlushMs = now;
+      void this.forceFlush().catch((e) => {
+        diag.error("@vercel/otel: periodic flush failed:", e);
+      });
     }
   }
 }
