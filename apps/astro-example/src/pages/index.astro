@@ -1,0 +1,103 @@
+---
+export const prerender = false;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Astro OpenTelemetry propagation</title>
+    <style>
+      :root {
+        color: #18181b;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+
+      body {
+        margin: 0 auto;
+        max-width: 48rem;
+        padding: 4rem 1.5rem;
+      }
+
+      code {
+        background: #f4f4f5;
+        border-radius: 0.25rem;
+        padding: 0.15rem 0.3rem;
+      }
+
+      button {
+        background: #18181b;
+        border: 0;
+        border-radius: 0.375rem;
+        color: white;
+        cursor: pointer;
+        font: inherit;
+        padding: 0.625rem 0.875rem;
+      }
+
+      button:disabled {
+        cursor: wait;
+        opacity: 0.6;
+      }
+
+      output {
+        display: block;
+        margin-top: 1.5rem;
+      }
+
+      pre {
+        background: #f4f4f5;
+        min-height: 3rem;
+        overflow-x: auto;
+        padding: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Astro OpenTelemetry propagation</h1>
+      <p>
+        This page is server-rendered. Astro middleware extracts the Vercel
+        request context before rendering.
+      </p>
+      <button id="trace-button" type="button">Make traced API call</button>
+      <output id="trace-result" aria-live="polite">
+        <pre>Waiting for a request.</pre>
+      </output>
+    </main>
+    <script>
+      const button = document.querySelector<HTMLButtonElement>("#trace-button");
+      const result = document.querySelector<HTMLOutputElement>("#trace-result");
+
+      button?.addEventListener("click", async () => {
+        if (!result) return;
+
+        button.disabled = true;
+        result.innerHTML = "<pre>Calling /api/trace...</pre>";
+
+        try {
+          const response = await fetch("/api/trace");
+          const body: unknown = await response.json();
+
+          if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+          }
+
+          result.innerHTML = "";
+          const output = document.createElement("pre");
+          output.textContent = JSON.stringify(body, null, 2);
+          result.append(output);
+        } catch (error) {
+          result.innerHTML = "";
+          const output = document.createElement("pre");
+          output.textContent =
+            error instanceof Error ? error.message : String(error);
+          result.append(output);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>
