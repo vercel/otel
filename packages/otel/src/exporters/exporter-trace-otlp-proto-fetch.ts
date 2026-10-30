@@ -1,5 +1,6 @@
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
 import type { IExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal-types";
+import { PROTOBUF_ENCODER } from "@opentelemetry/otlp-transformer/build/src/common/utils";
 import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal";
 import type { ExportResult } from "@opentelemetry/core";
 import { encodeTraceServiceRequest } from "./proto";
@@ -40,7 +41,7 @@ class Impl extends OTLPExporterEdgeBase<
   IExportTraceServiceRequest
 > {
   convert(spans: ReadableSpan[]): IExportTraceServiceRequest {
-    return createExportTraceServiceRequest(spans);
+    return createExportTraceServiceRequest(spans, PROTOBUF_ENCODER);
   }
 
   override toMessage(serviceRequest: IExportTraceServiceRequest): {

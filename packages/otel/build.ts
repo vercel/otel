@@ -7,7 +7,7 @@ const SOURCEMAP = true;
 
 const MAX_SIZES = {
   "dist/node/index.js": 300_000, // Increased from original 217KB limit
-  "dist/edge/index.js": 192_000, // Increased from original 185KB limit
+  "dist/edge/index.js": 210_000, // Increased after upgrading the OpenTelemetry dependencies
 };
 
 type ExternalPluginFactory = (external: string[]) => Plugin;

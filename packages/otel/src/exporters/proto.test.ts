@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TimedEvent, ReadableSpan } from "@opentelemetry/sdk-trace-base";
 import { ProtobufTraceSerializer } from "@opentelemetry/otlp-transformer";
+import { PROTOBUF_ENCODER } from "@opentelemetry/otlp-transformer/build/src/common/utils";
 import { createExportTraceServiceRequest } from "@opentelemetry/otlp-transformer/build/src/trace/internal";
 import type { InstrumentationScope } from "@opentelemetry/core";
 import { hrTime, TraceState } from "@opentelemetry/core";
@@ -143,7 +144,7 @@ describe("OTLP Protobuf", () => {
   }
 
   function validateProtobufEncoding(spans: ReadableSpan[]): void {
-    const request = createExportTraceServiceRequest(spans);
+    const request = createExportTraceServiceRequest(spans, PROTOBUF_ENCODER);
 
     // Both encoders should produce valid protobuf without errors
     const expected = encodeViaOtlpLibrary(spans);
