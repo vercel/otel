@@ -36,7 +36,6 @@ import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { AsyncLocalStorageContextManager } from "@opentelemetry/context-async-hooks";
 import {
   CompositePropagator,
-  W3CBaggagePropagator,
   parseKeyPairsIntoRecord,
 } from "@opentelemetry/core";
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
@@ -53,6 +52,7 @@ import type {
 } from "./types";
 import { FetchInstrumentation } from "./instrumentations/fetch";
 import { W3CTraceContextPropagator } from "./propagators/w3c-tracecontext-propagator";
+import { W3CBaggagePropagator } from "./propagators/w3c-baggage-propagator";
 import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 import { getStringFromEnv, getStringListFromEnv } from "./utils/env-parser";
