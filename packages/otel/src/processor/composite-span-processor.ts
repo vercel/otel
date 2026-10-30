@@ -9,6 +9,9 @@ import { getVercelRequestContext } from "../vercel-request-context/api";
 import { getVercelRequestContextAttributes } from "../vercel-request-context/attributes";
 import { isSampled } from "../util/sampled";
 import type { AttributesFromHeaders } from "../types";
+import { toTimeoutMillis } from "../util/timeout";
+
+const DEFAULT_FLUSH_TIMEOUT_MILLIS = 10_000;
 
 /** @internal */
 export class CompositeSpanProcessor implements SpanProcessor {
@@ -18,10 +21,17 @@ export class CompositeSpanProcessor implements SpanProcessor {
   >();
   private readonly waitSpanEnd = new Map<string, () => void>();
 
+  private readonly flushTimeoutMillis: number;
+
   constructor(
     private processors: SpanProcessor[],
     private attributesFromHeaders: AttributesFromHeaders | undefined,
-  ) {}
+    flushTimeoutMillis?: number,
+  ) {
+    this.flushTimeoutMillis =
+      toTimeoutMillis(flushTimeoutMillis, "flushTimeoutMillis") ??
+      DEFAULT_FLUSH_TIMEOUT_MILLIS;
+  }
 
   forceFlush(): Promise<void> {
     return Promise.all(
@@ -31,6 +41,23 @@ export class CompositeSpanProcessor implements SpanProcessor {
         }),
       ),
     ).then(() => undefined);
+  }
+
+  private forceFlushWithTimeout(timeoutMillis: number): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return Promise.race([
+      this.forceFlush(),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(() => {
+          diag.warn(
+            `@vercel/otel: forceFlush did not complete within ${timeoutMillis}ms, giving up`,
+          );
+          resolve();
+        }, timeoutMillis);
+      }),
+    ]).finally(() => {
+      clearTimeout(timer);
+    });
   }
 
   shutdown(): Promise<void> {
@@ -81,7 +108,7 @@ export class CompositeSpanProcessor implements SpanProcessor {
               clearTimeout(timer);
             }
           }
-          return this.forceFlush();
+          return this.forceFlushWithTimeout(this.flushTimeoutMillis);
         });
       }
     }

@@ -1,7 +1,11 @@
 import type { OTLPExporterError } from "@opentelemetry/otlp-exporter-base";
 import { diag } from "@opentelemetry/api";
 import type { ExportResult } from "@opentelemetry/core";
+import { getStringFromEnv } from "../utils/env-parser";
+import { toTimeoutMillis } from "../util/timeout";
 import type { OTLPExporterConfig } from "./config";
+
+const DEFAULT_TIMEOUT_MILLIS = 10_000;
 
 /** @internal */
 export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
@@ -13,9 +17,16 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   private _sendingPromises: Promise<void>[] = [];
   /** @internal */
   protected url: string;
+  /** @internal */
+  private readonly timeoutMillis: number;
 
   constructor(config: OTLPExporterConfig = {}) {
     this.url = config.url || this.getDefaultUrl(config);
+    this.timeoutMillis =
+      toTimeoutMillis(config.timeoutMillis, "timeoutMillis") ??
+      timeoutMillisFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT") ??
+      timeoutMillisFromEnv("OTEL_EXPORTER_OTLP_TIMEOUT") ??
+      DEFAULT_TIMEOUT_MILLIS;
     if (config.headers) {
       this._headers = config.headers;
     }
@@ -34,13 +45,6 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     items: ExportItem[],
     resultCallback: (result: ExportResult) => void,
   ): void {
-    if (this._shutdownOnce.isCalled) {
-      diag.debug(
-        "@vercel/otel/otlp: Shutdown already started. Cannot send objects",
-      );
-      return;
-    }
-
     this.send(
       items,
       () => resultCallback({ code: 0 }), // SUCCESS
@@ -67,21 +71,30 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
       diag.debug(
         "@vercel/otel/otlp: Shutdown already started. Cannot send objects",
       );
+      onError(new Error("Exporter has been shut down") as OTLPExporterError);
       return;
     }
-
-    const serviceRequest = this.convert(items);
 
     let body: string | Uint8Array | Blob;
     let contentType: string;
     let headers: Record<string, string> | undefined;
     try {
-      const message = this.toMessage(serviceRequest);
+      const message = this.toMessage(this.convert(items));
       ({ body, contentType, headers } = message);
     } catch (e) {
-      diag.warn("@vercel/otel/otlp: no proto", e);
+      diag.warn("@vercel/otel/otlp: failed to serialize spans", e);
+      onError(
+        (e instanceof Error ? e : new Error(String(e))) as OTLPExporterError,
+      );
       return;
     }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort(
+        new Error(`Export timed out after ${this.timeoutMillis}ms`),
+      );
+    }, this.timeoutMillis);
 
     const promise = fetch(this.url, {
       method: "POST",
@@ -92,6 +105,7 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
         "Content-Type": contentType,
         "User-Agent": "OTel-OTLP-Exporter-JavaScript/0.46.0",
       },
+      signal: controller.signal,
       // @ts-expect-error - this handles a Next.js specific issue
       next: { internal: true },
     })
@@ -106,6 +120,7 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
         onError(err as OTLPExporterError);
       })
       .finally(() => {
+        clearTimeout(timer);
         const index = this._sendingPromises.indexOf(promise);
         this._sendingPromises.splice(index, 1);
       });
@@ -120,4 +135,8 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     contentType: string;
     headers?: Record<string, string>;
   };
+}
+
+function timeoutMillisFromEnv(key: string): number | undefined {
+  return toTimeoutMillis(getStringFromEnv(key), key);
 }
