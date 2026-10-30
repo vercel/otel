@@ -63,6 +63,7 @@ Registers the OpenTelemetry SDK with the specified configuration. Configuration 
 - `propagators`: A set of propagators that may extend inbound and outbound contexts. By default, `@vercel/otel` configures [W3C Trace Context](https://www.w3.org/TR/trace-context/) propagator.
 - `traceSampler`: The sampler to be used to decide which requests should be traced. By default, all requests are traced. This option can be changed to, for instance, only trace 1% of all requests.
 - `spanProcessors` and `traceExporter`: The export mechanism for traces. By default, `@vercel/otel` configures the best export mechanism for the environment. For instance, if a [tracing integrations](https://vercel.com/docs/observability/otel-overview) is configured on Vercel, this integration will be automatically used for export; otherwise an [OTLP exporter](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#otlp-exporter) can be used if configured in environment variables.
+- `experimentalPartialSpans`: Export a snapshot when a span starts, then export the completed span again when it ends. The Vercel runtime exporter still receives only completed spans. By default, spans are exported only after they end.
 
 See [API](https://otel.vercel.sh/api/) for more details.
 

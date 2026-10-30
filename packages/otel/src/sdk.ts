@@ -57,6 +57,7 @@ import { VercelRuntimePropagator } from "./vercel-request-context/propagator";
 import { VercelRuntimeSpanExporter } from "./vercel-request-context/exporter";
 import { getStringFromEnv, getStringListFromEnv } from "./utils/env-parser";
 import { FilterWhenDrainedSpanProcessor } from "./processor/filter-when-drained-span-processor";
+import { PartialSpanProcessor } from "./processor/partial-span-processor";
 
 interface Env {
   OTEL_SDK_DISABLED?: string;
@@ -451,7 +452,7 @@ function parseSpanProcessor(
 
             processors.push(
               new FilterWhenDrainedSpanProcessor(
-                new BatchSpanProcessor(exporter),
+                createExporterSpanProcessor(exporter, configuration),
               ),
             );
           }
@@ -465,7 +466,10 @@ function parseSpanProcessor(
           ) {
             processors.push(
               new FilterWhenDrainedSpanProcessor(
-                new BatchSpanProcessor(parseTraceExporter(env)),
+                createExporterSpanProcessor(
+                  parseTraceExporter(env),
+                  configuration,
+                ),
               ),
             );
           }
@@ -476,9 +480,23 @@ function parseSpanProcessor(
       })
       .filter(isNotNull),
     ...(configuration.traceExporter && configuration.traceExporter !== "auto"
-      ? [new BatchSpanProcessor(configuration.traceExporter)]
+      ? [
+          createExporterSpanProcessor(
+            configuration.traceExporter,
+            configuration,
+          ),
+        ]
       : []),
   ];
+}
+
+function createExporterSpanProcessor(
+  exporter: SpanExporter,
+  configuration: Configuration,
+): SpanProcessor {
+  return configuration.experimentalPartialSpans
+    ? new PartialSpanProcessor(exporter)
+    : new BatchSpanProcessor(exporter);
 }
 
 /**
