@@ -66,6 +66,7 @@
     "unit-test": "vitest --run",
     "unit-test-watch": "vitest"
   },
+  "dependencies": {},
   "devDependencies": {
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/api-logs": "~0.219.0",
