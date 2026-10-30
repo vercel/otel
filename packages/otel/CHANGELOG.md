@@ -1,5 +1,19 @@
 # @vercel/otel
 
+## 2.2.0
+
+### Minor Changes
+
+- [#225](https://github.com/vercel/otel/pull/225) [`33f8cc1`](https://github.com/vercel/otel/commit/33f8cc145d74cd899b15403c1f51641fdae06d7b) Thanks [@kakadiadarpan](https://github.com/kakadiadarpan)! - Add time limits to span exports.
+
+  - OTLP export requests now abort after 10s by default, on any platform. Before, they had no timeout. Change it with `timeoutMillis` on `OTLPHttpProtoTraceExporter` or `OTLPHttpJsonTraceExporter`, or with `OTEL_EXPORTER_OTLP_TRACES_TIMEOUT` and `OTEL_EXPORTER_OTLP_TIMEOUT`. `@vercel/otel` now reads those env vars, in milliseconds, so `10` means 10ms.
+  - On Vercel, the span flush queued in `waitUntil` gives up after 10s. Change it with the new `flushTimeoutMillis` option in `registerOTel`.
+  - An export that fails before sending reports the failure right away instead of stalling for 30s.
+
+### Patch Changes
+
+- [#230](https://github.com/vercel/otel/pull/230) [`9a69a11`](https://github.com/vercel/otel/commit/9a69a11e5b254158aaa5c2094acdd1bb468ebffe) Thanks [@kakadiadarpan](https://github.com/kakadiadarpan)! - Fix [CVE-2026-54285](https://github.com/advisories/GHSA-8988-4f7v-96qf) in the baggage propagator, which `registerOTel` uses by default. Inbound `baggage` headers are now capped at 180 entries and 8,192 bytes, and entries over 4,096 bytes are skipped. Before, every entry was parsed, however large the header.
+
 ## 2.1.4
 
 ### Patch Changes
