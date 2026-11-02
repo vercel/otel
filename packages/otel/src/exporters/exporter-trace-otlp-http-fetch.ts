@@ -1,9 +1,9 @@
 import type { ReadableSpan, SpanExporter } from "@opentelemetry/sdk-trace-base";
-import { JsonTraceSerializer } from "@opentelemetry/otlp-transformer/build/src/trace/json/trace";
 import type { ExportResult } from "@opentelemetry/core";
 import { OTLPExporterEdgeBase } from "./otlp-exporter-base";
 import { getDefaultUrl } from "./trace-config";
 import type { OTLPExporterConfig } from "./config";
+import { serializeTraceServiceRequestJson } from "./trace-service-request";
 
 /**
  * OTLP exporter for the `http/json` protocol. Compatible with the "edge" runtime.
@@ -46,7 +46,7 @@ class Impl extends OTLPExporterEdgeBase<ReadableSpan, ReadableSpan[]> {
     contentType: string;
     headers?: Record<string, string> | undefined;
   } {
-    const serialized = JsonTraceSerializer.serializeRequest(spans);
+    const serialized = serializeTraceServiceRequestJson(spans);
     return {
       body: new TextDecoder().decode(serialized),
       contentType: "application/json",
