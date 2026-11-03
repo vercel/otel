@@ -35,7 +35,7 @@ export class OTLPHttpProtoTraceExporter implements SpanExporter {
 }
 
 /** @internal */
-export class Impl extends OTLPExporterEdgeBase<
+class Impl extends OTLPExporterEdgeBase<
   ReadableSpan,
   IExportTraceServiceRequest
 > {

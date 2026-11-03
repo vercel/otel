@@ -41,11 +41,7 @@ import {
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
 import { OTLPHttpJsonTraceExporter } from "./exporters/exporter-trace-otlp-http-fetch";
 import { OTLPHttpProtoTraceExporter } from "./exporters/exporter-trace-otlp-proto-fetch";
-import {
-  DAEMON_OTLP_SOCKET_PATH,
-  OTLPSocketProtoTraceExporter,
-  isSocket,
-} from "./exporters/exporter-trace-otlp-proto-socket";
+import { DAEMON_OTLP_SOCKET_PATH, isSocket } from "./exporters/unix-socket";
 import { getDefaultResourceAttributes } from "./util/attributes";
 import type {
   Configuration,
@@ -475,7 +471,10 @@ function parseSpanProcessor(
             );
             processors.push(
               new BatchSpanProcessor(
-                new OTLPSocketProtoTraceExporter(DAEMON_OTLP_SOCKET_PATH),
+                new OTLPHttpProtoTraceExporter({
+                  url: "http://localhost/v1/traces",
+                  socketPath: DAEMON_OTLP_SOCKET_PATH,
+                }),
               ),
             );
           }

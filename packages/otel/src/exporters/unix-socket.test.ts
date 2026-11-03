@@ -7,9 +7,9 @@ import {
   BasicTracerProvider,
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import { OTLPSocketProtoTraceExporter } from "./exporter-trace-otlp-proto-socket";
+import { OTLPHttpProtoTraceExporter } from "./exporter-trace-otlp-proto-fetch";
 
-describe("OTLPSocketProtoTraceExporter", () => {
+describe("OTLPHttpProtoTraceExporter with socketPath", () => {
   it("sends spans as protobuf over the Unix socket", async () => {
     const socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
     const received: { url?: string; contentType?: string; size: number }[] = [];
@@ -34,7 +34,12 @@ describe("OTLPSocketProtoTraceExporter", () => {
     try {
       const provider = new BasicTracerProvider({
         spanProcessors: [
-          new SimpleSpanProcessor(new OTLPSocketProtoTraceExporter(socketPath)),
+          new SimpleSpanProcessor(
+            new OTLPHttpProtoTraceExporter({
+              url: "http://localhost/v1/traces",
+              socketPath,
+            }),
+          ),
         ],
       });
       provider.getTracer("test").startSpan("work").end();
