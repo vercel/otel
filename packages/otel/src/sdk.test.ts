@@ -1,4 +1,7 @@
 import * as http from "node:http";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ROOT_CONTEXT,
@@ -14,23 +17,6 @@ import {
 } from "@opentelemetry/sdk-trace-base";
 import type { Configuration } from "./types";
 import { Sdk } from "./sdk";
-import type * as unixSocket from "./exporters/unix-socket";
-
-const daemonSocketPath = await vi.hoisted(async () => {
-  // vi.hoisted runs before the imports, so it imports its own modules.
-  const fs = await import("node:fs");
-  const os = await import("node:os");
-  const path = await import("node:path");
-  return path.join(
-    fs.mkdtempSync(path.join(os.tmpdir(), "otel-")),
-    "otlp.sock",
-  );
-});
-
-vi.mock("./exporters/unix-socket", async (importOriginal) => ({
-  ...(await importOriginal<typeof unixSocket>()),
-  DAEMON_OTLP_SOCKET_PATH: daemonSocketPath,
-}));
 
 describe("Sdk propagators", () => {
   let sdk: Sdk | undefined;
@@ -108,6 +94,7 @@ describe("Sdk span processors", () => {
 
 describe("Sdk in a Vercel Daemon", () => {
   let server: http.Server | undefined;
+  const socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
 
   afterEach(async () => {
     await new Promise((resolve) => {
@@ -139,19 +126,20 @@ describe("Sdk in a Vercel Daemon", () => {
       });
     });
     await new Promise<void>((resolve) => {
-      server?.listen(daemonSocketPath, resolve);
+      server?.listen(socketPath, resolve);
     });
     return received;
   }
 
   async function exportOneSpan(): Promise<void> {
+    vi.stubEnv("VERCEL_OTEL_SOCKET_PATH", socketPath);
     const sdk = new Sdk({ instrumentations: [] });
     sdk.start();
     trace.getTracer("test").startSpan("work").end();
     await sdk.shutdown();
   }
 
-  it("sends spans as protobuf to the daemon OTLP socket", async () => {
+  it("sends spans as protobuf to VERCEL_OTEL_SOCKET_PATH", async () => {
     const received = await listenOnDaemonSocket();
 
     await exportOneSpan();
@@ -161,7 +149,7 @@ describe("Sdk in a Vercel Daemon", () => {
     ]);
   });
 
-  it("prefers OTEL_EXPORTER_OTLP_ENDPOINT over the daemon OTLP socket", async () => {
+  it("prefers OTEL_EXPORTER_OTLP_ENDPOINT over VERCEL_OTEL_SOCKET_PATH", async () => {
     const received = await listenOnDaemonSocket();
     vi.stubEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318");
     const fetchMock = vi.fn(() => Promise.resolve(new Response()));

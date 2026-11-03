@@ -41,7 +41,6 @@ import {
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
 import { OTLPHttpJsonTraceExporter } from "./exporters/exporter-trace-otlp-http-fetch";
 import { OTLPHttpProtoTraceExporter } from "./exporters/exporter-trace-otlp-proto-fetch";
-import { DAEMON_OTLP_SOCKET_PATH, isSocket } from "./exporters/unix-socket";
 import { getDefaultResourceAttributes } from "./util/attributes";
 import type {
   Configuration,
@@ -71,6 +70,7 @@ interface Env {
   OTEL_EXPORTER_OTLP_TRACES_HEADERS?: string;
   OTEL_EXPORTER_OTLP_TRACES_PROTOCOL?: string;
   OTEL_EXPORTER_OTLP_PROTOCOL?: string;
+  VERCEL_OTEL_SOCKET_PATH?: string;
 }
 
 const logLevelMap: Record<string, DiagLogLevel> = {
@@ -254,6 +254,7 @@ function getEnv(): Env {
     OTEL_EXPORTER_OTLP_TRACES_HEADERS: getStringFromEnv(
       "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
     ),
+    VERCEL_OTEL_SOCKET_PATH: getStringFromEnv("VERCEL_OTEL_SOCKET_PATH"),
   };
 }
 
@@ -459,21 +460,21 @@ function parseSpanProcessor(
 
           // In a Vercel Daemon, the controller receives OTLP on a Unix socket.
           else if (
+            env.VERCEL_OTEL_SOCKET_PATH &&
             (!configuration.traceExporter ||
               configuration.traceExporter === "auto") &&
             !env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT &&
-            !env.OTEL_EXPORTER_OTLP_ENDPOINT &&
-            isSocket(DAEMON_OTLP_SOCKET_PATH)
+            !env.OTEL_EXPORTER_OTLP_ENDPOINT
           ) {
             diag.debug(
-              "@vercel/otel: Configure daemon OTLP socket: ",
-              DAEMON_OTLP_SOCKET_PATH,
+              "@vercel/otel: Configure OTLP socket: ",
+              env.VERCEL_OTEL_SOCKET_PATH,
             );
             processors.push(
               new BatchSpanProcessor(
                 new OTLPHttpProtoTraceExporter({
                   url: "http://localhost/v1/traces",
-                  socketPath: DAEMON_OTLP_SOCKET_PATH,
+                  socketPath: env.VERCEL_OTEL_SOCKET_PATH,
                 }),
               ),
             );

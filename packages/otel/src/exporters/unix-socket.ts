@@ -1,19 +1,4 @@
-import type * as fs from "node:fs";
 import type * as http from "node:http";
-
-/** The OTLP socket of the controller in a Vercel Daemon. */
-export const DAEMON_OTLP_SOCKET_PATH = "/var/run/vercel/o11y/otlp.sock";
-
-/** Returns true when `path` is a Unix socket. Always false outside Node.js. */
-export function isSocket(path: string): boolean {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fsModule = require("node:fs") as typeof fs;
-    return fsModule.statSync(path).isSocket();
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Sends a POST request over a Unix socket and resolves with the status code.
