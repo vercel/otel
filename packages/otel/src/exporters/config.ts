@@ -5,6 +5,11 @@ export interface OTLPExporterConfig {
   headers?: Record<string, unknown>;
   url?: string;
   /**
+   * Path of a Unix socket to send the export requests to, for example the OTLP
+   * socket of a Vercel Daemon. Only works in Node.js.
+   */
+  socketPath?: string;
+  /**
    * Maximum time in milliseconds to wait for an export request before aborting it.
    * Defaults to `OTEL_EXPORTER_OTLP_TRACES_TIMEOUT`, then `OTEL_EXPORTER_OTLP_TIMEOUT`, then 10000.
    * Values that are not positive finite numbers are ignored in favor of the next source.

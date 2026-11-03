@@ -1,3 +1,4 @@
+import type * as fs from "node:fs";
 import type { ContextManager, TextMapPropagator } from "@opentelemetry/api";
 import type { Instrumentation } from "@opentelemetry/instrumentation";
 import type { ResourceDetectionConfig } from "@opentelemetry/resources";
@@ -456,6 +457,28 @@ function parseSpanProcessor(
             );
           }
 
+          // In a Vercel Daemon, the controller receives OTLP on a Unix socket.
+          else if (
+            (!configuration.traceExporter ||
+              configuration.traceExporter === "auto") &&
+            !env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT &&
+            !env.OTEL_EXPORTER_OTLP_ENDPOINT &&
+            isSocket(DAEMON_OTLP_SOCKET_PATH)
+          ) {
+            diag.debug(
+              "@vercel/otel: Configure daemon OTLP socket: ",
+              DAEMON_OTLP_SOCKET_PATH,
+            );
+            processors.push(
+              new BatchSpanProcessor(
+                new OTLPHttpProtoTraceExporter({
+                  url: "http://localhost/v1/traces",
+                  socketPath: DAEMON_OTLP_SOCKET_PATH,
+                }),
+              ),
+            );
+          }
+
           // Consider going throw `VERCEL_OTEL_ENDPOINTS` (otel collector) for OTLP.
           else if (
             !configuration.traceExporter ||
@@ -521,6 +544,19 @@ function parseTraceExporter(env: Env): SpanExporter {
 
 const DEFAULT_COLLECTOR_RESOURCE_PATH = "v1/traces";
 const DEFAULT_COLLECTOR_URL = `http://localhost:4318/${DEFAULT_COLLECTOR_RESOURCE_PATH}`;
+
+const DAEMON_OTLP_SOCKET_PATH = "/var/run/vercel/o11y/otlp.sock";
+
+function isSocket(path: string): boolean {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fsModule = require("node:fs") as typeof fs;
+    return fsModule.statSync(path).isSocket();
+  } catch {
+    // The path does not exist, or this is not a Node env.
+    return false;
+  }
+}
 
 function buildExporterUrlFromEnv(env: Env): string {
   const defaultUrlFromEnv = env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
