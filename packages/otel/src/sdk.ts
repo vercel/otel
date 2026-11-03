@@ -1,4 +1,3 @@
-import type * as fs from "node:fs";
 import type { ContextManager, TextMapPropagator } from "@opentelemetry/api";
 import type { Instrumentation } from "@opentelemetry/instrumentation";
 import type { ResourceDetectionConfig } from "@opentelemetry/resources";
@@ -42,6 +41,11 @@ import {
 import { CompositeSpanProcessor } from "./processor/composite-span-processor";
 import { OTLPHttpJsonTraceExporter } from "./exporters/exporter-trace-otlp-http-fetch";
 import { OTLPHttpProtoTraceExporter } from "./exporters/exporter-trace-otlp-proto-fetch";
+import {
+  DAEMON_OTLP_SOCKET_PATH,
+  OTLPSocketProtoTraceExporter,
+  isSocket,
+} from "./exporters/exporter-trace-otlp-proto-socket";
 import { getDefaultResourceAttributes } from "./util/attributes";
 import type {
   Configuration,
@@ -471,10 +475,7 @@ function parseSpanProcessor(
             );
             processors.push(
               new BatchSpanProcessor(
-                new OTLPHttpProtoTraceExporter({
-                  url: "http://localhost/v1/traces",
-                  socketPath: DAEMON_OTLP_SOCKET_PATH,
-                }),
+                new OTLPSocketProtoTraceExporter(DAEMON_OTLP_SOCKET_PATH),
               ),
             );
           }
@@ -544,19 +545,6 @@ function parseTraceExporter(env: Env): SpanExporter {
 
 const DEFAULT_COLLECTOR_RESOURCE_PATH = "v1/traces";
 const DEFAULT_COLLECTOR_URL = `http://localhost:4318/${DEFAULT_COLLECTOR_RESOURCE_PATH}`;
-
-const DAEMON_OTLP_SOCKET_PATH = "/var/run/vercel/o11y/otlp.sock";
-
-function isSocket(path: string): boolean {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fsModule = require("node:fs") as typeof fs;
-    return fsModule.statSync(path).isSocket();
-  } catch {
-    // The path does not exist, or this is not a Node env.
-    return false;
-  }
-}
 
 function buildExporterUrlFromEnv(env: Env): string {
   const defaultUrlFromEnv = env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;

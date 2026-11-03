@@ -1,8 +1,6 @@
-import type * as http from "node:http";
 import type { OTLPExporterError } from "@opentelemetry/otlp-exporter-base";
-import { context, diag } from "@opentelemetry/api";
+import { diag } from "@opentelemetry/api";
 import type { ExportResult } from "@opentelemetry/core";
-import { suppressTracing } from "@opentelemetry/core";
 import { getStringFromEnv } from "../utils/env-parser";
 import { toTimeoutMillis } from "../util/timeout";
 import type { OTLPExporterConfig } from "./config";
@@ -20,13 +18,10 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   /** @internal */
   protected url: string;
   /** @internal */
-  private readonly socketPath: string | undefined;
-  /** @internal */
   private readonly timeoutMillis: number;
 
   constructor(config: OTLPExporterConfig = {}) {
     this.url = config.url || this.getDefaultUrl(config);
-    this.socketPath = config.socketPath;
     this.timeoutMillis =
       toTimeoutMillis(config.timeoutMillis, "timeoutMillis") ??
       timeoutMillisFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT") ??
@@ -101,34 +96,16 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
       );
     }, this.timeoutMillis);
 
-    const requestHeaders = {
-      ...this._headers,
-      ...headers,
-      "Content-Type": contentType,
-      "User-Agent": "OTel-OTLP-Exporter-JavaScript/0.46.0",
-    } as Record<string, string>;
-    const request = this.socketPath
-      ? postToSocket(
-          this.socketPath,
-          this.url,
-          body,
-          requestHeaders,
-          controller.signal,
-        )
-      : fetch(this.url, {
-          method: "POST",
-          body: body as BodyInit,
-          headers: requestHeaders,
-          signal: controller.signal,
-          // @ts-expect-error - this handles a Next.js specific issue
-          next: { internal: true },
-        }).then((res) => {
-          // Drain the response body.
-          void res.arrayBuffer().catch(() => undefined);
-          return res.status;
-        });
-
-    const promise = request
+    const promise = this.post(
+      body,
+      {
+        ...(this._headers as Record<string, string> | undefined),
+        ...headers,
+        "Content-Type": contentType,
+        "User-Agent": "OTel-OTLP-Exporter-JavaScript/0.46.0",
+      },
+      controller.signal,
+    )
       .then((status) => {
         diag.debug("@vercel/otel/otlp: onSuccess", status);
         onSuccess();
@@ -146,6 +123,28 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
     this._sendingPromises.push(promise);
   }
 
+  /**
+   * Sends the export request and resolves with the response status.
+   * @internal
+   */
+  protected async post(
+    body: string | Uint8Array | Blob,
+    headers: Record<string, string>,
+    signal: AbortSignal,
+  ): Promise<number> {
+    const res = await fetch(this.url, {
+      method: "POST",
+      body: body as BodyInit,
+      headers,
+      signal,
+      // @ts-expect-error - this handles a Next.js specific issue
+      next: { internal: true },
+    });
+    // Drain the response body.
+    void res.arrayBuffer().catch(() => undefined);
+    return res.status;
+  }
+
   abstract convert(items: ExportItem[]): ServiceRequest;
   abstract getDefaultUrl(config: OTLPExporterConfig): string;
   abstract toMessage(serviceRequest: ServiceRequest): {
@@ -157,39 +156,4 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
 
 function timeoutMillisFromEnv(key: string): number | undefined {
   return toTimeoutMillis(getStringFromEnv(key), key);
-}
-
-/** Sends a POST request over a Unix socket and resolves with the status code. */
-async function postToSocket(
-  socketPath: string,
-  url: string,
-  body: string | Uint8Array | Blob,
-  headers: Record<string, string>,
-  signal: AbortSignal,
-): Promise<number> {
-  let httpModule: typeof http;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    httpModule = require("node:http") as typeof http;
-  } catch {
-    throw new Error("socketPath is only supported in Node.js");
-  }
-  const data =
-    body instanceof Blob ? new Uint8Array(await body.arrayBuffer()) : body;
-  return new Promise((resolve, reject) => {
-    // Do not trace the export request itself.
-    context.with(suppressTracing(context.active()), () => {
-      const req = httpModule.request(
-        url,
-        { socketPath, method: "POST", headers, signal },
-        (res) => {
-          res.on("error", reject);
-          res.on("end", () => resolve(res.statusCode ?? 0));
-          res.resume();
-        },
-      );
-      req.on("error", reject);
-      req.end(data);
-    });
-  });
 }

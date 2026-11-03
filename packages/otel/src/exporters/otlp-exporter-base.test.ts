@@ -1,7 +1,3 @@
-import * as http from "node:http";
-import { mkdtempSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { diag } from "@opentelemetry/api";
 import type { ExportResult } from "@opentelemetry/core";
@@ -155,54 +151,5 @@ describe("OTLPExporterEdgeBase", () => {
     );
 
     expect(message).toBe("Export timed out after 40ms");
-  });
-
-  it("sends the request over socketPath when set", async () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal("fetch", fetchMock);
-    const socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
-    const received: { url?: string; contentType?: string; body: string }[] = [];
-    const server = http.createServer((req, res) => {
-      let body = "";
-      req.on("data", (chunk: Buffer) => (body += chunk.toString()));
-      req.on("end", () => {
-        received.push({
-          url: req.url,
-          contentType: req.headers["content-type"],
-          body,
-        });
-        res.end();
-      });
-    });
-    await new Promise<void>((resolve) => {
-      server.listen(socketPath, resolve);
-    });
-
-    try {
-      const exporter = new TestExporter({
-        url: "http://localhost/v1/traces",
-        socketPath,
-      });
-      const result = await exportOnce(exporter);
-
-      expect(result.code).toBe(ExportResultCode.SUCCESS);
-      expect(received).toEqual([
-        { url: "/v1/traces", contentType: "text/plain", body: "span" },
-      ]);
-      expect(fetchMock).not.toHaveBeenCalled();
-    } finally {
-      await new Promise((resolve) => {
-        server.close(resolve);
-      });
-    }
-  });
-
-  it("reports failure when socketPath does not accept connections", async () => {
-    const socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
-    const exporter = new TestExporter({ socketPath });
-
-    const result = await exportOnce(exporter);
-
-    expect(result.code).toBe(ExportResultCode.FAILED);
   });
 });
