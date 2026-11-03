@@ -1,0 +1,14 @@
+packages/otel/src/instrumentations/vercel-handler.ts
+  h_3ceb785fe0a1f8 1-63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c07c80bcb3eb22ec254b625bcad72fa327007e94",
+  "prompts": {},
+  "humans": {
+    "h_3ceb785fe0a1f8": {
+      "author": "Gal Schlezinger <gal@spitfire.co.il>"
+    }
+  }
+}
