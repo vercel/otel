@@ -1,0 +1,14 @@
+packages/otel/package.json
+  h_3ceb785fe0a1f8 59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a0c8f04acef5f6c5fd8174684188a1df233db260",
+  "prompts": {},
+  "humans": {
+    "h_3ceb785fe0a1f8": {
+      "author": "Gal Schlezinger <gal@spitfire.co.il>"
+    }
+  }
+}
