@@ -471,11 +471,13 @@ function parseSpanProcessor(
               env.VERCEL_OTEL_SOCKET_PATH,
             );
             processors.push(
-              new BatchSpanProcessor(
-                new OTLPHttpProtoTraceExporter({
-                  url: "http://localhost/v1/traces",
-                  socketPath: env.VERCEL_OTEL_SOCKET_PATH,
-                }),
+              new FilterWhenDrainedSpanProcessor(
+                new BatchSpanProcessor(
+                  new OTLPHttpProtoTraceExporter({
+                    url: "http://localhost/v1/traces",
+                    socketPath: env.VERCEL_OTEL_SOCKET_PATH,
+                  }),
+                ),
               ),
             );
           }
