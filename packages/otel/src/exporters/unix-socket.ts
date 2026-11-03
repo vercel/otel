@@ -1,7 +1,5 @@
 import type * as fs from "node:fs";
 import type * as http from "node:http";
-import { context } from "@opentelemetry/api";
-import { suppressTracing } from "@opentelemetry/core";
 
 /** The OTLP socket of the controller in a Vercel Daemon. */
 export const DAEMON_OTLP_SOCKET_PATH = "/var/run/vercel/o11y/otlp.sock";
@@ -36,19 +34,20 @@ export function postToSocket(
     return Promise.reject(err);
   }
   return new Promise((resolve, reject) => {
-    // Do not trace the export request itself.
-    context.with(suppressTracing(context.active()), () => {
-      const req = httpModule.request(
-        url,
-        { socketPath, method: "POST", headers, signal },
-        (res) => {
-          res.on("error", reject);
-          res.on("end", () => resolve(res.statusCode ?? 0));
-          res.resume();
-        },
-      );
-      req.on("error", reject);
-      req.end(body);
-    });
+    // Report the abort reason, like `fetch` does.
+    const fail = (err: Error): void => {
+      reject(signal.aborted ? (signal.reason as Error) : err);
+    };
+    const req = httpModule.request(
+      url,
+      { socketPath, method: "POST", headers, signal },
+      (res) => {
+        res.on("error", fail);
+        res.on("end", () => resolve(res.statusCode ?? 0));
+        res.resume();
+      },
+    );
+    req.on("error", fail);
+    req.end(body);
   });
 }
