@@ -56,7 +56,7 @@
     "build": "pnpm clean && pnpm tsx build.ts && pnpm build-types && pnpm build-site",
     "build-only": "pnpm tsx build.ts",
     "build-types": "tsc --noEmit false --declaration --emitDeclarationOnly --stripInternal --declarationDir dist/types src/index.ts",
-    "build-site": "pnpm build-typedoc && cp index.html LICENSE CHANGELOG.md dist-site",
+    "build-site": "pnpm build-typedoc && cp index.html LICENSE CHANGELOG.md dist-site && pnpm pack --pack-destination dist-site && mv dist-site/vercel-otel-*.tgz dist-site/package.tgz",
     "build-typedoc": "pnpm typedoc src/index.ts",
     "clean": "rimraf dist && rimraf dist-site",
     "eslint": "eslint-runner",
