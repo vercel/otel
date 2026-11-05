@@ -163,10 +163,7 @@ describe("Sdk in a Vercel Daemon", () => {
     expect(received).toEqual([
       { url: "/v1/traces", contentType: "application/x-protobuf" },
     ]);
-    expect(fetchMock).not.toHaveBeenCalledWith(
-      "http://localhost:4318/v1/traces",
-      expect.anything(),
-    );
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("prefers OTEL_EXPORTER_OTLP_ENDPOINT over VERCEL_OTEL_SOCKET_PATH", async () => {

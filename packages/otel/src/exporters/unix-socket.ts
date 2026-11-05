@@ -38,7 +38,9 @@ export function postToSocket(
     const send = (): void => {
       const req = httpModule.request(
         url,
-        { socketPath, method: "POST", headers, signal },
+        // A new connection per export, so a kept-alive connection that the
+        // controller already closed is never reused.
+        { socketPath, method: "POST", headers, signal, agent: false },
         (res) => {
           res.on("error", fail);
           res.on("end", () => {
@@ -65,5 +67,5 @@ export function postToSocket(
 /** Seconds to wait from a `Retry-After` header, defaulting to 1. */
 function parseRetryAfter(value: string | undefined): number {
   const seconds = Number(value);
-  return value !== undefined && value !== "" && seconds >= 0 ? seconds : 1;
+  return value && seconds >= 0 ? seconds : 1;
 }
