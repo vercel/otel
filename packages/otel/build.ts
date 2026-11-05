@@ -49,6 +49,22 @@ const stripEvalEdge: Plugin = {
   },
 };
 
+// Unix sockets are Node.js only. Keep the socket client out of the Edge bundle.
+const stubUnixSocketEdge: Plugin = {
+  name: "stubUnixSocketEdge",
+  setup(builder): void {
+    builder.onResolve({ filter: /^\.\/unix-socket$/ }, (args) => ({
+      path: args.path,
+      namespace: "stub-unix-socket",
+    }));
+    builder.onLoad({ filter: /.*/, namespace: "stub-unix-socket" }, () => ({
+      contents: `export function postToSocket() {
+        return Promise.reject(new Error("Unix sockets are only supported in Node.js"));
+      }`,
+    }));
+  },
+};
+
 /** Adds support for require, __filename, and __dirname to ESM / Node. */
 const esmNodeSupportBanner = {
   js: `import { fileURLToPath } from 'url';
@@ -96,6 +112,7 @@ async function buildAll(): Promise<void> {
       plugins: [
         externalCjsToEsmPlugin(["async_hooks", "events", ...peerDependencies]),
         stripEvalEdge,
+        stubUnixSocketEdge,
       ],
     }),
   ]);
