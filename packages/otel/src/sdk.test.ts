@@ -94,7 +94,9 @@ describe("Sdk span processors", () => {
 
 describe("Sdk in a Vercel Daemon", () => {
   let server: http.Server | undefined;
-  const socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
+  // A fresh path per server, so no kept-alive connection to an earlier
+  // server is reused.
+  let socketPath = "";
 
   afterEach(async () => {
     await new Promise((resolve) => {
@@ -114,6 +116,7 @@ describe("Sdk in a Vercel Daemon", () => {
   }
 
   async function listenOnDaemonSocket(): Promise<ReceivedRequest[]> {
+    socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
     const received: ReceivedRequest[] = [];
     server = http.createServer((req, res) => {
       req.resume();

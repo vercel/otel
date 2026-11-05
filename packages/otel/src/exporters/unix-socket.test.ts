@@ -7,7 +7,9 @@ import { postToSocket } from "./unix-socket";
 
 describe("postToSocket", () => {
   let server: http.Server | undefined;
-  const socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
+  // A fresh path per server, so no kept-alive connection to an earlier
+  // server is reused.
+  let socketPath = "";
 
   afterEach(async () => {
     await new Promise((resolve) => {
@@ -18,6 +20,7 @@ describe("postToSocket", () => {
 
   /** Answers each request with the next status, repeating the last one. */
   async function listen(statuses: number[]): Promise<{ requests: number }> {
+    socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
     const state = { requests: 0 };
     server = http.createServer((req, res) => {
       req.resume();
