@@ -1,4 +1,8 @@
-import { afterEach, describe, expect, it } from "vitest";
+import * as http from "node:http";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ROOT_CONTEXT,
   context,
@@ -84,6 +88,96 @@ describe("Sdk span processors", () => {
     span.end();
     expect(exporter.getFinishedSpans()[0]?.attributes.secret).toBe(
       "[redacted]",
+    );
+  });
+});
+
+describe("Sdk in a Vercel Daemon", () => {
+  let server: http.Server | undefined;
+  // A fresh path per server, so no kept-alive connection to an earlier
+  // server is reused.
+  let socketPath = "";
+
+  afterEach(async () => {
+    await new Promise((resolve) => {
+      server?.close(resolve);
+    });
+    server = undefined;
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+    propagation.disable();
+    trace.disable();
+    context.disable();
+  });
+
+  interface ReceivedRequest {
+    url?: string;
+    contentType?: string;
+  }
+
+  async function listenOnDaemonSocket(): Promise<ReceivedRequest[]> {
+    socketPath = join(mkdtempSync(join(tmpdir(), "otel-")), "otlp.sock");
+    const received: ReceivedRequest[] = [];
+    server = http.createServer((req, res) => {
+      req.resume();
+      req.on("end", () => {
+        received.push({
+          url: req.url,
+          contentType: req.headers["content-type"],
+        });
+        res.end();
+      });
+    });
+    await new Promise<void>((resolve) => {
+      server?.listen(socketPath, resolve);
+    });
+    return received;
+  }
+
+  async function exportOneSpan(): Promise<void> {
+    vi.stubEnv("VERCEL_OTEL_SOCKET_PATH", socketPath);
+    const sdk = new Sdk({ instrumentations: [] });
+    sdk.start();
+    trace.getTracer("test").startSpan("work").end();
+    await sdk.shutdown();
+  }
+
+  it("sends spans as protobuf to VERCEL_OTEL_SOCKET_PATH", async () => {
+    const received = await listenOnDaemonSocket();
+
+    await exportOneSpan();
+
+    expect(received).toEqual([
+      { url: "/v1/traces", contentType: "application/x-protobuf" },
+    ]);
+  });
+
+  it("prefers VERCEL_OTEL_SOCKET_PATH over VERCEL_OTEL_ENDPOINTS", async () => {
+    const received = await listenOnDaemonSocket();
+    vi.stubEnv("VERCEL_OTEL_ENDPOINTS", "1");
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await exportOneSpan();
+
+    expect(received).toEqual([
+      { url: "/v1/traces", contentType: "application/x-protobuf" },
+    ]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("prefers OTEL_EXPORTER_OTLP_ENDPOINT over VERCEL_OTEL_SOCKET_PATH", async () => {
+    const received = await listenOnDaemonSocket();
+    vi.stubEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318");
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await exportOneSpan();
+
+    expect(received).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://collector:4318/v1/traces",
+      expect.anything(),
     );
   });
 });

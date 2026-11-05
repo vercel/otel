@@ -70,6 +70,7 @@ interface Env {
   OTEL_EXPORTER_OTLP_TRACES_HEADERS?: string;
   OTEL_EXPORTER_OTLP_TRACES_PROTOCOL?: string;
   OTEL_EXPORTER_OTLP_PROTOCOL?: string;
+  VERCEL_OTEL_SOCKET_PATH?: string;
 }
 
 const logLevelMap: Record<string, DiagLogLevel> = {
@@ -253,6 +254,7 @@ function getEnv(): Env {
     OTEL_EXPORTER_OTLP_TRACES_HEADERS: getStringFromEnv(
       "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
     ),
+    VERCEL_OTEL_SOCKET_PATH: getStringFromEnv("VERCEL_OTEL_SOCKET_PATH"),
   };
 }
 
@@ -428,7 +430,31 @@ function parseSpanProcessor(
             new BatchSpanProcessor(new VercelRuntimeSpanExporter()),
           ];
 
-          if (process.env.VERCEL_OTEL_ENDPOINTS) {
+          // In a Vercel Daemon, the controller receives OTLP on a Unix socket.
+          // Checked before `VERCEL_OTEL_ENDPOINTS`: daemons inherit their
+          // deployment's env, but have no collector to send to.
+          if (
+            env.VERCEL_OTEL_SOCKET_PATH &&
+            (!configuration.traceExporter ||
+              configuration.traceExporter === "auto") &&
+            !env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT &&
+            !env.OTEL_EXPORTER_OTLP_ENDPOINT
+          ) {
+            diag.debug(
+              "@vercel/otel: Configure OTLP socket: ",
+              env.VERCEL_OTEL_SOCKET_PATH,
+            );
+            processors.push(
+              new FilterWhenDrainedSpanProcessor(
+                new BatchSpanProcessor(
+                  new OTLPHttpProtoTraceExporter({
+                    url: "http://localhost/v1/traces",
+                    socketPath: env.VERCEL_OTEL_SOCKET_PATH,
+                  }),
+                ),
+              ),
+            );
+          } else if (process.env.VERCEL_OTEL_ENDPOINTS) {
             // OTEL collector is configured on 4318 port.
             const port = process.env.VERCEL_OTEL_ENDPOINTS_PORT || "4318";
             // It's important to use x-protobuf here because the Vercel collector

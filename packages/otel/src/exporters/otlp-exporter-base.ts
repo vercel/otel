@@ -4,6 +4,7 @@ import type { ExportResult } from "@opentelemetry/core";
 import { getStringFromEnv } from "../utils/env-parser";
 import { toTimeoutMillis } from "../util/timeout";
 import type { OTLPExporterConfig } from "./config";
+import { postToSocket } from "./unix-socket";
 
 const DEFAULT_TIMEOUT_MILLIS = 10_000;
 
@@ -18,10 +19,13 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
   /** @internal */
   protected url: string;
   /** @internal */
+  private readonly socketPath: string | undefined;
+  /** @internal */
   private readonly timeoutMillis: number;
 
   constructor(config: OTLPExporterConfig = {}) {
     this.url = config.url || this.getDefaultUrl(config);
+    this.socketPath = config.socketPath;
     this.timeoutMillis =
       toTimeoutMillis(config.timeoutMillis, "timeoutMillis") ??
       timeoutMillisFromEnv("OTEL_EXPORTER_OTLP_TRACES_TIMEOUT") ??
@@ -96,24 +100,37 @@ export abstract class OTLPExporterEdgeBase<ExportItem, ServiceRequest> {
       );
     }, this.timeoutMillis);
 
-    const promise = fetch(this.url, {
-      method: "POST",
-      body: body as BodyInit,
-      headers: {
-        ...this._headers,
-        ...headers,
-        "Content-Type": contentType,
-        "User-Agent": "OTel-OTLP-Exporter-JavaScript/0.46.0",
-      },
-      signal: controller.signal,
-      // @ts-expect-error - this handles a Next.js specific issue
-      next: { internal: true },
-    })
-      .then((res) => {
-        diag.debug("@vercel/otel/otlp: onSuccess", res.status, res.statusText);
+    const requestHeaders = {
+      ...(this._headers as Record<string, string> | undefined),
+      ...headers,
+      "Content-Type": contentType,
+      "User-Agent": "OTel-OTLP-Exporter-JavaScript/0.46.0",
+    };
+    const request = this.socketPath
+      ? postToSocket(
+          this.socketPath,
+          this.url,
+          body as string | Uint8Array,
+          requestHeaders,
+          controller.signal,
+        )
+      : fetch(this.url, {
+          method: "POST",
+          body: body as BodyInit,
+          headers: requestHeaders,
+          signal: controller.signal,
+          // @ts-expect-error - this handles a Next.js specific issue
+          next: { internal: true },
+        }).then((res) => {
+          // Drain the response body.
+          void res.arrayBuffer().catch(() => undefined);
+          return res.status;
+        });
+
+    const promise = request
+      .then((status) => {
+        diag.debug("@vercel/otel/otlp: onSuccess", status);
         onSuccess();
-        // Drain the response body.
-        void res.arrayBuffer().catch(() => undefined);
       })
       .catch((err) => {
         diag.error("@vercel/otel/otlp: onError", err);
