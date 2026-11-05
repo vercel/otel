@@ -2,7 +2,8 @@ import type * as http from "node:http";
 
 /**
  * Sends a POST request over a Unix socket and resolves with the status code.
- * Node.js only.
+ * Retries a 429 after its `Retry-After` delay until `signal` aborts, and
+ * rejects any other non-2xx status. Node.js only.
  */
 export function postToSocket(
   socketPath: string,
@@ -23,16 +24,46 @@ export function postToSocket(
     const fail = (err: Error): void => {
       reject(signal.aborted ? (signal.reason as Error) : err);
     };
-    const req = httpModule.request(
-      url,
-      { socketPath, method: "POST", headers, signal },
-      (res) => {
-        res.on("error", fail);
-        res.on("end", () => resolve(res.statusCode ?? 0));
-        res.resume();
-      },
-    );
-    req.on("error", fail);
-    req.end(body);
+    const retryLater = (seconds: number): void => {
+      const onAbort = (): void => {
+        clearTimeout(timer);
+        fail(signal.reason as Error);
+      };
+      const timer = setTimeout(() => {
+        signal.removeEventListener("abort", onAbort);
+        send();
+      }, seconds * 1000);
+      signal.addEventListener("abort", onAbort, { once: true });
+    };
+    const send = (): void => {
+      const req = httpModule.request(
+        url,
+        { socketPath, method: "POST", headers, signal },
+        (res) => {
+          res.on("error", fail);
+          res.on("end", () => {
+            const status = res.statusCode ?? 0;
+            if (status === 429 && !signal.aborted) {
+              // The controller asks for a retry when too many exports run at once.
+              retryLater(parseRetryAfter(res.headers["retry-after"]));
+            } else if (status >= 200 && status < 300) {
+              resolve(status);
+            } else {
+              fail(new Error(`OTLP export failed with status ${status}`));
+            }
+          });
+          res.resume();
+        },
+      );
+      req.on("error", fail);
+      req.end(body);
+    };
+    send();
   });
+}
+
+/** Seconds to wait from a `Retry-After` header, defaulting to 1. */
+function parseRetryAfter(value: string | undefined): number {
+  const seconds = Number(value);
+  return value !== undefined && value !== "" && seconds >= 0 ? seconds : 1;
 }
