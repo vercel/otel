@@ -1,5 +1,11 @@
 # @vercel/otel
 
+## 2.3.0
+
+### Minor Changes
+
+- [#234](https://github.com/vercel/otel/pull/234) [`1592b6f`](https://github.com/vercel/otel/commit/1592b6ffe7fca81d3be4974baae50c421177404c) Thanks [@Schniz](https://github.com/Schniz)! - When `VERCEL_OTEL_SOCKET_PATH` is set and no OTLP endpoint is configured, the `'auto'` exporter sends traces over that Unix socket. Vercel Daemons use it to send traces to the daemon controller with no extra setup.
+
 ## 2.2.1
 
 ### Patch Changes
