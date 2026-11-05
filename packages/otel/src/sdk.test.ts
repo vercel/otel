@@ -149,6 +149,23 @@ describe("Sdk in a Vercel Daemon", () => {
     ]);
   });
 
+  it("prefers VERCEL_OTEL_SOCKET_PATH over VERCEL_OTEL_ENDPOINTS", async () => {
+    const received = await listenOnDaemonSocket();
+    vi.stubEnv("VERCEL_OTEL_ENDPOINTS", "1");
+    const fetchMock = vi.fn(() => Promise.resolve(new Response()));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await exportOneSpan();
+
+    expect(received).toEqual([
+      { url: "/v1/traces", contentType: "application/x-protobuf" },
+    ]);
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      "http://localhost:4318/v1/traces",
+      expect.anything(),
+    );
+  });
+
   it("prefers OTEL_EXPORTER_OTLP_ENDPOINT over VERCEL_OTEL_SOCKET_PATH", async () => {
     const received = await listenOnDaemonSocket();
     vi.stubEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://collector:4318");
