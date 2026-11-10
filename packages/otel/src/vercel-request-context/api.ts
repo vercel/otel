@@ -3,7 +3,11 @@
  * Replace with the real package once it's published.
  */
 
-import type { SpanContext } from "@opentelemetry/api";
+import type { SpanContext, TraceFlags } from "@opentelemetry/api";
+
+type VercelRootSpanContext = Omit<SpanContext, "traceFlags"> & {
+  traceFlags?: TraceFlags;
+};
 
 /** @internal */
 export interface VercelRequestContext {
@@ -14,7 +18,7 @@ export interface VercelRequestContext {
   url: string;
   telemetry?: {
     reportSpans: (data: unknown) => void;
-    rootSpanContext?: SpanContext;
+    rootSpanContext?: VercelRootSpanContext;
     traceDrains?: string[];
   };
   [key: symbol]: unknown;
