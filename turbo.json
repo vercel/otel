@@ -1,5 +1,5 @@
 {
-  "pipeline": {
+  "tasks": {
     "//#prettier-script": {
       "outputs": ["node_modules/.cache/prettier/.prettier-cache"]
     },
