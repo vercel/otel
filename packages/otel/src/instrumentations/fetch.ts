@@ -76,6 +76,20 @@ export interface FetchInstrumentationConfig extends InstrumentationConfig {
   dontPropagateContextUrls?: (string | RegExp)[];
 
   /**
+   * Whether to propagate the tracing context for requests whose span is not
+   * sampled. When enabled, these requests still carry the context (for
+   * example, a W3C `traceparent` header with the sampled flag set to `00`), so
+   * downstream services can follow the sampling decision instead of starting
+   * a new trace. No span is recorded or exported for these requests. The
+   * [`propagateContextUrls`](FetchInstrumentationConfig#propagateContextUrls)
+   * and [`dontPropagateContextUrls`](FetchInstrumentationConfig#dontPropagateContextUrls)
+   * rules still apply. Defaults to `false`.
+   *
+   * Example: `fetch: { propagateUnsampledContext: true }`.
+   */
+  propagateUnsampledContext?: boolean;
+
+  /**
    * A string for the "resource.name" attribute that can include attribute expressions in `{}`.
    * Can be overriden by the `opentelemetry.attributes` property in the `RequestInit` object.
    *
@@ -173,7 +187,7 @@ export class FetchInstrumentation implements Instrumentation {
     const branchHost = process.env.VERCEL_BRANCH_URL || null;
     const propagateContextUrls = this.config.propagateContextUrls ?? [];
     const dontPropagateContextUrls = this.config.dontPropagateContextUrls ?? [];
-    if (init?.opentelemetry?.propagateContext) {
+    if (init?.opentelemetry?.propagateContext !== undefined) {
       return init.opentelemetry.propagateContext;
     }
     const urlString = url.toString();
@@ -335,7 +349,9 @@ export class FetchInstrumentation implements Instrumentation {
           method: options.method || "GET",
         });
 
-        if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
+        const sampled =
+          span.isRecording() && isSampled(span.spanContext().traceFlags);
+        if (!sampled && !this.config.propagateUnsampledContext) {
           span.end();
           return original.apply(this, [url, options, callback]);
         }
@@ -348,6 +364,11 @@ export class FetchInstrumentation implements Instrumentation {
             options.headers || {},
             HTTP_HEADERS_SETTER,
           );
+        }
+
+        if (!sampled) {
+          span.end();
+          return original.apply(this, [url, options, callback]);
         }
 
         if (attributesFromRequestHeaders) {
@@ -507,7 +528,9 @@ export class FetchInstrumentation implements Instrumentation {
         attributes: init?.opentelemetry?.attributes,
       });
 
-      if (!span.isRecording() || !isSampled(span.spanContext().traceFlags)) {
+      const sampled =
+        span.isRecording() && isSampled(span.spanContext().traceFlags);
+      if (!sampled && !this.config.propagateUnsampledContext) {
         span.end();
         return originalFetch(input, init);
       }
@@ -516,6 +539,15 @@ export class FetchInstrumentation implements Instrumentation {
         const parentContext = context.active();
         const fetchContext = traceApi.setSpan(parentContext, span);
         propagation.inject(fetchContext, req.headers, FETCH_HEADERS_SETTER);
+      }
+
+      if (!sampled) {
+        span.end();
+        // See the FormData note below.
+        if (init?.body instanceof FormData) {
+          req.headers.delete("content-type");
+        }
+        return originalFetch(input, { ...init, headers: req.headers });
       }
 
       if (attributesFromRequestHeaders) {
